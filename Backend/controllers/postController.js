@@ -1,3 +1,4 @@
+
 const asyncHandler = require('express-async-handler');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
@@ -73,6 +74,55 @@ const createPost = asyncHandler(async (req, res) => {
 
   // Return the newly created post
   res.status(201).json(post);
+});
+
+// @desc    Update a post
+// @route   PUT /api/posts/:id
+// @access  Private
+const updatePost = asyncHandler(async (req, res) => {
+  const { content, imageUrl, images } = req.body;
+
+  const post = await Post.findById(req.params.id);
+
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  // Check if user is the post author
+  if (post.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to update this post');
+  }
+
+  // Update post fields
+  post.content = content || post.content;
+  post.imageUrl = imageUrl || post.imageUrl;
+  post.images = images || post.images;
+
+  const updatedPost = await post.save();
+  res.json(updatedPost);
+});
+
+// @desc    Delete a post
+// @route   DELETE /api/posts/delete/:postId
+// @access  Private
+const deletepost = asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.postId);
+
+  if (!post) {
+    res.status(404);
+    throw new Error('Post not found');
+  }
+
+  // Check if user is the post author
+  if (post.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to delete this post');
+  }
+
+  await Post.findByIdAndDelete(req.params.postId);
+  res.json({ message: 'Post deleted successfully' });
 });
 
 // @desc    Get global feed posts (not in ghost circles)
@@ -480,6 +530,7 @@ const getPostById = asyncHandler(async (req, res) => {
 module.exports = {
   createPost,
   updatePost,
+  deletepost,
   getGlobalFeed,
   getGhostCirclePosts,
   getPostById,
@@ -487,8 +538,8 @@ module.exports = {
   recognizeUser,
   getComments,
   addComment,
-  editComment,incrementShareCount,
+  editComment,
+  incrementShareCount,
   deleteComment,
-  replyToComment,
-  deletepost
+  replyToComment
 };

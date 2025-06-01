@@ -1,3 +1,4 @@
+
 export interface User {
     _id: string;
     username: string;
@@ -33,6 +34,7 @@ export interface User {
     user: string | User;
     content?: string;
     imageUrl?: string;
+    images?: string[];
     anonymousAlias: string;
     avatarEmoji: string;
     ghostCircle?: string | GhostCircle;
@@ -53,6 +55,7 @@ export interface User {
       }[];
       createdAt: string;
     }[];
+    shareCount?: number;
     expiresAt: string;
     createdAt: string;
     updatedAt: string;

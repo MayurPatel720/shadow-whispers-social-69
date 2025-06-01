@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
 
 interface ImageSliderProps {
@@ -10,6 +10,17 @@ interface ImageSliderProps {
 
 const ImageSlider: React.FC<ImageSliderProps> = ({ images, className }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [api, setApi] = useState<CarouselApi>();
+
+  React.useEffect(() => {
+    if (!api) {
+      return;
+    }
+
+    api.on("select", () => {
+      setCurrentIndex(api.selectedScrollSnap());
+    });
+  }, [api]);
 
   if (!images || images.length === 0) return null;
 
@@ -27,7 +38,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, className }) => {
 
   return (
     <div className={cn("relative w-full", className)}>
-      <Carousel className="w-full">
+      <Carousel className="w-full" setApi={setApi}>
         <CarouselContent>
           {images.map((image, index) => (
             <CarouselItem key={index}>
