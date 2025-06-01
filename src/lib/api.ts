@@ -2,9 +2,10 @@
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
+
 // Create axios instance with base URL
-// const API_URL = "http://localhost:8900";
-const API_URL = "https://undercover-service.onrender.com";
+const API_URL = "http://localhost:8900";
+
 export const api = axios.create({
 	baseURL: API_URL,
 	headers: {
@@ -40,11 +41,19 @@ export const getToken = () => {
 
 export const initSocket = (): Socket => {
 	const token = getToken();
+	if (!token) {
+		console.error("No token found, cannot initialize socket");
+		throw new Error("Authentication required");
+	}
 	const socket = io(`${API_URL}`, {
 		auth: { token },
+		transports: ["websocket", "polling"],
 	});
 	socket.on("connect_error", (err) => {
 		console.error("Socket.IO connection error:", err.message);
+	});
+	socket.on("connect", () => {
+		console.log("Socket.IO connected, ID:", socket.id);
 	});
 	return socket;
 };
@@ -62,12 +71,14 @@ export const getPostById = async (postId: string): Promise<Post> => {
 	const response = await api.get(`/api/posts/${postId}`);
 	return response.data;
 };
+
 export const incrementShareCount = async (
 	postId: string
 ): Promise<{ shareCount: number }> => {
 	const response = await api.put(`/api/posts/${postId}/share`);
 	return response.data;
 };
+
 export const registerUser = async (
 	username: string,
 	fullName: string,
@@ -106,6 +117,7 @@ export const getUserProfile = async (userId?: string): Promise<User> => {
 	const response = await api.get(endpoint);
 	return response.data;
 };
+
 export const updateUserProfile = async (
 	userData: Partial<User>
 ): Promise<User> => {

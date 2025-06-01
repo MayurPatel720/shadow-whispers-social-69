@@ -1,72 +1,91 @@
-require('dotenv').config({ path: './.env' });
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const morgan = require('morgan');
-const cors = require('cors');
-const ConnectTODB = require('./configs/dbConnect');
-const indexRoutes = require('./routes/indexRoutes');
-const userRoutes = require('./routes/userRoutes');
-const ghostCircleRoutes = require('./routes/ghostCircleRoutes');
-const postRoutes = require('./routes/postRoutes');
-const whisperRoutes = require('./routes/whisperRoutes');
-const socketConfig = require('./configs/socket');
+// server.js
+require("dotenv").config({ path: "./.env" });
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const morgan = require("morgan");
+const cors = require("cors");
+const ConnectTODB = require("./configs/dbConnect");
+const indexRoutes = require("./routes/indexRoutes");
+const userRoutes = require("./routes/userRoutes");
+const ghostCircleRoutes = require("./routes/ghostCircleRoutes");
+const postRoutes = require("./routes/postRoutes");
+const whisperRoutes = require("./routes/whisperRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = [
+	"https://underkover.in",
+	"http://localhost:8080",
+	"http://192.168.253.3:8080",
+	"http://localhost:3000",
+];
+
 const io = new Server(server, {
-  cors: {
-    origin: [
-          'https://underkover.in',
-      'http://localhost:8080',
-      'http://localhost:3000', // Add common React port
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+	cors: {
+		origin: (origin, callback) => {
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS (Socket.IO)"));
+			}
+		},
+		methods: ["GET", "POST"],
+		credentials: true,
+	},
 });
 
-// Middleware
-app.use(cors({
-  origin: [
-    'https://underkover.in',
-    'http://localhost:8080',
-    'http://localhost:3000',
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}));
+app.use(
+	cors({
+		origin: (origin, callback) => {
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
+		methods: ["GET", "POST", "PUT", "DELETE"],
+		allowedHeaders: ["Content-Type", "Authorization"],
+		credentials: true,
+	})
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 
-// Initialize Socket.IO
-socketConfig(io);
+// Make io globally available
+global.io = io;
+
+// Apply Socket.IO configuration
+require("./configs/socket")(io);
 
 // Connect to DB
 ConnectTODB();
 
-// Routes
-app.use('/api', indexRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/ghost-circles', ghostCircleRoutes);
-app.use('/api/posts', postRoutes);
-app.use('/api/whispers', whisperRoutes);
+// API Routes
+app.use("/api", indexRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/ghost-circles", ghostCircleRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/whispers", whisperRoutes);
+app.use("/api/notifications", notificationRoutes);
 
-app.get('/healthcheck', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+// Healthcheck Route
+app.get("/healthcheck", (req, res) => {
+	res.status(200).json({ status: "ok" });
 });
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode);
-  res.json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
-  });
+	const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+	res.status(statusCode).json({
+		message: err.message,
+		stack: process.env.NODE_ENV === "production" ? null : err.stack,
+	});
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8900; // Updated to match logs
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

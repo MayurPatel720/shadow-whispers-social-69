@@ -1,18 +1,22 @@
-
-const express = require('express');
+// routes/whisperRoutes.js
+const express = require("express");
 const router = express.Router();
 const {
-  sendWhisper,
-  getMyWhispers,
-  getWhisperConversation,
-} = require('../controllers/whisperController');
-const { protect } = require('../middleware/authMiddleware');
+	sendWhisper,
+	getMyWhispers,
+	getWhisperConversation,
+	markWhisperAsRead, // Added
+} = require("../controllers/whisperController");
+const { protect } = require("../middleware/authMiddleware");
 
 // Protected routes
-router.route('/')
-  .post(protect, sendWhisper)
-  .get(protect, getMyWhispers);
+router
+	.route("/")
+	.post(protect, sendWhisper) // Send a new whisper (REST)
+	.get(protect, getMyWhispers); // Get all user conversations
 
-router.get('/:userId', protect, getWhisperConversation);
+router.get("/:userId", protect, getWhisperConversation); // Get conversation with a specific user
+
+router.put("/:whisperId/read", protect, markWhisperAsRead); // Mark a whisper as read
 
 module.exports = router;
