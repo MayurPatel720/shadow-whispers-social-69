@@ -1,3 +1,4 @@
+
 // server.js
 require("dotenv").config({ path: "./.env" });
 const express = require("express");
@@ -21,6 +22,7 @@ const allowedOrigins = [
 	"http://localhost:8080",
 	"http://192.168.253.3:8080",
 	"http://localhost:3000",
+	"https://lovable.dev/projects/f9d440f6-e552-4080-9d03-1bdf75980bbe",
 ];
 
 const io = new Server(server, {
