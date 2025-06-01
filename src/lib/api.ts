@@ -180,13 +180,15 @@ export const getGhostCirclePosts = async (
 export const createPost = async (
 	content: string,
 	ghostCircleId?: string,
-	imageUrl?: string
+	imageUrl?: string,
+	images?: string[]
 ): Promise<Post> => {
 	try {
 		const postData = {
 			content,
 			...(ghostCircleId && { ghostCircleId }),
 			...(imageUrl && { imageUrl }),
+			...(images && images.length > 0 && { images }),
 		};
 		const response = await api.post("/api/posts", postData);
 		return response.data;
@@ -199,11 +201,15 @@ export const createPost = async (
 export const updatePost = async (
 	postId: string,
 	content: string,
-	imageUrl?: string
+	imageUrl?: string,
+	images?: string[]
 ): Promise<Post> => {
-	const postData: { content: string; imageUrl?: string } = { content };
+	const postData: { content: string; imageUrl?: string; images?: string[] } = { content };
 	if (imageUrl !== undefined) {
 		postData.imageUrl = imageUrl;
+	}
+	if (images !== undefined) {
+		postData.images = images;
 	}
 	const response = await api.put(`/api/posts/${postId}`, postData);
 	return response.data;
@@ -378,6 +384,16 @@ export const revokeRecognition = async (targetUserId: string): Promise<any> => {
 		return response.data;
 	} catch (error: any) {
 		console.error("Error revoking recognition:", error);
+		throw error?.response?.data || error;
+	}
+};
+
+export const deleteConversation = async (userId: string): Promise<any> => {
+	try {
+		const response = await api.delete(`/api/whispers/conversation/${userId}`);
+		return response.data;
+	} catch (error: any) {
+		console.error("Error deleting conversation:", error);
 		throw error?.response?.data || error;
 	}
 };

@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 // Define a comment schema to be reused in both comments and replies
@@ -50,6 +51,10 @@ const postSchema = mongoose.Schema(
       type: String,
       default: '',
     },
+    images: [{
+      type: String,
+      default: [],
+    }],
     anonymousAlias: {
       type: String,
       required: true,

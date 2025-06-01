@@ -1,4 +1,3 @@
-
 const asyncHandler = require('express-async-handler');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
@@ -10,10 +9,10 @@ const { log } = require('console');
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-  const { content, ghostCircleId, imageUrl, expiresIn } = req.body;
+  const { content, ghostCircleId, imageUrl, images, expiresIn } = req.body;
 
   // Check if content or image is provided
-  if (!content && !imageUrl) {
+  if (!content && !imageUrl && (!images || images.length === 0)) {
     res.status(400);
     throw new Error('Please add content or image to your post');
   }
@@ -27,6 +26,7 @@ const createPost = asyncHandler(async (req, res) => {
     user: req.user._id,
     content: content || '',
     imageUrl: imageUrl || '',
+    images: images || [],
     anonymousAlias: req.user.anonymousAlias,
     avatarEmoji: req.user.avatarEmoji,
     expiresAt: expiryTime,
@@ -73,70 +73,7 @@ const createPost = asyncHandler(async (req, res) => {
 
   // Return the newly created post
   res.status(201).json(post);
-});const deletepost = asyncHandler(async (req, res) => {
-  try {
-    const  postId  = req.params.postId;
-
-    // Find the post to be deleted
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    // Verify the current user is the owner of the post
-    if (post.user.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this post' });
-    }
-
-    // Remove the post from the database using findByIdAndDelete
-    await Post.findByIdAndDelete(postId);
-
-    // Remove the post reference from the user's posts array
-    await User.findByIdAndUpdate(
-      req.user.id, 
-      { $pull: { posts: postId } }, 
-      { new: true }
-    );
-
-    res.status(200).json({ message: 'Post and user reference deleted successfully' });
-  } catch (error) {
-    console.error('Delete post error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
 });
-
-// @desc    Update a post
-// @route   PUT /api/posts/:id
-// @access  Private
-const updatePost = asyncHandler(async (req, res) => {
-  const { content, imageUrl } = req.body;
-  const postId = req.params.id;
-
-  // Find the post
-  const post = await Post.findById(postId);
-  
-  if (!post) {
-    res.status(404);
-    throw new Error('Post not found');
-  }
-
-  // Check if user is the author
-  if (post.user.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error('Not authorized to update this post');
-  }
-
-  // Update post fields
-  if (content !== undefined) post.content = content;
-  if (imageUrl !== undefined) post.imageUrl = imageUrl;
-
-  // Save updated post
-  const updatedPost = await post.save();
-  res.json(updatedPost);
-});
-
-
-
 
 // @desc    Get global feed posts (not in ghost circles)
 // @route   GET /api/posts/global

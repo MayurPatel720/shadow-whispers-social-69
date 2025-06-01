@@ -1,3 +1,4 @@
+
 // controllers/whisperController.js
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../models/whisperModel");
@@ -265,10 +266,39 @@ const markWhisperAsRead = asyncHandler(async (req, res) => {
 	}
 });
 
+// @desc    Delete conversation with a specific user
+// @route   DELETE /api/whispers/conversation/:userId
+// @access  Private
+const deleteConversation = asyncHandler(async (req, res) => {
+	const partnerId = req.params.userId;
+
+	try {
+		// Delete all whispers between current user and the partner
+		const result = await Whisper.deleteMany({
+			$or: [
+				{ sender: req.user._id, receiver: partnerId },
+				{ sender: partnerId, receiver: req.user._id },
+			],
+		});
+
+		res.json({
+			message: "Conversation deleted successfully",
+			deletedCount: result.deletedCount,
+		});
+	} catch (error) {
+		console.error(
+			`Error deleting conversation between ${req.user._id} and ${partnerId}:`,
+			error.message
+		);
+		throw error;
+	}
+});
+
 module.exports = {
 	sendWhisper,
 	getMyWhispers,
 	getWhisperConversation,
 	saveWhisper,
 	markWhisperAsRead,
+	deleteConversation,
 };

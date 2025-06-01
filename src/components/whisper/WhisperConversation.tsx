@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,15 +7,33 @@ import {
 	initSocket,
 	markWhisperAsRead,
 	sendWhisper,
+	deleteConversation,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send, Loader, User } from "lucide-react";
+import { ArrowLeft, Send, Loader, User, MoreVertical, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import { Socket } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface WhisperConversationProps {
 	partnerId: string;
@@ -55,6 +74,26 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		enabled: !!partnerId && !!user,
 	});
 
+	const deleteConversationMutation = useMutation({
+		mutationFn: () => deleteConversation(partnerId),
+		onSuccess: () => {
+			toast({
+				title: "Conversation Deleted",
+				description: "The conversation has been permanently deleted.",
+			});
+			queryClient.invalidateQueries({ queryKey: ["whispers"] });
+			onBack();
+		},
+		onError: (error: any) => {
+			console.error("Delete conversation error:", error);
+			toast({
+				variant: "destructive",
+				title: "Failed to Delete",
+				description: "Could not delete the conversation. Please try again.",
+			});
+		},
+	});
+
 	useEffect(() => {
 		if (!user?._id) {
 			toast({
@@ -67,12 +106,22 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 		if (conversation?.messages) {
 			setMessages(conversation.messages);
+			// Mark unread messages as read
+			const unreadMessages = conversation.messages.filter(
+				(msg: Whisper) => msg.receiver === user._id && !msg.read
+			);
+			
+			unreadMessages.forEach((msg: Whisper) => {
+				markWhisperAsRead(msg._id).catch((error) => {
+					console.error("Error marking whisper as read:", error);
+				});
+			});
 		}
 
 		const newSocket = initSocket();
 		newSocket.on("connect", () => {
 			console.log("Connected to WebSocket, ID:", newSocket.id);
-			newSocket.emit("joinConversation", partnerId); // Send partnerId
+			newSocket.emit("joinConversation", partnerId);
 		});
 
 		newSocket.on("connect_error", (err) => {
@@ -92,11 +141,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 					.then(() => console.log(`Whisper ${whisper._id} marked as read`))
 					.catch((error) => {
 						console.error("Error marking whisper as read:", error);
-						toast({
-							variant: "destructive",
-							title: "Error",
-							description: "Failed to mark message as read.",
-						});
 					});
 			}
 		});
@@ -257,61 +301,89 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 	return (
 		<div className="flex flex-col h-screen bg-undercover-dark text-white">
-			<style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #2a2a2a;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #6e59a5;
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #57458b;
-        }
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #6e59a5 #2a2a2a;
-        }
-      `}</style>
-
-			{/* Header */}
-			<div className="p-4 border-b border-gray-700 flex items-center sticky top-0 bg-undercover-dark z-10">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="md:hidden mr-2 text-white"
-					onClick={onBack}
-				>
-					<ArrowLeft />
-				</Button>
-				<div
-					className="flex items-center space-x-3"
-					onClick={() => handleAliasClick(partner._id, partner.anonymousAlias)}
-				>
-					<AvatarGenerator
-						emoji={partner.avatarEmoji || "🎭"}
-						nickname={partner.anonymousAlias}
-						color="#6E59A5"
-						size="md"
-					/>
-					<div>
-						<h3 className="font-medium flex items-center text-white">
-							{partner.anonymousAlias}
-							{hasRecognized && partner.username && (
-								<span className="ml-2 text-xs bg-undercover-purple/20 text-undercover-light-purple px-2 py-1 rounded-full flex items-center">
-									<User size={12} className="mr-1" />@{partner.username}
-								</span>
-							)}
-						</h3>
-						<p className="text-xs text-gray-400">
-							{hasRecognized ? "Identity revealed" : "Anonymous whispers"}
-						</p>
+			{/* Header with delete option */}
+			<div className="p-4 border-b border-gray-700 flex items-center justify-between sticky top-0 bg-undercover-dark z-10">
+				<div className="flex items-center">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="md:hidden mr-2 text-white"
+						onClick={onBack}
+					>
+						<ArrowLeft />
+					</Button>
+					<div
+						className="flex items-center space-x-3 cursor-pointer"
+						onClick={() => handleAliasClick(partner._id, partner.anonymousAlias)}
+					>
+						<AvatarGenerator
+							emoji={partner.avatarEmoji || "🎭"}
+							nickname={partner.anonymousAlias}
+							color="#6E59A5"
+							size="md"
+						/>
+						<div>
+							<h3 className="font-medium flex items-center text-white">
+								{partner.anonymousAlias}
+								{hasRecognized && partner.username && (
+									<span className="ml-2 text-xs bg-undercover-purple/20 text-undercover-light-purple px-2 py-1 rounded-full flex items-center">
+										<User size={12} className="mr-1" />@{partner.username}
+									</span>
+								)}
+							</h3>
+							<p className="text-xs text-gray-400">
+								{hasRecognized ? "Identity revealed" : "Anonymous whispers"}
+							</p>
+						</div>
 					</div>
 				</div>
+
+				<AlertDialog>
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="ghost" size="icon" className="text-white">
+								<MoreVertical size={20} />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent className="bg-gray-800 border-gray-700">
+							<AlertDialogTrigger asChild>
+								<DropdownMenuItem className="text-red-400 focus:text-red-300 cursor-pointer">
+									<Trash2 size={16} className="mr-2" />
+									Delete Conversation
+								</DropdownMenuItem>
+							</AlertDialogTrigger>
+						</DropdownMenuContent>
+					</DropdownMenu>
+
+					<AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+						<AlertDialogHeader>
+							<AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+							<AlertDialogDescription className="text-gray-400">
+								This will permanently delete all messages with {partner.anonymousAlias}. 
+								This action cannot be undone.
+							</AlertDialogDescription>
+						</AlertDialogHeader>
+						<AlertDialogFooter>
+							<AlertDialogCancel className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600">
+								Cancel
+							</AlertDialogCancel>
+							<AlertDialogAction
+								onClick={() => deleteConversationMutation.mutate()}
+								className="bg-red-600 hover:bg-red-700"
+								disabled={deleteConversationMutation.isPending}
+							>
+								{deleteConversationMutation.isPending ? (
+									<>
+										<Loader className="h-4 w-4 animate-spin mr-2" />
+										Deleting...
+									</>
+								) : (
+									"Delete"
+								)}
+							</AlertDialogAction>
+						</AlertDialogFooter>
+					</AlertDialogContent>
+				</AlertDialog>
 			</div>
 
 			{/* Messages */}

@@ -32,6 +32,7 @@ export interface User {
     _id: string;
     content: string;
     imageUrl?: string;
+    images?: string[];
     ghostCircleId?: string;
     userId: string;
     likes: string[];

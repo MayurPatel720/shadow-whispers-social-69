@@ -1,3 +1,4 @@
+
 // routes/whisperRoutes.js
 const express = require("express");
 const router = express.Router();
@@ -5,7 +6,8 @@ const {
 	sendWhisper,
 	getMyWhispers,
 	getWhisperConversation,
-	markWhisperAsRead, // Added
+	markWhisperAsRead,
+	deleteConversation,
 } = require("../controllers/whisperController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -18,5 +20,7 @@ router
 router.get("/:userId", protect, getWhisperConversation); // Get conversation with a specific user
 
 router.put("/:whisperId/read", protect, markWhisperAsRead); // Mark a whisper as read
+
+router.delete("/conversation/:userId", protect, deleteConversation); // Delete conversation with a user
 
 module.exports = router;
