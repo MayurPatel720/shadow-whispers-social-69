@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselApi } from '@/components/ui/carousel';
 import { cn } from '@/lib/utils';
 
 interface ImageSliderProps {
@@ -38,11 +38,19 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, className }) => {
 
   return (
     <div className={cn("relative w-full", className)}>
-      <Carousel className="w-full" setApi={setApi}>
-        <CarouselContent>
+      <Carousel 
+        className="w-full" 
+        setApi={setApi}
+        opts={{
+          align: "start",
+          loop: false,
+          dragFree: true,
+        }}
+      >
+        <CarouselContent className="-ml-0">
           {images.map((image, index) => (
-            <CarouselItem key={index}>
-              <div className="relative aspect-square">
+            <CarouselItem key={index} className="pl-0">
+              <div className="relative w-full">
                 <img
                   src={image}
                   alt={`Post image ${index + 1}`}
@@ -52,27 +60,26 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images, className }) => {
             </CarouselItem>
           ))}
         </CarouselContent>
-        {images.length > 1 && (
-          <>
-            <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2" />
-            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2" />
-          </>
-        )}
       </Carousel>
       
-      {images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
-          {images.map((_, index) => (
-            <div
-              key={index}
-              className={cn(
-                "w-2 h-2 rounded-full transition-all duration-200",
-                index === currentIndex ? "bg-white" : "bg-white/50"
-              )}
-            />
-          ))}
-        </div>
-      )}
+      {/* Image count indicator in top right */}
+      <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+        {currentIndex + 1}/{images.length}
+      </div>
+      
+      {/* Dot indicators at bottom */}
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1">
+        {images.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => api?.scrollTo(index)}
+            className={cn(
+              "w-2 h-2 rounded-full transition-all duration-200 cursor-pointer",
+              index === currentIndex ? "bg-white" : "bg-white/50"
+            )}
+          />
+        ))}
+      </div>
     </div>
   );
 };
