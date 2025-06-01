@@ -52,6 +52,7 @@ import CommentItem from './CommentItem';
 import GuessIdentityModal from '@/components/recognition/GuessIdentityModal';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
+import ImageSlider from '@/components/ui/image-slider';
 
 interface Post {
   _id: string;
@@ -61,6 +62,7 @@ interface Post {
   avatarEmoji: string;
   content: string;
   imageUrl?: string;
+  images?: string[];
   likes: { user: string }[];
   comments: any[];
   createdAt: string;
@@ -325,11 +327,12 @@ const PostCard: React.FC<PostCardProps> = ({
     identityRecognizers: [],
   };
 
-  const imageUrl = post.imageUrl
-    ? post.imageUrl.startsWith('http')
-      ? post.imageUrl
-      : `${import.meta.env.VITE_API_URL || 'https://undercover-service.onrender.com'}${post.imageUrl}`
-    : null;
+  // Handle both old imageUrl and new images array
+  const displayImages = post.images && post.images.length > 0 
+    ? post.images 
+    : post.imageUrl 
+      ? [post.imageUrl] 
+      : [];
 
   return (
     <Card className="border border-undercover-purple/20 bg-card shadow-md hover:shadow-lg transition-shadow mb-4">
@@ -375,18 +378,11 @@ const PostCard: React.FC<PostCardProps> = ({
       <CardContent className="p-4 pt-2">
         <p className="text-sm text-foreground mb-2">{post.content}</p>
 
-        {imageUrl && (
-          <div className="mt-3 rounded-md overflow-hidden">
-            <img
-              src={imageUrl}
-              alt="Post image"
-              className="w-full h-auto max-h-80 object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                console.error('Image failed to load:', target.src);
-                target.onerror = null;
-                target.src = '/placeholder.svg';
-              }}
+        {displayImages.length > 0 && (
+          <div className="mt-3">
+            <ImageSlider 
+              images={displayImages} 
+              className="max-h-80 rounded-lg overflow-hidden" 
             />
           </div>
         )}
@@ -424,8 +420,8 @@ const PostCard: React.FC<PostCardProps> = ({
                   className="flex items-center space-x-1 text-xs"
                   disabled={isSharing}
                 >
-<MousePointer2 size={16} className="rotate-90" />
-<span>{shareCount}</span>
+                  <MousePointer2 size={16} className="rotate-90" />
+                  <span>{shareCount}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">

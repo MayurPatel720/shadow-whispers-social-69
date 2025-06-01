@@ -70,6 +70,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const removeAllImages = () => {
+    setImageFiles([]);
+    setImages([]);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() && imageFiles.length === 0) {
@@ -133,7 +138,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-gray-800 text-white border-purple-600">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-gray-800 text-white border-purple-600">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-purple-300">
             {ghostCircleId ? (
@@ -161,67 +166,95 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           />
 
           {images.length > 0 && (
-            <div className="space-y-2">
-              <ImageSlider images={images} className="max-h-[200px]" />
-              <div className="flex flex-wrap gap-2">
-                {images.map((_, index) => (
-                  <Button
-                    key={index}
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => removeImage(index)}
-                    className="text-xs"
-                  >
-                    <X size={12} className="mr-1" />
-                    Remove {index + 1}
-                  </Button>
-                ))}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium text-purple-300">
+                  Selected Images ({images.length}/10)
+                </h4>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  onClick={removeAllImages}
+                  className="text-xs"
+                >
+                  <X size={12} className="mr-1" />
+                  Remove All
+                </Button>
+              </div>
+              
+              <div className="bg-gray-700 rounded-lg p-3">
+                <ImageSlider images={images} className="max-h-[300px] mb-3" />
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-[150px] overflow-y-auto">
+                  {images.map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-16 object-cover rounded border-2 border-gray-600"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => removeImage(index)}
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0 opacity-80 hover:opacity-100"
+                      >
+                        <X size={12} />
+                      </Button>
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center rounded-b">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          <div className="flex justify-between items-center mt-2">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={() => document.getElementById("image-upload")?.click()}
-                disabled={isUploading || isSubmitting || images.length >= 10}
-              >
-                <ImageIcon className="mr-2 w-4 h-4" />
-                {isUploading ? "Uploading..." : "Add Images"}
-              </Button>
-              <input
-                type="file"
-                id="image-upload"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-            </div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-purple-300 border-purple-700 w-full sm:w-auto"
+              onClick={() => document.getElementById("image-upload")?.click()}
+              disabled={isUploading || isSubmitting || images.length >= 10}
+            >
+              <ImageIcon className="mr-2 w-4 h-4" />
+              {isUploading ? "Uploading..." : "Add Images"}
+            </Button>
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handleImageUpload}
+            />
 
-            <p className="text-xs text-gray-400">
-              {images.length}/10 images
-            </p>
+            <div className="text-xs text-gray-400 flex items-center gap-2">
+              <span>{images.length}/10 images</span>
+              {images.length > 0 && (
+                <span className="text-purple-300">• {imageFiles.reduce((total, file) => total + file.size, 0) > 1024 * 1024 ? `${(imageFiles.reduce((total, file) => total + file.size, 0) / (1024 * 1024)).toFixed(1)}MB` : `${Math.round(imageFiles.reduce((total, file) => total + file.size, 0) / 1024)}KB`}</span>
+              )}
+            </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
-              className="border-gray-600"
+              className="border-gray-600 w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
               disabled={(!content.trim() && images.length === 0) || isSubmitting}
             >
               {isSubmitting ? (
