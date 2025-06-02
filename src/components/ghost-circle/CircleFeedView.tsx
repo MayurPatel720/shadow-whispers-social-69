@@ -87,12 +87,13 @@ const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId, circleName })
             // Transform the post to match the Post interface
             const transformedPost: Post = {
               _id: post._id,
-              user: post.user || post.userId || '',
+              user: typeof post.user === 'string' ? post.user : post.user?._id || post.userId || '',
               anonymousAlias: post.anonymousAlias || 'Anonymous',
               avatarEmoji: post.avatarEmoji || '🎭',
               content: post.content || '',
               imageUrl: post.imageUrl,
               images: post.images || [],
+              videos: post.videos || [],
               likes: post.likes || [],
               comments: post.comments || [],
               shareCount: post.shareCount || 0,

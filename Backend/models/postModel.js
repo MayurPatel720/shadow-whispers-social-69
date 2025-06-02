@@ -55,6 +55,24 @@ const postSchema = mongoose.Schema(
       type: String,
       default: [],
     }],
+    videos: [{
+      url: {
+        type: String,
+        required: true
+      },
+      thumbnail: {
+        type: String,
+        default: ''
+      },
+      duration: {
+        type: Number,
+        default: 0
+      },
+      size: {
+        type: Number,
+        default: 0
+      }
+    }],
     anonymousAlias: {
       type: String,
       required: true,

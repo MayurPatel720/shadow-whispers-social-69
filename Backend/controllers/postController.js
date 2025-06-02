@@ -10,12 +10,12 @@ const { log } = require('console');
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-  const { content, ghostCircleId, imageUrl, images, expiresIn } = req.body;
+  const { content, ghostCircleId, imageUrl, images, videos, expiresIn } = req.body;
 
-  // Check if content or image is provided
-  if (!content && !imageUrl && (!images || images.length === 0)) {
+  // Check if content, image, or video is provided
+  if (!content && !imageUrl && (!images || images.length === 0) && (!videos || videos.length === 0)) {
     res.status(400);
-    throw new Error('Please add content or image to your post');
+    throw new Error('Please add content, image, or video to your post');
   }
 
   // Calculate expiry time (default 24 hours)
@@ -28,6 +28,7 @@ const createPost = asyncHandler(async (req, res) => {
     content: content || '',
     imageUrl: imageUrl || '',
     images: images || [],
+    videos: videos || [],
     anonymousAlias: req.user.anonymousAlias,
     avatarEmoji: req.user.avatarEmoji,
     expiresAt: expiryTime,
@@ -80,7 +81,7 @@ const createPost = asyncHandler(async (req, res) => {
 // @route   PUT /api/posts/:id
 // @access  Private
 const updatePost = asyncHandler(async (req, res) => {
-  const { content, imageUrl, images } = req.body;
+  const { content, imageUrl, images, videos } = req.body;
 
   const post = await Post.findById(req.params.id);
 
@@ -99,6 +100,7 @@ const updatePost = asyncHandler(async (req, res) => {
   post.content = content || post.content;
   post.imageUrl = imageUrl || post.imageUrl;
   post.images = images || post.images;
+  post.videos = videos || post.videos;
 
   const updatedPost = await post.save();
   res.json(updatedPost);

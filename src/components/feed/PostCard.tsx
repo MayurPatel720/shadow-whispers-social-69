@@ -63,6 +63,12 @@ interface Post {
   content: string;
   imageUrl?: string;
   images?: string[];
+  videos?: Array<{
+    url: string;
+    thumbnail?: string;
+    duration?: number;
+    size?: number;
+  }>;
   likes: { user: string }[];
   comments: any[];
   createdAt: string;
@@ -327,12 +333,14 @@ const PostCard: React.FC<PostCardProps> = ({
     identityRecognizers: [],
   };
 
-  // Handle both old imageUrl and new images array
+  // Handle both old imageUrl and new images/videos arrays
   const displayImages = post.images && post.images.length > 0 
     ? post.images 
     : post.imageUrl 
       ? [post.imageUrl] 
       : [];
+
+  const displayVideos = post.videos || [];
 
   return (
     <Card className="border border-undercover-purple/20 bg-card shadow-md hover:shadow-lg transition-shadow mb-4">
@@ -378,11 +386,12 @@ const PostCard: React.FC<PostCardProps> = ({
       <CardContent className="p-4 pt-2">
         <p className="text-sm text-foreground mb-2">{post.content}</p>
 
-        {displayImages.length > 0 && (
+        {(displayImages.length > 0 || displayVideos.length > 0) && (
           <div className="mt-3">
             <ImageSlider 
-              images={displayImages} 
-              className="max-h-80 rounded-lg overflow-hidden" 
+              images={displayImages}
+              videos={displayVideos}
+              className="max-h-96 rounded-lg overflow-hidden" 
             />
           </div>
         )}
