@@ -107,6 +107,8 @@ const PostCard: React.FC<PostCardProps> = ({
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [lastTap, setLastTap] = useState(0);
 
   const isOwnPost = post.user === currentUserId;
   const handleAliasClick = (userId: string, alias: string) => {
@@ -136,6 +138,21 @@ const PostCard: React.FC<PostCardProps> = ({
     } finally {
       setIsLiking(false);
     }
+  };
+
+  const handleDoubleTap = () => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      // Double tap detected
+      if (!isLiked) {
+        handleLike();
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 1000);
+      }
+    }
+    setLastTap(now);
   };
 
   const handleShare = async (platform?: 'whatsapp' | 'instagram' | 'link') => {
@@ -383,7 +400,7 @@ const PostCard: React.FC<PostCardProps> = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2">
+      <CardContent className="p-4 pt-2 relative" onTouchEnd={handleDoubleTap} onClick={handleDoubleTap}>
         <p className="text-sm text-foreground mb-2">{post.content}</p>
 
         {(displayImages.length > 0 || displayVideos.length > 0) && (
@@ -391,7 +408,17 @@ const PostCard: React.FC<PostCardProps> = ({
             <ImageSlider 
               images={displayImages}
               videos={displayVideos}
-              className="max-h-96 rounded-lg overflow-hidden" 
+              className="rounded-lg overflow-hidden" 
+            />
+          </div>
+        )}
+
+        {/* Like Animation */}
+        {showLikeAnimation && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <Heart 
+              size={80} 
+              className="text-red-500 fill-red-500 animate-ping opacity-75" 
             />
           </div>
         )}

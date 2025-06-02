@@ -21,7 +21,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   autoplay = true,
   muted = true,
   controls = true,
-  maintainAspectRatio = false
+  maintainAspectRatio = true
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -127,6 +127,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           maintainAspectRatio ? "h-auto" : "h-full object-cover"
         )}
         onClick={togglePlay}
+        style={{ aspectRatio: maintainAspectRatio ? 'auto' : undefined }}
       />
       
       {controls && (
@@ -146,8 +147,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {isPlaying ? <Pause size={24} /> : <Play size={24} />}
           </Button>
 
+          {/* Mute/Unmute Button in bottom right */}
+          <div className="absolute bottom-2 right-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMute}
+              className="h-8 w-8 text-white hover:bg-white/20 bg-black/50 rounded-full"
+            >
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </Button>
+          </div>
+
           {/* Bottom Controls */}
-          <div className="absolute bottom-2 left-2 right-2">
+          <div className="absolute bottom-2 left-2 right-12">
             {/* Progress Bar */}
             <div
               className="w-full h-1 bg-white/30 rounded-full mb-2 cursor-pointer"
@@ -157,40 +170,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 className="h-full bg-white rounded-full transition-all duration-100"
                 style={{ width: `${progress}%` }}
               />
-            </div>
-
-            {/* Control Buttons */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleMute}
-                  className="h-8 w-8 text-white hover:bg-white/20"
-                >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Mute/Unmute Button in bottom right */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleMute}
-                  className="h-8 w-8 text-white hover:bg-white/20 bg-black/30"
-                >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleFullscreen}
-                  className="h-8 w-8 text-white hover:bg-white/20"
-                >
-                  <Maximize size={16} />
-                </Button>
-              </div>
             </div>
           </div>
         </div>

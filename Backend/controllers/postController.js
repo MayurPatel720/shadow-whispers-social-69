@@ -97,10 +97,10 @@ const updatePost = asyncHandler(async (req, res) => {
   }
 
   // Update post fields
-  post.content = content || post.content;
-  post.imageUrl = imageUrl || post.imageUrl;
-  post.images = images || post.images;
-  post.videos = videos || post.videos;
+  post.content = content !== undefined ? content : post.content;
+  post.imageUrl = imageUrl !== undefined ? imageUrl : post.imageUrl;
+  post.images = images !== undefined ? images : post.images;
+  post.videos = videos !== undefined ? videos : post.videos;
 
   const updatedPost = await post.save();
   res.json(updatedPost);

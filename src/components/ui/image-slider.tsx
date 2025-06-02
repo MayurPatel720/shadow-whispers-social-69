@@ -47,18 +47,17 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
 
   // Check if we have any videos to determine sizing
   const hasVideos = videos && videos.length > 0;
-  const aspectRatioClass = hasVideos ? "" : "aspect-[4/3]";
 
   if (mediaItems.length === 1) {
     const item = mediaItems[0];
     return (
       <div className={cn("relative w-full", className)}>
-        <div className={cn("w-full overflow-hidden rounded-lg bg-gray-100", aspectRatioClass)}>
+        <div className="w-full overflow-hidden rounded-lg bg-gray-100">
           {item.type === 'image' ? (
             <img
               src={item.url}
               alt="Post media"
-              className="w-full h-full object-cover"
+              className="w-full h-auto object-contain"
             />
           ) : (
             <VideoPlayer
@@ -89,12 +88,12 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
           {mediaItems.map((item, index) => (
             <CarouselItem key={index} className="pl-0">
               <div className="relative w-full">
-                <div className={cn("w-full overflow-hidden rounded-lg bg-gray-100", aspectRatioClass)}>
+                <div className="w-full overflow-hidden rounded-lg bg-gray-100">
                   {item.type === 'image' ? (
                     <img
                       src={item.url}
                       alt={`Media ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-auto object-contain"
                     />
                   ) : (
                     <VideoPlayer

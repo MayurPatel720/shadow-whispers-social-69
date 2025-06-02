@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit3, Save } from "lucide-react";
+import { Edit3, Save, ImageIcon, Video, X } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { updatePost } from "@/lib/api";
 
@@ -27,22 +27,63 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
   onSuccess
 }) => {
   const [content, setContent] = useState(post?.content || "");
+  const [images, setImages] = useState<string[]>(post?.images || []);
+  const [videos, setVideos] = useState<any[]>(post?.videos || []);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImages(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const video = {
+            url: reader.result as string,
+            thumbnail: "",
+            duration: 0,
+            size: file.size
+          };
+          setVideos(prev => [...prev, video]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = (index: number) => {
+    setVideos(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
-    if (!content.trim()) {
+    if (!content.trim() && images.length === 0 && videos.length === 0) {
       toast({
         variant: "destructive",
         title: "Content required",
-        description: "Please add some content to your post.",
+        description: "Please add some content, image, or video to your post.",
       });
       return;
     }
     
     setIsSubmitting(true);
     try {
-      // Fix: Pass the correct arguments to updatePost (postId, content, imageUrl, images, videos)
-      await updatePost(post._id, content, post.imageUrl, post.images, post.videos);
+      await updatePost(post._id, content, images, videos);
       
       toast({
         title: "Post updated",
@@ -81,6 +122,90 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           <div className="mt-2 text-xs text-gray-400">
             {content.length}/500 characters
           </div>
+
+          {/* Image Upload */}
+          <div className="mt-4">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+              id="image-upload"
+            />
+            <label htmlFor="image-upload">
+              <Button variant="outline" className="w-full" asChild>
+                <span className="flex items-center gap-2 cursor-pointer">
+                  <ImageIcon size={16} />
+                  Add Images
+                </span>
+              </Button>
+            </label>
+          </div>
+
+          {/* Video Upload */}
+          <div className="mt-2">
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              onChange={handleVideoUpload}
+              className="hidden"
+              id="video-upload"
+            />
+            <label htmlFor="video-upload">
+              <Button variant="outline" className="w-full" asChild>
+                <span className="flex items-center gap-2 cursor-pointer">
+                  <Video size={16} />
+                  Add Videos
+                </span>
+              </Button>
+            </label>
+          </div>
+
+          {/* Preview Images */}
+          {images.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-2">Images:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {images.map((image, index) => (
+                  <div key={index} className="relative">
+                    <img src={image} alt={`Preview ${index}`} className="w-full h-20 object-cover rounded" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Preview Videos */}
+          {videos.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-2">Videos:</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {videos.map((video, index) => (
+                  <div key={index} className="relative">
+                    <video src={video.url} className="w-full h-20 object-cover rounded" />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => removeVideo(index)}
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         <DialogFooter className="gap-2">
@@ -94,7 +219,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           </Button>
           <Button 
             onClick={handleSubmit}
-            disabled={!content.trim() || isSubmitting}
+            disabled={(!content.trim() && images.length === 0 && videos.length === 0) || isSubmitting}
             className="bg-purple-600 hover:bg-purple-700 text-white"
           >
             {isSubmitting ? (
