@@ -11,6 +11,7 @@ interface VideoPlayerProps {
   autoplay?: boolean;
   muted?: boolean;
   controls?: boolean;
+  maintainAspectRatio?: boolean;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -19,7 +20,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   className,
   autoplay = true,
   muted = true,
-  controls = true
+  controls = true,
+  maintainAspectRatio = false
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -120,7 +122,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         muted={isMuted}
         loop
         playsInline
-        className="w-full h-full object-cover rounded-lg"
+        className={cn(
+          "w-full rounded-lg",
+          maintainAspectRatio ? "h-auto" : "h-full object-cover"
+        )}
         onClick={togglePlay}
       />
       
@@ -167,14 +172,25 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 </Button>
               </div>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleFullscreen}
-                className="h-8 w-8 text-white hover:bg-white/20"
-              >
-                <Maximize size={16} />
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Mute/Unmute Button in bottom right */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMute}
+                  className="h-8 w-8 text-white hover:bg-white/20 bg-black/30"
+                >
+                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleFullscreen}
+                  className="h-8 w-8 text-white hover:bg-white/20"
+                >
+                  <Maximize size={16} />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

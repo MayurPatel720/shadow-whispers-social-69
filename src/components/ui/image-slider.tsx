@@ -45,11 +45,15 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
 
   if (!mediaItems || mediaItems.length === 0) return null;
 
+  // Check if we have any videos to determine sizing
+  const hasVideos = videos && videos.length > 0;
+  const aspectRatioClass = hasVideos ? "" : "aspect-[4/3]";
+
   if (mediaItems.length === 1) {
     const item = mediaItems[0];
     return (
       <div className={cn("relative w-full", className)}>
-        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
+        <div className={cn("w-full overflow-hidden rounded-lg bg-gray-100", aspectRatioClass)}>
           {item.type === 'image' ? (
             <img
               src={item.url}
@@ -60,7 +64,8 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
             <VideoPlayer
               src={item.url}
               thumbnail={item.thumbnail}
-              className="w-full h-full"
+              className="w-full"
+              maintainAspectRatio={true}
             />
           )}
         </div>
@@ -84,7 +89,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
           {mediaItems.map((item, index) => (
             <CarouselItem key={index} className="pl-0">
               <div className="relative w-full">
-                <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
+                <div className={cn("w-full overflow-hidden rounded-lg bg-gray-100", aspectRatioClass)}>
                   {item.type === 'image' ? (
                     <img
                       src={item.url}
@@ -95,8 +100,9 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
                     <VideoPlayer
                       src={item.url}
                       thumbnail={item.thumbnail}
-                      className="w-full h-full"
+                      className="w-full"
                       autoplay={index === currentIndex}
+                      maintainAspectRatio={true}
                     />
                   )}
                 </div>

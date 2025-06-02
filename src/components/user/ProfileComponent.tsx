@@ -22,6 +22,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getUserProfile, getUserPosts, deletePost } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditProfileModal from "./EditProfileModal";
+import EditPostModal from "@/components/feed/EditPostModal";
+import DeletePostDialog from "@/components/feed/DeletePostDialog";
 import RecognitionModal from "@/components/recognition/RecognitionModal";
 import { toast } from "@/hooks/use-toast";
 import { User, Post } from "@/types/user";
@@ -39,6 +41,9 @@ const ProfileComponent = ({
   const navigate = useNavigate();
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [recognitionModalOpen, setRecognitionModalOpen] = useState(false);
+  const [editPostModalOpen, setEditPostModalOpen] = useState(false);
+  const [deletePostDialogOpen, setDeletePostDialogOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const isOwnProfile = !targetUserId || targetUserId === user?._id;
   const currentUserId = isOwnProfile ? user?._id : targetUserId;
@@ -81,26 +86,26 @@ const ProfileComponent = ({
     },
   });
 
-  const handleDeletePost = async (postId: string) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this post?"
-    );
-    if (!confirmDelete) return;
+  const handleEditPost = (post: Post) => {
+    setSelectedPost(post);
+    setEditPostModalOpen(true);
+  };
 
-    try {
-      await deletePost(postId);
-      toast({
-        title: "Post deleted",
-        description: "Your post has been successfully deleted.",
-      });
-      refetch();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Failed to delete post",
-        description: "Please try again later.",
-      });
-    }
+  const handleDeletePost = (post: Post) => {
+    setSelectedPost(post);
+    setDeletePostDialogOpen(true);
+  };
+
+  const handlePostUpdated = () => {
+    refetch();
+    setEditPostModalOpen(false);
+    setSelectedPost(null);
+  };
+
+  const handlePostDeleted = () => {
+    refetch();
+    setDeletePostDialogOpen(false);
+    setSelectedPost(null);
   };
 
   const handleWhisperClick = () => {
@@ -146,10 +151,8 @@ const ProfileComponent = ({
   return (
     <div className="max-w-4xl w-full mx-auto px-2 py-2 sm:px-4 sm:py-4">
       <Card className="bg-card shadow-md border border-undercover-purple/20 mb-4">
-        {/* Header Section */}
         <CardHeader className="p-3 sm:p-4 md:p-6 pb-0">
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-            {/* Avatar and Name Section with Edit Button on mobile */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl">
@@ -178,7 +181,6 @@ const ProfileComponent = ({
                 </div>
               </div>
               
-              {/* Only Edit Button on the same line as name (mobile only) */}
               {isOwnProfile && (
                 <div className="sm:hidden">
                   <Button
@@ -193,7 +195,6 @@ const ProfileComponent = ({
               )}
             </div>
 
-            {/* Action Buttons - Desktop view */}
             <div className="hidden sm:flex gap-2">
               {isOwnProfile ? (
                 <>
@@ -234,7 +235,6 @@ const ProfileComponent = ({
               )}
             </div>
             
-            {/* Mobile view - second row of buttons */}
             {isOwnProfile && (
               <div className="flex sm:hidden gap-2 mt-1">
                 <Button 
@@ -258,7 +258,6 @@ const ProfileComponent = ({
               </div>
             )}
             
-            {/* Non-own profile mobile whisper button */}
             {!isOwnProfile && (
               <div className="flex sm:hidden mt-1">
                 <Button
@@ -275,7 +274,6 @@ const ProfileComponent = ({
           </div>
         </CardHeader>
 
-        {/* Main Content */}
         <CardContent className="p-3 sm:p-4 md:p-6 pt-3">
           <div className="border-t border-border my-2 sm:my-3"></div>
 
@@ -289,7 +287,6 @@ const ProfileComponent = ({
                 `In Undercover, you're known as ${displayedAlias}. This identity stays consistent throughout your experience.`}
             </p>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <StatsCard
                 icon={<Grid size={16} className="text-undercover-purple" />}
@@ -318,7 +315,6 @@ const ProfileComponent = ({
             </div>
           </div>
 
-          {/* Rewards Section */}
           {profileData?.claimedRewards?.length > 0 && (
             <div className="mt-4 sm:mt-6">
               <h3 className="text-sm sm:text-base font-medium flex items-center mb-2">
@@ -354,7 +350,6 @@ const ProfileComponent = ({
         </CardContent>
       </Card>
 
-      {/* Tabs Section */}
       <Tabs defaultValue="posts" className="w-full">
         <TabsList className="w-full grid grid-cols-2 mb-4">
           <TabsTrigger
@@ -387,8 +382,8 @@ const ProfileComponent = ({
                   key={post._id}
                   post={post}
                   isOwnProfile={isOwnProfile}
-                  onEdit={() => navigate(`/edit-post/${post._id}`)}
-                  onDelete={() => handleDeletePost(post._id)}
+                  onEdit={() => handleEditPost(post)}
+                  onDelete={() => handleDeletePost(post)}
                 />
               ))}
             </div>
@@ -397,7 +392,6 @@ const ProfileComponent = ({
           )}
         </TabsContent>
 
-        {/* Settings Tab */}
         <TabsContent value="settings">
           <Card className="shadow-sm">
             <CardContent className="space-y-4 p-4 sm:p-6">
@@ -441,7 +435,6 @@ const ProfileComponent = ({
         </TabsContent>
       </Tabs>
 
-      {/* Modals */}
       <EditProfileModal
         open={editProfileOpen}
         onOpenChange={setEditProfileOpen}
@@ -450,6 +443,23 @@ const ProfileComponent = ({
         open={recognitionModalOpen}
         onOpenChange={setRecognitionModalOpen}
       />
+      
+      {selectedPost && (
+        <>
+          <EditPostModal
+            open={editPostModalOpen}
+            onOpenChange={setEditPostModalOpen}
+            post={selectedPost}
+            onSuccess={handlePostUpdated}
+          />
+          <DeletePostDialog
+            open={deletePostDialogOpen}
+            onOpenChange={setDeletePostDialogOpen}
+            postId={selectedPost._id}
+            onSuccess={handlePostDeleted}
+          />
+        </>
+      )}
     </div>
   );
 };
@@ -512,7 +522,6 @@ const PostCard = ({ post, isOwnProfile, onEdit, onDelete }) => {
   );
 };
 
-// Empty Posts State Component
 const EmptyPostsState = ({ onCreatePost }) => {
   return (
     <div className="text-center py-8 border border-dashed rounded-lg bg-card">
