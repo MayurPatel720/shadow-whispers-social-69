@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
@@ -181,7 +182,8 @@ export const createPost = async (
 	content: string,
 	ghostCircleId?: string,
 	imageUrl?: string,
-	images?: string[]
+	images?: string[],
+	videos?: Array<{url: string, thumbnail?: string, duration?: number}>
 ): Promise<Post> => {
 	try {
 		const postData = {
@@ -189,6 +191,7 @@ export const createPost = async (
 			...(ghostCircleId && { ghostCircleId }),
 			...(imageUrl && { imageUrl }),
 			...(images && images.length > 0 && { images }),
+			...(videos && videos.length > 0 && { videos }),
 		};
 		const response = await api.post("/api/posts", postData);
 		return response.data;
@@ -202,14 +205,23 @@ export const updatePost = async (
 	postId: string,
 	content: string,
 	imageUrl?: string,
-	images?: string[]
+	images?: string[],
+	videos?: Array<{url: string, thumbnail?: string, duration?: number}>
 ): Promise<Post> => {
-	const postData: { content: string; imageUrl?: string; images?: string[] } = { content };
+	const postData: { 
+		content: string; 
+		imageUrl?: string; 
+		images?: string[];
+		videos?: Array<{url: string, thumbnail?: string, duration?: number}>;
+	} = { content };
 	if (imageUrl !== undefined) {
 		postData.imageUrl = imageUrl;
 	}
 	if (images !== undefined) {
 		postData.images = images;
+	}
+	if (videos !== undefined) {
+		postData.videos = videos;
 	}
 	const response = await api.put(`/api/posts/${postId}`, postData);
 	return response.data;

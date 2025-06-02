@@ -41,8 +41,8 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
     
     setIsSubmitting(true);
     try {
-      // Fix: Pass the correct arguments to updatePost (postId, content, imageUrl, images)
-      await updatePost(post._id, content, post.imageUrl, post.images);
+      // Fix: Pass the correct arguments to updatePost (postId, content, imageUrl, images, videos)
+      await updatePost(post._id, content, post.imageUrl, post.images, post.videos);
       
       toast({
         title: "Post updated",
