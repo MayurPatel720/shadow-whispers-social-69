@@ -49,7 +49,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
     const item = mediaItems[0];
     return (
       <div className={cn("relative w-full", className)}>
-        <div className="aspect-square w-full overflow-hidden rounded-lg">
+        <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
           {item.type === 'image' ? (
             <img
               src={item.url}
@@ -84,7 +84,7 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
           {mediaItems.map((item, index) => (
             <CarouselItem key={index} className="pl-0">
               <div className="relative w-full">
-                <div className="aspect-square w-full overflow-hidden rounded-lg">
+                <div className="aspect-[4/3] w-full overflow-hidden rounded-lg bg-gray-100">
                   {item.type === 'image' ? (
                     <img
                       src={item.url}
@@ -108,14 +108,14 @@ const ImageSlider: React.FC<ImageSliderProps> = ({ images = [], videos = [], cla
       
       {/* Media count indicator in top right */}
       {mediaItems.length > 1 && (
-        <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm font-medium">
+        <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm font-medium z-10">
           {currentIndex + 1}/{mediaItems.length}
         </div>
       )}
       
       {/* Dot indicators at bottom */}
       {mediaItems.length > 1 && (
-        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-1.5">
+        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-1.5 z-10">
           {mediaItems.map((_, index) => (
             <button
               key={index}

@@ -30,7 +30,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 }) => {
   const [content, setContent] = useState("");
   const [images, setImages] = useState<string[]>([]);
-  const [videos, setVideos] = useState<string[]>([]);
+  const [videos, setVideos] = useState<Array<{url: string, thumbnail?: string, duration?: number}>>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -101,7 +101,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         
         const reader = new FileReader();
         reader.onload = () => {
-          setVideos(prev => [...prev, reader.result as string]);
+          setVideos(prev => [...prev, { url: reader.result as string }]);
         };
         reader.readAsDataURL(compressedFile);
       } catch (error) {
@@ -144,7 +144,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 
     setIsSubmitting(true);
     let uploadedImageUrls: string[] = [];
-    let uploadedVideoUrls: Array<{url: string, thumbnail?: string}> = [];
+    let uploadedVideoUrls: Array<{url: string, thumbnail?: string, duration?: number}> = [];
 
     try {
       if (imageFiles.length > 0) {
@@ -180,7 +180,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           const data = await res.json();
           uploadedVideoUrls.push({
             url: data.secure_url,
-            thumbnail: data.eager?.[0]?.secure_url || data.secure_url.replace(/\.[^/.]+$/, ".jpg")
+            thumbnail: data.eager?.[0]?.secure_url || data.secure_url.replace(/\.[^/.]+$/, ".jpg"),
+            duration: data.duration
           });
         }
       }
@@ -188,6 +189,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.log("Media uploaded:", { images: uploadedImageUrls, videos: uploadedVideoUrls });
       setIsUploading(false);
 
+      // Fix: Pass videos array correctly to createPost
       await createPost(content, ghostCircleId, undefined, uploadedImageUrls, uploadedVideoUrls);
       setContent("");
       setImages([]);
@@ -269,7 +271,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               <div className="bg-gray-700 rounded-lg p-3">
                 <ImageSlider 
                   images={images} 
-                  videos={videos.map(url => ({ url }))}
+                  videos={videos}
                   className="max-h-[300px] mb-3" 
                 />
                 
@@ -295,7 +297,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                   {videos.map((video, index) => (
                     <div key={`video-${index}`} className="relative group">
                       <video
-                        src={video}
+                        src={video.url}
                         className="w-full h-16 object-cover rounded border-2 border-gray-600"
                         muted
                       />

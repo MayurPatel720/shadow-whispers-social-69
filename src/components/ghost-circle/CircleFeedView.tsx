@@ -14,9 +14,10 @@ import { Post } from "@/types";
 interface CircleFeedViewProps {
   circleId: string;
   circleName: string;
+  onBack?: () => void;
 }
 
-const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId, circleName }) => {
+const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId, circleName, onBack }) => {
   const { user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   
