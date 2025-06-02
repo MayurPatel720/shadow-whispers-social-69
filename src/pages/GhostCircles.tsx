@@ -107,6 +107,10 @@ const GhostCircles = () => {
   }
 
   if (selectedCircleId) {
+    // Find the selected circle to get its name
+    const selectedCircle = ghostCircles.find(circle => circle._id === selectedCircleId);
+    const circleName = selectedCircle?.name || "Ghost Circle";
+
     return (
       <motion.div
         className="relative container mx-auto px-4 py-6  bg-gradient-to-b from-gray-900 to-black min-h-screen"
@@ -132,7 +136,11 @@ const GhostCircles = () => {
             </Button>
           </motion.div>
         </div>
-        <CircleFeedView circleId={selectedCircleId} onBack={handleBackToCircles} />
+        <CircleFeedView 
+          circleId={selectedCircleId} 
+          circleName={circleName}
+          onBack={handleBackToCircles} 
+        />
       </motion.div>
     );
   }

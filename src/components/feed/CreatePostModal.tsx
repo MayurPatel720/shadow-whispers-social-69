@@ -189,8 +189,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.log("Media uploaded:", { images: uploadedImageUrls, videos: uploadedVideoUrls });
       setIsUploading(false);
 
-      // Fix: Pass videos array correctly to createPost
-      await createPost(content, ghostCircleId, undefined, uploadedImageUrls, uploadedVideoUrls);
+      // Fix: Pass the correct arguments to createPost (content, ghostCircleId, imageUrl, images, videos)
+      await createPost(content, ghostCircleId, uploadedImageUrls[0], uploadedImageUrls, uploadedVideoUrls);
       setContent("");
       setImages([]);
       setVideos([]);
