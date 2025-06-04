@@ -47,7 +47,7 @@ const NotificationButton: React.FC = () => {
 		const handleMobileNotifications = () => {
 			if (isMobile) {
 				// For iOS Safari, notifications only work if the site is added to home screen
-				if (isIOS && !window.navigator.standalone) {
+				if (isIOS && !(navigator as any).standalone) {
 					toast({
 						title: "iOS Notification Setup",
 						description: "On iOS, add this app to your home screen for full notification support.",
@@ -107,8 +107,6 @@ const NotificationButton: React.FC = () => {
 							badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 							tag: "whisper-notification-" + Date.now(),
 							requireInteraction: isMobile,
-							silent: false,
-							vibrate: isMobile ? [200, 100, 200] : undefined,
 							actions: isMobile ? [
 								{
 									action: 'open',
@@ -116,6 +114,11 @@ const NotificationButton: React.FC = () => {
 								}
 							] : undefined
 						};
+
+						// Add vibrate for mobile devices using type assertion
+						if (isMobile) {
+							(notificationOptions as any).vibrate = [200, 100, 200];
+						}
 
 						const notification = new Notification(title, notificationOptions);
 						
@@ -200,13 +203,19 @@ const NotificationButton: React.FC = () => {
 			
 			// Show enhanced test browser notification for mobile
 			if (Notification.permission === "granted") {
-				const notification = new Notification("Test Notification", {
+				const notificationOptions: NotificationOptions = {
 					body: "This is a test from your mobile device!",
 					icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 					tag: "test-notification",
-					vibrate: isMobile ? [300, 200, 300] : undefined,
 					requireInteraction: isMobile,
-				});
+				};
+
+				// Add vibrate for mobile devices using type assertion
+				if (isMobile) {
+					(notificationOptions as any).vibrate = [300, 200, 300];
+				}
+
+				const notification = new Notification("Test Notification", notificationOptions);
 				
 				if (isMobile) {
 					setTimeout(() => notification.close(), 4000);
@@ -245,12 +254,18 @@ const NotificationButton: React.FC = () => {
 				// Show immediate test notification on success
 				setTimeout(() => {
 					if (Notification.permission === "granted") {
-						const welcomeNotification = new Notification("Welcome!", {
+						const notificationOptions: NotificationOptions = {
 							body: "Notifications are now enabled for this device.",
 							icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 							tag: "welcome-notification",
-							vibrate: isMobile ? [200, 100, 200] : undefined,
-						});
+						};
+
+						// Add vibrate for mobile devices using type assertion
+						if (isMobile) {
+							(notificationOptions as any).vibrate = [200, 100, 200];
+						}
+
+						const welcomeNotification = new Notification("Welcome!", notificationOptions);
 						
 						if (isMobile) {
 							setTimeout(() => welcomeNotification.close(), 3000);

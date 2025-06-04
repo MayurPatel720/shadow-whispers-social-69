@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,14 +73,20 @@ const NotificationPermission: React.FC<NotificationPermissionProps> = ({
         if (deviceType === 'mobile') {
           setTimeout(() => {
             try {
-              const testNotification = new Notification("Welcome! 🎉", {
+              const notificationOptions: NotificationOptions = {
                 body: "Notifications are working on your mobile device.",
                 icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
                 badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
                 tag: "welcome-mobile",
-                vibrate: [200, 100, 200],
                 requireInteraction: true,
-              });
+              };
+
+              // Add vibrate for mobile devices
+              if (deviceType === 'mobile') {
+                (notificationOptions as any).vibrate = [200, 100, 200];
+              }
+
+              const testNotification = new Notification("Welcome! 🎉", notificationOptions);
               
               setTimeout(() => testNotification.close(), 4000);
             } catch (error) {
