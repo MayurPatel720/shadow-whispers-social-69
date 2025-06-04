@@ -4,8 +4,8 @@ import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
 // Create axios instance with base URL
-// const API_URL = "http://localhost:8900";
-const API_URL = "https://undercover-service.onrender.com";
+const API_URL = "http://localhost:8900";
+// const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
 	baseURL: API_URL,
@@ -182,7 +182,7 @@ export const createPost = async (
 	ghostCircleId?: string,
 	imageUrl?: string,
 	images?: string[],
-	videos?: Array<{url: string, thumbnail?: string, duration?: number}>
+	videos?: Array<{ url: string; thumbnail?: string; duration?: number }>
 ): Promise<Post> => {
 	try {
 		const postData = {
@@ -200,18 +200,23 @@ export const createPost = async (
 	}
 };
 
-export const updatePost = async (postId: string, content: string, images?: string[], videos?: any[]) => {
-  try {
-    const response = await api.put(`/posts/${postId}`, {
-      content,
-      images: images || [],
-      videos: videos || []
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error updating post:', error);
-    throw error;
-  }
+export const updatePost = async (
+	postId: string,
+	content: string,
+	images?: string[],
+	videos?: any[]
+) => {
+	try {
+		const response = await api.put(`/posts/${postId}`, {
+			content,
+			images: images || [],
+			videos: videos || [],
+		});
+		return response.data;
+	} catch (error) {
+		console.error("Error updating post:", error);
+		throw error;
+	}
 };
 
 export const deletePost = async (postId: string): Promise<void> => {

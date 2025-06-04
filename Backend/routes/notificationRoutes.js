@@ -1,24 +1,24 @@
-
 // routes/notificationRoutes.js
+require("dotenv").config("../.env");
 const express = require("express");
 const router = express.Router();
 const Notification = require("../models/Notification");
 const { protect } = require("../middleware/authMiddleware");
-const webpush = require('web-push');
+const webpush = require("web-push");
 
 // Mock subscription storage (in production, use a database)
 const pushSubscriptions = new Map();
 
-// Configure web-push with VAPID keys
 const vapidKeys = {
-  publicKey: 'BJKz8xKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN',
-  privateKey: 'your-private-vapid-key-here' // In production, use environment variables
+	publicKey:
+		"BIW1fqapVHYJS_j_vQWr32lMj0mlE-KBdRrgCMCODxRgYdH-kncIF3cPT5NPuvwlqfHEFLZ6Smmc38y2T2aAqGo",
+	privateKey: process.env.PRIVATE_VAPID,
 };
 
 webpush.setVapidDetails(
-  'mailto:your-email@example.com',
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
+	"mailto:your-email@example.com",
+	vapidKeys.publicKey,
+	vapidKeys.privateKey
 );
 
 // POST /api/notifications/subscribe - Subscribe to push notifications
@@ -27,23 +27,25 @@ router.post("/subscribe", protect, async (req, res) => {
 
 	try {
 		if (!userId || !subscription) {
-			return res.status(400).json({ error: "User ID and subscription are required" });
+			return res
+				.status(400)
+				.json({ error: "User ID and subscription are required" });
 		}
 
 		// Store subscription (in production, save to database)
 		pushSubscriptions.set(userId, subscription);
-		
+
 		console.log(`Push subscription saved for user ${userId}:`, subscription);
 
-		res.status(200).json({ 
+		res.status(200).json({
 			message: "Subscription saved successfully",
-			userId 
+			userId,
 		});
 	} catch (error) {
 		console.error("Error saving subscription:", error);
-		res.status(500).json({ 
+		res.status(500).json({
 			error: "Failed to save subscription",
-			details: error.message 
+			details: error.message,
 		});
 	}
 });
@@ -64,17 +66,19 @@ router.post("/send-push", protect, async (req, res) => {
 			userId,
 			createdAt: new Date(),
 			metadata: {
-				platform: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop',
+				platform: req.headers["user-agent"]?.includes("Mobile")
+					? "mobile"
+					: "desktop",
 				timestamp: Date.now(),
-				source: 'push'
-			}
+				source: "push",
+			},
 		};
 
 		const notification = await Notification.create(notificationData);
 
 		// Get subscription for user
 		const subscription = pushSubscriptions.get(userId);
-		
+
 		let pushSent = false;
 		if (subscription) {
 			try {
@@ -87,26 +91,26 @@ router.post("/send-push", protect, async (req, res) => {
 					data: {
 						notificationId: notification._id,
 						userId: userId,
-						timestamp: Date.now()
+						timestamp: Date.now(),
 					},
 					requireInteraction: true,
 					actions: [
 						{
-							action: 'open',
-							title: 'Open App'
+							action: "open",
+							title: "Open App",
 						},
 						{
-							action: 'close',
-							title: 'Close'
-						}
-					]
+							action: "close",
+							title: "Close",
+						},
+					],
 				});
 
 				await webpush.sendNotification(subscription, payload);
 				pushSent = true;
 				console.log(`Push notification sent to user ${userId}`);
 			} catch (pushError) {
-				console.error('Push notification failed:', pushError);
+				console.error("Push notification failed:", pushError);
 				// If push fails, remove invalid subscription
 				if (pushError.statusCode === 410) {
 					pushSubscriptions.delete(userId);
@@ -129,22 +133,24 @@ router.post("/send-push", protect, async (req, res) => {
 			console.log(`Socket notification sent to user ${userId}:`, socketData);
 		}
 
-		res.status(200).json({ 
-			message: pushSent ? "Push notification sent successfully" : "Notification sent via socket", 
+		res.status(200).json({
+			message: pushSent
+				? "Push notification sent successfully"
+				: "Notification sent via socket",
 			data: {
 				id: notification._id,
 				title: notification.title,
 				message: notification.message,
 				timestamp: notification.createdAt,
 				platform: notificationData.metadata.platform,
-				pushSent: pushSent
-			}
+				pushSent: pushSent,
+			},
 		});
 	} catch (error) {
 		console.error("Error sending push notification:", error);
-		res.status(500).json({ 
+		res.status(500).json({
 			error: "Failed to send notification",
-			details: error.message 
+			details: error.message,
 		});
 	}
 });
@@ -153,7 +159,7 @@ router.post("/send-push", protect, async (req, res) => {
 router.get("/", protect, async (req, res) => {
 	try {
 		const { page = 1, limit = 20 } = req.query;
-		
+
 		const notifications = await Notification.find({ userId: req.user.id })
 			.sort({ createdAt: -1 })
 			.limit(limit * 1)
@@ -165,13 +171,13 @@ router.get("/", protect, async (req, res) => {
 			notifications,
 			totalPages: Math.ceil(total / limit),
 			currentPage: page,
-			total
+			total,
 		});
 	} catch (error) {
 		console.error("Error fetching notifications:", error);
-		res.status(500).json({ 
+		res.status(500).json({
 			error: "Failed to fetch notifications",
-			details: error.message 
+			details: error.message,
 		});
 	}
 });
@@ -180,30 +186,32 @@ router.get("/", protect, async (req, res) => {
 router.post("/mark-read", protect, async (req, res) => {
 	try {
 		const { notificationIds } = req.body;
-		
+
 		if (!notificationIds || !Array.isArray(notificationIds)) {
-			return res.status(400).json({ error: "Notification IDs array is required" });
+			return res
+				.status(400)
+				.json({ error: "Notification IDs array is required" });
 		}
 
 		await Notification.updateMany(
-			{ 
-				_id: { $in: notificationIds }, 
-				userId: req.user.id 
+			{
+				_id: { $in: notificationIds },
+				userId: req.user.id,
 			},
-			{ 
-				$set: { 
-					read: true, 
-					readAt: new Date() 
-				} 
+			{
+				$set: {
+					read: true,
+					readAt: new Date(),
+				},
 			}
 		);
 
 		res.status(200).json({ message: "Notifications marked as read" });
 	} catch (error) {
 		console.error("Error marking notifications as read:", error);
-		res.status(500).json({ 
+		res.status(500).json({
 			error: "Failed to mark notifications as read",
-			details: error.message 
+			details: error.message,
 		});
 	}
 });
