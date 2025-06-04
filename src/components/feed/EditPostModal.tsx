@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit3, Save, ImageIcon, Video, X, Camera, FolderOpen } from "lucide-react";
+import { Edit3, Save, X, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { updatePost } from "@/lib/api";
+import MediaUpload from "@/components/ui/media-upload";
 
 interface EditPostModalProps {
   open: boolean;
@@ -34,28 +35,11 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Refs for file inputs
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const imageCameraRef = useRef<HTMLInputElement>(null);
-  const videoCameraRef = useRef<HTMLInputElement>(null);
-
-  // Check if we're on mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const validateImageFiles = (files: File[]): File[] => {
+    const validFiles: File[] = [];
     
-    if (images.length + videos.length + files.length > 10) {
-      toast({
-        title: "Too many files",
-        description: "You can upload maximum 10 files per post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Process new files
     for (const file of files) {
       if (!file.type.startsWith('image/')) {
         toast({
@@ -65,7 +49,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         });
         continue;
       }
-
+      
       const maxSize = isMobile ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
       if (file.size > maxSize) {
         toast({
@@ -75,43 +59,16 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         });
         continue;
       }
-
-      try {
-        setImageFiles(prev => [...prev, file]);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-          setImages(prev => [...prev, reader.result as string]);
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error processing image:', error);
-        toast({
-          title: "Image processing failed",
-          description: `Could not process ${file.name}.`,
-          variant: "destructive",
-        });
-      }
+      
+      validFiles.push(file);
     }
-
-    // Clear input
-    if (e.target) {
-      e.target.value = '';
-    }
+    
+    return validFiles;
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const validateVideoFiles = (files: File[]): File[] => {
+    const validFiles: File[] = [];
     
-    if (images.length + videos.length + files.length > 10) {
-      toast({
-        title: "Too many files",
-        description: "You can upload maximum 10 files per post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     for (const file of files) {
       if (!file.type.startsWith('video/')) {
         toast({
@@ -121,7 +78,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         });
         continue;
       }
-
+      
       const maxSize = isMobile ? 100 * 1024 * 1024 : 50 * 1024 * 1024;
       if (file.size > maxSize) {
         toast({
@@ -131,59 +88,75 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         });
         continue;
       }
+      
+      validFiles.push(file);
+    }
+    
+    return validFiles;
+  };
 
-      try {
-        setVideoFiles(prev => [...prev, file]);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-          const video = {
-            url: reader.result as string,
-            thumbnail: "",
-            duration: 0,
-            size: file.size
-          };
-          setVideos(prev => [...prev, video]);
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error processing video:', error);
+  const handleImageSelect = (files: File[]) => {
+    console.log('Image files selected for edit:', files);
+    const validFiles = validateImageFiles(files);
+    
+    if (validFiles.length === 0) return;
+
+    setImageFiles(prev => {
+      const newFiles = [...prev, ...validFiles];
+      console.log('Updated image files:', newFiles);
+      return newFiles;
+    });
+    
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImages(prev => {
+          const newImages = [...prev, reader.result as string];
+          console.log('Updated image previews:', newImages);
+          return newImages;
+        });
+      };
+      reader.onerror = () => {
         toast({
-          title: "Video processing failed",
-          description: `Could not process ${file.name}.`,
+          title: "File read error",
+          description: `Could not read ${file.name}. Please try again.`,
           variant: "destructive",
         });
-      }
-    }
-
-    // Clear input
-    if (e.target) {
-      e.target.value = '';
-    }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const triggerImagePicker = () => {
-    if (imageInputRef.current) {
-      imageInputRef.current.click();
-    }
-  };
+  const handleVideoSelect = (files: File[]) => {
+    console.log('Video files selected for edit:', files);
+    const validFiles = validateVideoFiles(files);
+    
+    if (validFiles.length === 0) return;
 
-  const triggerVideoPicker = () => {
-    if (videoInputRef.current) {
-      videoInputRef.current.click();
-    }
-  };
-
-  const triggerImageCamera = () => {
-    if (imageCameraRef.current) {
-      imageCameraRef.current.click();
-    }
-  };
-
-  const triggerVideoCamera = () => {
-    if (videoCameraRef.current) {
-      videoCameraRef.current.click();
-    }
+    setVideoFiles(prev => {
+      const newFiles = [...prev, ...validFiles];
+      console.log('Updated video files:', newFiles);
+      return newFiles;
+    });
+    
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setVideos(prev => {
+          const newVideos = [...prev, { url: reader.result as string }];
+          console.log('Updated video previews:', newVideos);
+          return newVideos;
+        });
+      };
+      reader.onerror = () => {
+        toast({
+          title: "File read error",
+          description: `Could not read ${file.name}. Please try again.`,
+          variant: "destructive",
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -211,7 +184,6 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
     let uploadedVideoUrls = [...videos.filter(vid => vid.url?.startsWith('http'))];
 
     try {
-      // Upload new image files
       if (imageFiles.length > 0) {
         setIsUploading(true);
         
@@ -234,7 +206,6 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
         }
       }
 
-      // Upload new video files
       if (videoFiles.length > 0) {
         for (const file of videoFiles) {
           const formData = new FormData();
@@ -306,91 +277,15 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
             {content.length}/500 characters
           </div>
 
-          {/* Photo options */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={triggerImageCamera}
-              disabled={isSubmitting || totalFiles >= 10}
-              className="text-purple-300 border-purple-700"
-            >
-              <Camera size={16} className="mr-2" />
-              Take Photo
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={triggerImagePicker}
-              disabled={isSubmitting || totalFiles >= 10}
-              className="text-purple-300 border-purple-700"
-            >
-              <FolderOpen size={16} className="mr-2" />
-              Choose Photos
-            </Button>
+          <div className="mt-4">
+            <MediaUpload
+              onImageSelect={handleImageSelect}
+              onVideoSelect={handleVideoSelect}
+              disabled={isSubmitting || isUploading}
+              maxFiles={10}
+              currentFileCount={totalFiles}
+            />
           </div>
-
-          {/* Video options */}
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={triggerVideoCamera}
-              disabled={isSubmitting || totalFiles >= 10}
-              className="text-purple-300 border-purple-700"
-            >
-              <Video size={16} className="mr-2" />
-              Record Video
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={triggerVideoPicker}
-              disabled={isSubmitting || totalFiles >= 10}
-              className="text-purple-300 border-purple-700"
-            >
-              <FolderOpen size={16} className="mr-2" />
-              Choose Videos
-            </Button>
-          </div>
-
-          {/* Hidden file inputs */}
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-          <input
-            ref={imageCameraRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-            capture="environment"
-          />
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/*"
-            multiple
-            onChange={handleVideoUpload}
-            className="hidden"
-          />
-          <input
-            ref={videoCameraRef}
-            type="file"
-            accept="video/*"
-            onChange={handleVideoUpload}
-            className="hidden"
-            capture="environment"
-          />
 
           {/* Preview Images */}
           {images.length > 0 && (
@@ -440,7 +335,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           {isUploading && (
             <div className="mt-4 bg-purple-900/20 border border-purple-500/20 rounded-lg p-3">
               <div className="flex items-center gap-2 text-purple-300">
-                <div className="animate-spin h-4 w-4 border-2 border-purple-300 rounded-full border-t-transparent" />
+                <Loader2 size={16} className="animate-spin" />
                 <span className="text-sm">Uploading files... Please wait</span>
               </div>
             </div>
@@ -463,7 +358,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({
           >
             {isSubmitting || isUploading ? (
               <>
-                <div className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent mr-2" />
+                <Loader2 size={16} className="animate-spin mr-2" />
                 {isUploading ? 'Uploading...' : 'Saving...'}
               </>
             ) : (

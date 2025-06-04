@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api";
-import { Ghost, ImageIcon, Video, Loader2, X, Plus, Upload, Camera, FolderOpen } from "lucide-react";
+import { Ghost, Loader2, X, Upload } from "lucide-react";
 import ImageSlider from "@/components/ui/image-slider";
+import MediaUpload from "@/components/ui/media-upload";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -35,188 +36,133 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Refs for mobile file inputs
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const imageCameraRef = useRef<HTMLInputElement>(null);
-  const videoCameraRef = useRef<HTMLInputElement>(null);
 
-  // Check if we're on mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  const compressVideo = async (file: File): Promise<File> => {
-    // For now, return the original file
-    // In a real implementation, you would use FFmpeg.js or similar
-    return file;
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const validateImageFiles = (files: File[]): File[] => {
+    const validFiles: File[] = [];
     
-    if (imageFiles.length + videoFiles.length + files.length > 10) {
-      toast({
-        title: "Too many files",
-        description: "You can upload maximum 10 files per post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Enhanced validation for mobile
-    const validFiles = files.filter(file => {
-      // Check file type
+    for (const file of files) {
       if (!file.type.startsWith('image/')) {
         toast({
           title: "Invalid file type",
           description: `${file.name} is not an image file.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
-      // Check file size (increased limit for mobile photos which are often larger)
-      const maxSize = isMobile ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB on mobile, 5MB on desktop
+      const maxSize = isMobile ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
       if (file.size > maxSize) {
         toast({
           title: "File too large",
           description: `${file.name} is too large. Maximum size is ${isMobile ? '10MB' : '5MB'}.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
-      return true;
-    });
-
-    // Process valid files
-    for (const file of validFiles) {
-      try {
-        setImageFiles(prev => [...prev, file]);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-          setImages(prev => [...prev, reader.result as string]);
-        };
-        reader.onerror = () => {
-          toast({
-            title: "File read error",
-            description: `Could not read ${file.name}. Please try again.`,
-            variant: "destructive",
-          });
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error processing image:', error);
-        toast({
-          title: "Image processing failed",
-          description: `Could not process ${file.name}.`,
-          variant: "destructive",
-        });
-      }
+      validFiles.push(file);
     }
-
-    // Clear input for mobile compatibility
-    if (e.target) {
-      e.target.value = '';
-    }
+    
+    return validFiles;
   };
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const validateVideoFiles = (files: File[]): File[] => {
+    const validFiles: File[] = [];
     
-    if (imageFiles.length + videoFiles.length + files.length > 10) {
-      toast({
-        title: "Too many files",
-        description: "You can upload maximum 10 files per post.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Enhanced validation for mobile
-    const validFiles = files.filter(file => {
-      // Check file type
+    for (const file of files) {
       if (!file.type.startsWith('video/')) {
         toast({
           title: "Invalid file type",
           description: `${file.name} is not a video file.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
-      // Check file size (increased limit for mobile videos)
-      const maxSize = isMobile ? 100 * 1024 * 1024 : 50 * 1024 * 1024; // 100MB on mobile, 50MB on desktop
+      const maxSize = isMobile ? 100 * 1024 * 1024 : 50 * 1024 * 1024;
       if (file.size > maxSize) {
         toast({
           title: "Video too large",
           description: `${file.name} is too large. Maximum size is ${isMobile ? '100MB' : '50MB'}.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
-      return true;
-    });
+      validFiles.push(file);
+    }
+    
+    return validFiles;
+  };
 
-    // Process valid files
-    for (const file of validFiles) {
-      try {
-        const compressedFile = await compressVideo(file);
-        setVideoFiles(prev => [...prev, compressedFile]);
-        
-        const reader = new FileReader();
-        reader.onload = () => {
-          setVideos(prev => [...prev, { url: reader.result as string }]);
-        };
-        reader.onerror = () => {
-          toast({
-            title: "File read error",
-            description: `Could not read ${file.name}. Please try again.`,
-            variant: "destructive",
-          });
-        };
-        reader.readAsDataURL(compressedFile);
-      } catch (error) {
-        console.error('Error processing video:', error);
+  const handleImageSelect = (files: File[]) => {
+    console.log('Image files selected:', files);
+    const validFiles = validateImageFiles(files);
+    
+    if (validFiles.length === 0) return;
+
+    // Add to state
+    setImageFiles(prev => {
+      const newFiles = [...prev, ...validFiles];
+      console.log('Updated image files:', newFiles);
+      return newFiles;
+    });
+    
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImages(prev => {
+          const newImages = [...prev, reader.result as string];
+          console.log('Updated image previews:', newImages);
+          return newImages;
+        });
+      };
+      reader.onerror = () => {
         toast({
-          title: "Video processing failed",
-          description: `Could not process ${file.name}.`,
+          title: "File read error",
+          description: `Could not read ${file.name}. Please try again.`,
           variant: "destructive",
         });
-      }
-    }
-
-    // Clear input for mobile compatibility
-    if (e.target) {
-      e.target.value = '';
-    }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  // Enhanced mobile-friendly file picker functions
-  const triggerImagePicker = () => {
-    if (imageInputRef.current) {
-      imageInputRef.current.click();
-    }
-  };
+  const handleVideoSelect = (files: File[]) => {
+    console.log('Video files selected:', files);
+    const validFiles = validateVideoFiles(files);
+    
+    if (validFiles.length === 0) return;
 
-  const triggerVideoPicker = () => {
-    if (videoInputRef.current) {
-      videoInputRef.current.click();
-    }
-  };
-
-  const triggerImageCamera = () => {
-    if (imageCameraRef.current) {
-      imageCameraRef.current.click();
-    }
-  };
-
-  const triggerVideoCamera = () => {
-    if (videoCameraRef.current) {
-      videoCameraRef.current.click();
-    }
+    // Add to state
+    setVideoFiles(prev => {
+      const newFiles = [...prev, ...validFiles];
+      console.log('Updated video files:', newFiles);
+      return newFiles;
+    });
+    
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setVideos(prev => {
+          const newVideos = [...prev, { url: reader.result as string }];
+          console.log('Updated video previews:', newVideos);
+          return newVideos;
+        });
+      };
+      reader.onerror = () => {
+        toast({
+          title: "File read error",
+          description: `Could not read ${file.name}. Please try again.`,
+          variant: "destructive",
+        });
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeImage = (index: number) => {
@@ -424,10 +370,6 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
                       >
                         <X size={12} />
                       </Button>
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs p-1 text-center rounded-b">
-                        <Video size={10} className="inline mr-1" />
-                        Video
-                      </div>
                     </div>
                   ))}
                 </div>
@@ -435,106 +377,22 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
           )}
 
-          <div className="flex flex-col space-y-2">
-            {/* Photo options */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={triggerImageCamera}
-                disabled={isUploading || isSubmitting || totalFiles >= 10}
-              >
-                <Camera className="mr-2 w-4 h-4" />
-                Take Photo
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={triggerImagePicker}
-                disabled={isUploading || isSubmitting || totalFiles >= 10}
-              >
-                <FolderOpen className="mr-2 w-4 h-4" />
-                Choose Photos
-              </Button>
-            </div>
+          <MediaUpload
+            onImageSelect={handleImageSelect}
+            onVideoSelect={handleVideoSelect}
+            disabled={isUploading || isSubmitting}
+            maxFiles={10}
+            currentFileCount={totalFiles}
+          />
 
-            {/* Video options */}
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={triggerVideoCamera}
-                disabled={isUploading || isSubmitting || totalFiles >= 10}
-              >
-                <Video className="mr-2 w-4 h-4" />
-                Record Video
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={triggerVideoPicker}
-                disabled={isUploading || isSubmitting || totalFiles >= 10}
-              >
-                <FolderOpen className="mr-2 w-4 h-4" />
-                Choose Videos
-              </Button>
+          {totalFiles > 0 && (
+            <div className="text-xs text-gray-400">
+              Total size: {totalSize > 1024 * 1024 
+                ? `${(totalSize / (1024 * 1024)).toFixed(1)}MB` 
+                : `${Math.round(totalSize / 1024)}KB`}
             </div>
-            
-            {/* Enhanced file inputs for mobile */}
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-            <input
-              ref={imageCameraRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-              capture="environment"
-            />
-            <input
-              ref={videoInputRef}
-              type="file"
-              accept="video/*"
-              multiple
-              className="hidden"
-              onChange={handleVideoUpload}
-            />
-            <input
-              ref={videoCameraRef}
-              type="file"
-              accept="video/*"
-              className="hidden"
-              onChange={handleVideoUpload}
-              capture="environment"
-            />
+          )}
 
-            <div className="text-xs text-gray-400 flex items-center gap-2">
-              <span>{totalFiles}/10 files</span>
-              {totalFiles > 0 && (
-                <span className="text-purple-300">
-                  • {totalSize > 1024 * 1024 
-                      ? `${(totalSize / (1024 * 1024)).toFixed(1)}MB` 
-                      : `${Math.round(totalSize / 1024)}KB`}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile-specific upload status */}
           {isUploading && (
             <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-3">
               <div className="flex items-center gap-2 text-purple-300">

@@ -1,256 +1,189 @@
 
-// src/components/NotificationButton.tsx
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { initSocket } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { notificationService } from "@/services/notificationService";
 
 const NotificationButton: React.FC = () => {
-	const { user } = useAuth();
-	const { toast } = useToast();
-	const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
-	const userId = user?._id;
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const userId = user?._id;
 
-	// Check if we're on mobile
-	const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-	const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-	const isAndroid = /Android/.test(navigator.userAgent);
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-	useEffect(() => {
-		if (!userId) {
-			console.log("No user ID available. Please log in.");
-			return;
-		}
+  useEffect(() => {
+    if (!userId) return;
 
-		// Check notification support
-		if (!("Notification" in window)) {
-			console.log("Browser does not support notifications.");
-			return;
-		}
+    // Check push notification support
+    const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
+    setIsPushSupported(pushSupported);
 
-		// Set initial permission status
-		setPermissionStatus(Notification.permission);
+    if ('Notification' in window) {
+      setPermissionStatus(Notification.permission);
+    }
 
-		const socket = initSocket();
+    // Initialize socket for fallback notifications
+    const socket = initSocket();
 
-		socket.on("connect", () => {
-			console.log("Notification socket connected, ID:", socket.id);
-			socket.emit("join", userId);
-			console.log(`Joined individual room ${userId}`);
-		});
+    socket.on("connect", () => {
+      console.log("Socket connected for notifications:", socket.id);
+      socket.emit("join", userId);
+    });
 
-		socket.on("connect_error", (err) => {
-			console.error("Notification socket connection error:", err.message);
-		});
+    socket.on("notification", ({ title, body }: { title: string; body: string }) => {
+      console.log("Received socket notification:", { title, body });
+      
+      toast({
+        title,
+        description: body,
+        duration: 5000,
+      });
+    });
 
-		socket.on(
-			"notification",
-			({ title, body }: { title: string; body: string }) => {
-				console.log("Received notification:", { title, body });
-				
-				// Always show in-app toast as fallback
-				toast({
-					title,
-					description: body,
-					duration: 5000,
-				});
+    return () => {
+      socket.disconnect();
+    };
+  }, [userId, toast]);
 
-				// Try to show browser notification if permission is granted
-				if (Notification.permission === "granted") {
-					try {
-						// Simple notification options that work on all browsers
-						const notificationOptions: NotificationOptions = {
-							body,
-							icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
-							tag: "whisper-notification-" + Date.now(),
-						};
+  const handleEnableNotifications = async () => {
+    try {
+      if (!userId) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please log in to enable notifications.",
+        });
+        return;
+      }
 
-						const notification = new Notification(title, notificationOptions);
-						
-						// Handle notification click
-						notification.onclick = () => {
-							window.focus();
-							notification.close();
-						};
-						
-						// Auto-close on mobile to prevent clutter
-						if (isMobile) {
-							setTimeout(() => {
-								if (notification) {
-									notification.close();
-								}
-							}, 6000);
-						}
-						
-						console.log("Browser notification displayed:", title);
-					} catch (error) {
-						console.error("Error showing notification:", error);
-					}
-				} else {
-					console.warn("Notification permission not granted:", Notification.permission);
-				}
-			}
-		);
+      // Request notification permission
+      const permission = await notificationService.requestNotificationPermission();
+      setPermissionStatus(permission);
+      
+      if (permission === 'granted') {
+        if (isPushSupported) {
+          // Subscribe to push notifications
+          const subscription = await notificationService.subscribeToPush(userId);
+          if (subscription) {
+            setIsSubscribed(true);
+            toast({
+              title: "Push Notifications Enabled! 🔔",
+              description: "You'll receive notifications even when the app is closed.",
+            });
+          } else {
+            toast({
+              title: "Notifications Enabled",
+              description: "You'll receive in-app notifications.",
+            });
+          }
+        } else {
+          toast({
+            title: "Notifications Enabled",
+            description: "You'll receive in-app notifications.",
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: isMobile 
+            ? "Go to browser settings > Site settings > Notifications to enable."
+            : "Please allow notifications in your browser settings.",
+          duration: 8000,
+        });
+      }
+    } catch (error) {
+      console.error("Error enabling notifications:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to enable notifications. Please try again.",
+      });
+    }
+  };
 
-		return () => {
-			socket.disconnect();
-			console.log("Notification socket disconnected");
-		};
-	}, [userId, toast, isMobile, isIOS, isAndroid]);
+  const handleTestNotification = async () => {
+    try {
+      if (!userId) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please log in to test notifications.",
+        });
+        return;
+      }
 
-	const handleTestNotification = async () => {
-		try {
-			// Enhanced permission request for mobile
-			if (Notification.permission !== 'granted') {
-				const permission = await Notification.requestPermission();
-				setPermissionStatus(permission);
-				
-				if (permission !== 'granted') {
-					toast({
-						variant: "destructive",
-						title: "Permission Required",
-						description: isMobile 
-							? "Please enable notifications in your browser settings for this site."
-							: "Please allow notifications to test the feature.",
-						duration: 6000,
-					});
-					return;
-				}
-			}
+      if (permissionStatus !== 'granted') {
+        toast({
+          variant: "destructive",
+          title: "Permission Required",
+          description: "Please enable notifications first.",
+        });
+        return;
+      }
 
-			const response = await api.post("/api/notifications", {
-				title: "Test Notification",
-				message: "This is a test notification!",
-				userId,
-			});
-			
-			console.log("Test notification response:", response.data);
-			
-			toast({
-				title: "Test Notification Sent",
-				description: "Check if you received the notification!",
-			});
-			
-			// Show simple test browser notification
-			if (Notification.permission === "granted") {
-				const notificationOptions: NotificationOptions = {
-					body: "This is a test notification!",
-					icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
-					tag: "test-notification",
-				};
+      await notificationService.sendTestNotification(
+        userId,
+        "Test Notification",
+        "This is a test push notification!"
+      );
+      
+      toast({
+        title: "Test Notification Sent",
+        description: "Check if you received the push notification!",
+      });
+    } catch (error) {
+      console.error("Error sending test notification:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to send test notification.",
+      });
+    }
+  };
 
-				const notification = new Notification("Test Notification", notificationOptions);
-				
-				if (isMobile) {
-					setTimeout(() => notification.close(), 4000);
-				}
-			}
-		} catch (error) {
-			console.error("Error sending test notification:", error);
-			toast({
-				variant: "destructive",
-				title: "Error",
-				description: "Failed to send test notification.",
-			});
-		}
-	};
-
-	const handleEnableNotifications = async () => {
-		try {
-			// Enhanced permission request with mobile considerations
-			if (isMobile) {
-				toast({
-					title: "Permission Request",
-					description: "Please allow notifications when your browser prompts you.",
-					duration: 4000,
-				});
-			}
-
-			const permission = await Notification.requestPermission();
-			setPermissionStatus(permission);
-			
-			if (permission === 'granted') {
-				toast({
-					title: "Notifications Enabled! 🎉",
-					description: "You'll now receive push notifications for messages!",
-				});
-				
-				// Show immediate test notification on success
-				setTimeout(() => {
-					if (Notification.permission === "granted") {
-						const notificationOptions: NotificationOptions = {
-							body: "Notifications are now enabled for this device.",
-							icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
-							tag: "welcome-notification",
-						};
-
-						const welcomeNotification = new Notification("Welcome!", notificationOptions);
-						
-						if (isMobile) {
-							setTimeout(() => welcomeNotification.close(), 3000);
-						}
-					}
-				}, 500);
-			} else {
-				const errorMessage = isMobile 
-					? "Notifications blocked. Go to browser settings > Site settings > Notifications to enable."
-					: "Please allow notifications when prompted by your browser.";
-				
-				toast({
-					variant: "destructive",
-					title: "Permission Denied",
-					description: errorMessage,
-					duration: 8000,
-				});
-			}
-		} catch (error) {
-			console.error("Error requesting permission:", error);
-			toast({
-				variant: "destructive",
-				title: "Error",
-				description: "Could not request notification permission. Try refreshing the page.",
-			});
-		}
-	};
-
-	// Show different instructions based on device
-	const getInstructions = () => {
-		if (isIOS) {
-			return "For best results on iOS: Add to home screen, then enable notifications.";
-		} else if (isAndroid) {
-			return "Android: Allow notifications when prompted by Chrome.";
-		} else {
-			return "Desktop: Click allow when your browser asks for permission.";
-		}
-	};
-
-	return (
-		<div className="flex flex-col gap-2">
-			{permissionStatus !== 'granted' && (
-				<div className="space-y-2">
-					<Button 
-						onClick={handleEnableNotifications} 
-						variant="outline"
-						className="text-sm"
-					>
-						Enable Notifications
-					</Button>
-					<p className="text-xs text-muted-foreground">
-						{getInstructions()}
-					</p>
-				</div>
-			)}
-			<Button onClick={handleTestNotification} variant="outline">
-				Test Notification
-			</Button>
-			<div className="text-xs text-muted-foreground space-y-1">
-				<p>Status: {permissionStatus === 'granted' ? '✅ Enabled' : '❌ Disabled'}</p>
-				<p>Device: {isMobile ? (isIOS ? 'iOS' : 'Mobile') : 'Desktop'}</p>
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex flex-col gap-3">
+      {permissionStatus !== 'granted' && (
+        <div className="space-y-2">
+          <Button 
+            onClick={handleEnableNotifications} 
+            variant="outline"
+            className="w-full text-sm bg-purple-600 hover:bg-purple-700 text-white border-purple-500"
+          >
+            Enable Notifications
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            {isMobile 
+              ? "Enable push notifications to get alerts even when the app is closed."
+              : "Enable notifications to get real-time updates."
+            }
+          </p>
+        </div>
+      )}
+      
+      {permissionStatus === 'granted' && (
+        <Button 
+          onClick={handleTestNotification} 
+          variant="outline"
+          className="w-full"
+        >
+          Test Notification
+        </Button>
+      )}
+      
+      <div className="text-xs text-muted-foreground space-y-1">
+        <p>Status: {permissionStatus === 'granted' ? '✅ Enabled' : '❌ Disabled'}</p>
+        {isPushSupported && <p>Push: {isSubscribed ? '✅ Subscribed' : '⏳ Available'}</p>}
+        <p>Device: {isMobile ? 'Mobile' : 'Desktop'}</p>
+      </div>
+    </div>
+  );
 };
 
 export default NotificationButton;

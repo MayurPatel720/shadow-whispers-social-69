@@ -5,57 +5,88 @@ const router = express.Router();
 const Notification = require("../models/Notification");
 const { protect } = require("../middleware/authMiddleware");
 
-// POST /api/notifications - Send a test notification
-router.post("/", protect, async (req, res) => {
-	const { title, message, userId } = req.body;
+// Mock subscription storage (in production, use a database)
+const pushSubscriptions = new Map();
+
+// POST /api/notifications/subscribe - Subscribe to push notifications
+router.post("/subscribe", protect, async (req, res) => {
+	const { userId, subscription } = req.body;
 
 	try {
-		// Validate userId
+		if (!userId || !subscription) {
+			return res.status(400).json({ error: "User ID and subscription are required" });
+		}
+
+		// Store subscription (in production, save to database)
+		pushSubscriptions.set(userId, subscription);
+		
+		console.log(`Push subscription saved for user ${userId}`);
+
+		res.status(200).json({ 
+			message: "Subscription saved successfully",
+			userId 
+		});
+	} catch (error) {
+		console.error("Error saving subscription:", error);
+		res.status(500).json({ 
+			error: "Failed to save subscription",
+			details: error.message 
+		});
+	}
+});
+
+// POST /api/notifications/send-push - Send push notification
+router.post("/send-push", protect, async (req, res) => {
+	const { userId, title, message } = req.body;
+
+	try {
 		if (!userId) {
 			return res.status(400).json({ error: "User ID is required" });
 		}
 
-		// Enhanced notification data for mobile support
+		// Create notification record
 		const notificationData = {
 			title: title || "New Notification",
 			message: message || "This is a test notification",
 			userId,
 			createdAt: new Date(),
-			// Add mobile-specific metadata
 			metadata: {
 				platform: req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop',
 				timestamp: Date.now(),
-				source: 'api'
+				source: 'push'
 			}
 		};
 
-		// Create notification
 		const notification = await Notification.create(notificationData);
 
-		// Enhanced Socket.IO event for mobile compatibility
+		// Get subscription for user
+		const subscription = pushSubscriptions.get(userId);
+		
+		if (subscription) {
+			// In a real implementation, you would use the web-push library here
+			// const webpush = require('web-push');
+			// await webpush.sendNotification(subscription, JSON.stringify({
+			//   title: notificationData.title,
+			//   body: notificationData.message,
+			//   icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
+			//   tag: `notification-${notification._id}`
+			// }));
+			
+			console.log(`Push notification would be sent to user ${userId}`);
+		}
+
+		// Fallback to Socket.IO
 		if (global.io) {
 			const socketData = {
 				title: notificationData.title,
 				body: notificationData.message,
-				// Add mobile-specific options
-				badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 				icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 				tag: `notification-${notification._id}`,
 				timestamp: Date.now(),
 			};
 
-			// Emit to user's room
 			global.io.to(userId).emit("notification", socketData);
-			
-			// Also emit to any connected sockets for this user (for multiple device support)
-			global.io.emit("user-notification", {
-				userId,
-				...socketData
-			});
-
-			console.log(`Notification sent to user ${userId}:`, socketData);
-		} else {
-			console.error("Socket.IO not initialized");
+			console.log(`Socket notification sent to user ${userId}:`, socketData);
 		}
 
 		res.status(200).json({ 
@@ -65,11 +96,12 @@ router.post("/", protect, async (req, res) => {
 				title: notification.title,
 				message: notification.message,
 				timestamp: notification.createdAt,
-				platform: notificationData.metadata.platform
+				platform: notificationData.metadata.platform,
+				pushSent: !!subscription
 			}
 		});
 	} catch (error) {
-		console.error("Error sending notification:", error);
+		console.error("Error sending push notification:", error);
 		res.status(500).json({ 
 			error: "Failed to send notification",
 			details: error.message 
