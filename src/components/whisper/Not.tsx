@@ -24,15 +24,18 @@ const NotificationButton: React.FC = () => {
       // Check push notification support
       const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window;
       setIsPushSupported(pushSupported);
+      console.log("Push notification support:", pushSupported);
 
       if ('Notification' in window) {
         setPermissionStatus(Notification.permission);
+        console.log("Current permission:", Notification.permission);
       }
 
       // Check if already subscribed
       if (pushSupported && Notification.permission === 'granted') {
         const subscribed = await notificationService.checkSubscription();
         setIsSubscribed(subscribed);
+        console.log("Already subscribed:", subscribed);
       }
     };
 
@@ -49,14 +52,12 @@ const NotificationButton: React.FC = () => {
     socket.on("notification", ({ title, body }: { title: string; body: string }) => {
       console.log("Received socket notification:", { title, body });
       
-      // Only show toast if push notifications are not available or permission denied
-      if (!isPushSupported || permissionStatus !== 'granted') {
-        toast({
-          title,
-          description: body,
-          duration: 5000,
-        });
-      }
+      // Show toast as fallback when push notifications fail
+      toast({
+        title,
+        description: body,
+        duration: 5000,
+      });
     });
 
     return () => {
@@ -77,39 +78,43 @@ const NotificationButton: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log("Requesting notification permission...");
+      
       // Request notification permission
       const permission = await notificationService.requestNotificationPermission();
       setPermissionStatus(permission);
       
       if (permission === 'granted') {
         if (isPushSupported) {
+          console.log("Subscribing to push notifications...");
           // Subscribe to push notifications
           const subscription = await notificationService.subscribeToPush(userId);
           if (subscription) {
             setIsSubscribed(true);
             toast({
-              title: "Push Notifications Enabled! 🔔",
-              description: "You'll now receive browser notifications even when the app is closed.",
+              title: "Browser Notifications Enabled! 🔔",
+              description: "You'll now receive notifications even when the app is closed.",
             });
           } else {
             toast({
-              title: "Notifications Enabled",
-              description: "You'll receive in-app notifications.",
+              variant: "destructive",
+              title: "Subscription Failed",
+              description: "Failed to subscribe to push notifications. Check console for details.",
             });
           }
         } else {
           toast({
             title: "Notifications Enabled",
-            description: "You'll receive in-app notifications.",
+            description: "You'll receive in-app notifications (push not supported).",
           });
         }
-      } else {
+      } else if (permission === 'denied') {
         toast({
           variant: "destructive",
           title: "Permission Denied",
           description: isMobile 
             ? "Go to browser settings > Site settings > Notifications to enable."
-            : "Please allow notifications in your browser settings.",
+            : "Please allow notifications in your browser settings and refresh the page.",
           duration: 8000,
         });
       }
@@ -147,6 +152,7 @@ const NotificationButton: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log("Sending test notification...");
       await notificationService.sendTestNotification(
         userId,
         "Test Browser Notification",

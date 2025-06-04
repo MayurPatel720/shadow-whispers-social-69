@@ -6,7 +6,7 @@ const Notification = require("../models/Notification");
 const { protect } = require("../middleware/authMiddleware");
 const webpush = require("web-push");
 
-// Mock subscription storage (in production, use a database)
+// Store subscriptions in memory (in production, use a database)
 const pushSubscriptions = new Map();
 
 const vapidKeys = {
@@ -15,11 +15,14 @@ const vapidKeys = {
 	privateKey: process.env.PRIVATE_VAPID,
 };
 
+// Set VAPID details
 webpush.setVapidDetails(
-	"mailto:your-email@example.com",
+	"mailto:admin@underkover.in",
 	vapidKeys.publicKey,
 	vapidKeys.privateKey
 );
+
+console.log("VAPID configured with public key:", vapidKeys.publicKey);
 
 // POST /api/notifications/subscribe - Subscribe to push notifications
 router.post("/subscribe", protect, async (req, res) => {
@@ -32,10 +35,13 @@ router.post("/subscribe", protect, async (req, res) => {
 				.json({ error: "User ID and subscription are required" });
 		}
 
-		// Store subscription (in production, save to database)
+		console.log("Storing subscription for user:", userId);
+		console.log("Subscription data:", subscription);
+
+		// Store subscription
 		pushSubscriptions.set(userId, subscription);
 
-		console.log(`Push subscription saved for user ${userId}:`, subscription);
+		console.log("Total subscriptions stored:", pushSubscriptions.size);
 
 		res.status(200).json({
 			message: "Subscription saved successfully",
@@ -59,25 +65,23 @@ router.post("/send-push", protect, async (req, res) => {
 			return res.status(400).json({ error: "User ID is required" });
 		}
 
+		console.log("Sending push notification to user:", userId);
+		console.log("Available subscriptions:", Array.from(pushSubscriptions.keys()));
+
 		// Create notification record
 		const notificationData = {
 			title: title || "New Notification",
 			message: message || "This is a test notification",
 			userId,
 			createdAt: new Date(),
-			metadata: {
-				platform: req.headers["user-agent"]?.includes("Mobile")
-					? "mobile"
-					: "desktop",
-				timestamp: Date.now(),
-				source: "push",
-			},
 		};
 
 		const notification = await Notification.create(notificationData);
+		console.log("Notification record created:", notification._id);
 
 		// Get subscription for user
 		const subscription = pushSubscriptions.get(userId);
+		console.log("Found subscription for user:", !!subscription);
 
 		let pushSent = false;
 		if (subscription) {
@@ -85,6 +89,7 @@ router.post("/send-push", protect, async (req, res) => {
 				const payload = JSON.stringify({
 					title: notificationData.title,
 					body: notificationData.message,
+					message: notificationData.message,
 					icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 					badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 					tag: `notification-${notification._id}`,
@@ -93,30 +98,26 @@ router.post("/send-push", protect, async (req, res) => {
 						userId: userId,
 						timestamp: Date.now(),
 					},
-					requireInteraction: true,
-					actions: [
-						{
-							action: "open",
-							title: "Open App",
-						},
-						{
-							action: "close",
-							title: "Close",
-						},
-					],
 				});
 
-				await webpush.sendNotification(subscription, payload);
+				console.log("Sending push with payload:", payload);
+				console.log("To subscription:", subscription);
+
+				const result = await webpush.sendNotification(subscription, payload);
+				console.log("Push notification sent successfully:", result);
 				pushSent = true;
-				console.log(`Push notification sent to user ${userId}`);
 			} catch (pushError) {
 				console.error("Push notification failed:", pushError);
+				console.error("Error details:", pushError.body);
+				
 				// If push fails, remove invalid subscription
-				if (pushError.statusCode === 410) {
+				if (pushError.statusCode === 410 || pushError.statusCode === 413) {
 					pushSubscriptions.delete(userId);
 					console.log(`Removed invalid subscription for user ${userId}`);
 				}
 			}
+		} else {
+			console.log("No subscription found for user:", userId);
 		}
 
 		// Fallback to Socket.IO for in-app notifications
@@ -130,20 +131,20 @@ router.post("/send-push", protect, async (req, res) => {
 			};
 
 			global.io.to(userId).emit("notification", socketData);
-			console.log(`Socket notification sent to user ${userId}:`, socketData);
+			console.log(`Socket notification sent to user ${userId}`);
 		}
 
 		res.status(200).json({
 			message: pushSent
 				? "Push notification sent successfully"
-				: "Notification sent via socket",
+				: "Notification created (push failed or no subscription)",
 			data: {
 				id: notification._id,
 				title: notification.title,
 				message: notification.message,
 				timestamp: notification.createdAt,
-				platform: notificationData.metadata.platform,
 				pushSent: pushSent,
+				subscriptionExists: !!subscription,
 			},
 		});
 	} catch (error) {

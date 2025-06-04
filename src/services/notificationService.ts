@@ -1,3 +1,4 @@
+
 import { api } from "@/lib/api";
 
 export interface PushSubscription {
@@ -15,13 +16,13 @@ class NotificationService {
 	async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
 		if ("serviceWorker" in navigator) {
 			try {
-				const registration = await navigator.serviceWorker.register("/sw.js", {
-					scope: "/",
-				});
-				console.log("Service Worker registered:", registration);
+				// Register with the correct path
+				const registration = await navigator.serviceWorker.register("/sw.js");
+				console.log("Service Worker registered successfully:", registration);
 
 				// Wait for service worker to be ready
 				await navigator.serviceWorker.ready;
+				console.log("Service Worker is ready");
 
 				return registration;
 			} catch (error) {
@@ -29,6 +30,7 @@ class NotificationService {
 				return null;
 			}
 		}
+		console.warn("Service Worker not supported");
 		return null;
 	}
 
@@ -37,13 +39,25 @@ class NotificationService {
 			throw new Error("Notifications not supported");
 		}
 
+		// First check current permission
+		if (Notification.permission === "granted") {
+			return "granted";
+		}
+
+		if (Notification.permission === "denied") {
+			return "denied";
+		}
+
+		// Request permission
 		const permission = await Notification.requestPermission();
-		console.log("Notification permission:", permission);
+		console.log("Notification permission result:", permission);
 		return permission;
 	}
 
 	async subscribeToPush(userId: string): Promise<PushSubscription | null> {
 		try {
+			console.log("Starting push subscription for user:", userId);
+
 			const registration = await this.registerServiceWorker();
 			if (!registration) {
 				throw new Error("Service Worker not available");
@@ -51,16 +65,17 @@ class NotificationService {
 
 			// Check if already subscribed
 			let subscription = await registration.pushManager.getSubscription();
+			console.log("Existing subscription:", subscription);
 
 			if (!subscription) {
+				console.log("Creating new push subscription...");
 				// Create new subscription
 				subscription = await registration.pushManager.subscribe({
 					userVisibleOnly: true,
 					applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
 				});
+				console.log("New subscription created:", subscription);
 			}
-
-			console.log("Push subscription created:", subscription);
 
 			// Convert subscription to our format
 			const subscriptionData = {
@@ -79,14 +94,15 @@ class NotificationService {
 				},
 			};
 
+			console.log("Sending subscription to backend:", subscriptionData);
+
 			// Send subscription to backend
-			await api.post("/api/notifications/subscribe", {
+			const response = await api.post("/api/notifications/subscribe", {
 				userId,
 				subscription: subscriptionData,
 			});
 
-			console.log("Subscription sent to backend successfully");
-
+			console.log("Backend response:", response.data);
 			return subscriptionData;
 		} catch (error) {
 			console.error("Push subscription failed:", error);
@@ -115,12 +131,13 @@ class NotificationService {
 		message: string
 	): Promise<void> {
 		try {
+			console.log("Sending test notification for user:", userId);
 			const response = await api.post("/api/notifications/send-push", {
 				userId,
 				title,
 				message,
 			});
-			console.log("Test notification response:", response.data);
+			console.log("Test notification sent:", response.data);
 		} catch (error) {
 			console.error("Failed to send test notification:", error);
 			throw error;
