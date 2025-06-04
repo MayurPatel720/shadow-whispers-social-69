@@ -42,14 +42,6 @@ router.post("/", protect, async (req, res) => {
 				icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 				tag: `notification-${notification._id}`,
 				timestamp: Date.now(),
-				requireInteraction: req.headers['user-agent']?.includes('Mobile') || false,
-				vibrate: req.headers['user-agent']?.includes('Mobile') ? [200, 100, 200] : undefined,
-				actions: req.headers['user-agent']?.includes('Mobile') ? [
-					{
-						action: 'open',
-						title: 'Open App'
-					}
-				] : undefined
 			};
 
 			// Emit to user's room

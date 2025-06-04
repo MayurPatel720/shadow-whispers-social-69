@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -80,11 +81,6 @@ const NotificationPermission: React.FC<NotificationPermissionProps> = ({
                 tag: "welcome-mobile",
                 requireInteraction: true,
               };
-
-              // Add vibrate for mobile devices
-              if (deviceType === 'mobile') {
-                (notificationOptions as any).vibrate = [200, 100, 200];
-              }
 
               const testNotification = new Notification("Welcome! 🎉", notificationOptions);
               

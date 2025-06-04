@@ -21,52 +21,17 @@ const NotificationButton: React.FC = () => {
 	useEffect(() => {
 		if (!userId) {
 			console.log("No user ID available. Please log in.");
-			toast({
-				variant: "destructive",
-				title: "Authentication Error",
-				description: "Please log in to receive notifications.",
-			});
 			return;
 		}
 
 		// Check notification support
 		if (!("Notification" in window)) {
 			console.log("Browser does not support notifications.");
-			toast({
-				variant: "destructive",
-				title: "Browser Not Supported",
-				description: "Your browser doesn't support push notifications. Try using Chrome, Firefox, or Safari.",
-			});
 			return;
 		}
 
 		// Set initial permission status
 		setPermissionStatus(Notification.permission);
-
-		// Special handling for mobile browsers
-		const handleMobileNotifications = () => {
-			if (isMobile) {
-				// For iOS Safari, notifications only work if the site is added to home screen
-				if (isIOS && !(navigator as any).standalone) {
-					toast({
-						title: "iOS Notification Setup",
-						description: "On iOS, add this app to your home screen for full notification support.",
-						duration: 8000,
-					});
-				}
-				
-				// For Android Chrome, ensure notifications are enabled
-				if (isAndroid && Notification.permission === 'default') {
-					toast({
-						title: "Enable Notifications",
-						description: "Tap 'Enable Notifications' and allow when prompted for the best experience.",
-						duration: 6000,
-					});
-				}
-			}
-		};
-
-		handleMobileNotifications();
 
 		const socket = initSocket();
 
@@ -78,11 +43,6 @@ const NotificationButton: React.FC = () => {
 
 		socket.on("connect_error", (err) => {
 			console.error("Notification socket connection error:", err.message);
-			toast({
-				variant: "destructive",
-				title: "Connection Error",
-				description: "Failed to connect to notification service.",
-			});
 		});
 
 		socket.on(
@@ -100,25 +60,12 @@ const NotificationButton: React.FC = () => {
 				// Try to show browser notification if permission is granted
 				if (Notification.permission === "granted") {
 					try {
-						// Enhanced notification options for mobile
+						// Simple notification options that work on all browsers
 						const notificationOptions: NotificationOptions = {
 							body,
 							icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
-							badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 							tag: "whisper-notification-" + Date.now(),
-							requireInteraction: isMobile,
-							actions: isMobile ? [
-								{
-									action: 'open',
-									title: 'Open App'
-								}
-							] : undefined
 						};
-
-						// Add vibrate for mobile devices using type assertion
-						if (isMobile) {
-							(notificationOptions as any).vibrate = [200, 100, 200];
-						}
 
 						const notification = new Notification(title, notificationOptions);
 						
@@ -140,24 +87,9 @@ const NotificationButton: React.FC = () => {
 						console.log("Browser notification displayed:", title);
 					} catch (error) {
 						console.error("Error showing notification:", error);
-						// Fallback to enhanced in-app notification
-						toast({
-							title: "📱 " + title,
-							description: body + " (Browser notification failed)",
-							duration: 8000,
-						});
 					}
 				} else {
 					console.warn("Notification permission not granted:", Notification.permission);
-					
-					// Show permission reminder for mobile users
-					if (isMobile && Notification.permission === 'denied') {
-						toast({
-							title: "Notifications Disabled",
-							description: "Go to browser settings > Site settings > Notifications to enable alerts.",
-							duration: 6000,
-						});
-					}
 				}
 			}
 		);
@@ -190,7 +122,7 @@ const NotificationButton: React.FC = () => {
 
 			const response = await api.post("/api/notifications", {
 				title: "Test Notification",
-				message: "This is a test from your mobile device!",
+				message: "This is a test notification!",
 				userId,
 			});
 			
@@ -201,19 +133,13 @@ const NotificationButton: React.FC = () => {
 				description: "Check if you received the notification!",
 			});
 			
-			// Show enhanced test browser notification for mobile
+			// Show simple test browser notification
 			if (Notification.permission === "granted") {
 				const notificationOptions: NotificationOptions = {
-					body: "This is a test from your mobile device!",
+					body: "This is a test notification!",
 					icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 					tag: "test-notification",
-					requireInteraction: isMobile,
 				};
-
-				// Add vibrate for mobile devices using type assertion
-				if (isMobile) {
-					(notificationOptions as any).vibrate = [300, 200, 300];
-				}
 
 				const notification = new Notification("Test Notification", notificationOptions);
 				
@@ -259,11 +185,6 @@ const NotificationButton: React.FC = () => {
 							icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
 							tag: "welcome-notification",
 						};
-
-						// Add vibrate for mobile devices using type assertion
-						if (isMobile) {
-							(notificationOptions as any).vibrate = [200, 100, 200];
-						}
 
 						const welcomeNotification = new Notification("Welcome!", notificationOptions);
 						

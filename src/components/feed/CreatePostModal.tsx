@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api";
-import { Ghost, ImageIcon, Video, Loader2, X, Plus, Upload } from "lucide-react";
+import { Ghost, ImageIcon, Video, Loader2, X, Plus, Upload, Camera, FolderOpen } from "lucide-react";
 import ImageSlider from "@/components/ui/image-slider";
 
 interface CreatePostModalProps {
@@ -39,6 +39,8 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   // Refs for mobile file inputs
   const imageInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const imageCameraRef = useRef<HTMLInputElement>(null);
+  const videoCameraRef = useRef<HTMLInputElement>(null);
 
   // Check if we're on mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -202,6 +204,18 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const triggerVideoPicker = () => {
     if (videoInputRef.current) {
       videoInputRef.current.click();
+    }
+  };
+
+  const triggerImageCamera = () => {
+    if (imageCameraRef.current) {
+      imageCameraRef.current.click();
+    }
+  };
+
+  const triggerVideoCamera = () => {
+    if (videoCameraRef.current) {
+      videoCameraRef.current.click();
     }
   };
 
@@ -421,29 +435,56 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex flex-col space-y-2">
+            {/* Photo options */}
+            <div className="grid grid-cols-2 gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className={`text-purple-300 border-purple-700 flex-1 sm:flex-none ${isMobile ? 'p-3' : ''}`}
-                onClick={triggerImagePicker}
+                className="text-purple-300 border-purple-700"
+                onClick={triggerImageCamera}
                 disabled={isUploading || isSubmitting || totalFiles >= 10}
               >
-                <ImageIcon className="mr-2 w-4 h-4" />
-                {isMobile ? 'Photos' : 'Images'}
+                <Camera className="mr-2 w-4 h-4" />
+                Take Photo
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className={`text-purple-300 border-purple-700 flex-1 sm:flex-none ${isMobile ? 'p-3' : ''}`}
-                onClick={triggerVideoPicker}
+                className="text-purple-300 border-purple-700"
+                onClick={triggerImagePicker}
+                disabled={isUploading || isSubmitting || totalFiles >= 10}
+              >
+                <FolderOpen className="mr-2 w-4 h-4" />
+                Choose Photos
+              </Button>
+            </div>
+
+            {/* Video options */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-purple-300 border-purple-700"
+                onClick={triggerVideoCamera}
                 disabled={isUploading || isSubmitting || totalFiles >= 10}
               >
                 <Video className="mr-2 w-4 h-4" />
-                Videos
+                Record Video
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="text-purple-300 border-purple-700"
+                onClick={triggerVideoPicker}
+                disabled={isUploading || isSubmitting || totalFiles >= 10}
+              >
+                <FolderOpen className="mr-2 w-4 h-4" />
+                Choose Videos
               </Button>
             </div>
             
@@ -455,7 +496,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               multiple
               className="hidden"
               onChange={handleImageUpload}
-              capture="environment"  // This helps on mobile to access camera
+            />
+            <input
+              ref={imageCameraRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+              capture="environment"
             />
             <input
               ref={videoInputRef}
@@ -464,7 +512,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               multiple
               className="hidden"
               onChange={handleVideoUpload}
-              capture="environment"  // This helps on mobile to access camera
+            />
+            <input
+              ref={videoCameraRef}
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={handleVideoUpload}
+              capture="environment"
             />
 
             <div className="text-xs text-gray-400 flex items-center gap-2">
