@@ -1,5 +1,7 @@
 
 // Service Worker for Push Notifications
+const CACHE_NAME = 'undercover-v1';
+
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing');
   self.skipWaiting();
@@ -14,29 +16,46 @@ self.addEventListener('push', (event) => {
   console.log('Push notification received:', event);
   
   if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body || data.message,
-      icon: data.icon || '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
-      badge: data.badge || '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
-      tag: data.tag || 'default',
-      data: data,
-      requireInteraction: true,
-      actions: [
-        {
-          action: 'open',
-          title: 'Open App'
-        },
-        {
-          action: 'close',
-          title: 'Close'
-        }
-      ]
-    };
+    try {
+      const data = event.data.json();
+      console.log('Push data:', data);
+      
+      const options = {
+        body: data.body || data.message,
+        icon: data.icon || '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
+        badge: data.badge || '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
+        tag: data.tag || 'default',
+        data: data.data || data,
+        requireInteraction: true,
+        vibrate: [200, 100, 200],
+        actions: [
+          {
+            action: 'open',
+            title: 'Open App',
+            icon: '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png'
+          },
+          {
+            action: 'close',
+            title: 'Close'
+          }
+        ]
+      };
 
-    event.waitUntil(
-      self.registration.showNotification(data.title || 'New Notification', options)
-    );
+      event.waitUntil(
+        self.registration.showNotification(data.title || 'New Notification', options)
+      );
+    } catch (error) {
+      console.error('Error processing push data:', error);
+      
+      // Fallback notification
+      event.waitUntil(
+        self.registration.showNotification('New Notification', {
+          body: 'You have a new notification',
+          icon: '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
+          badge: '/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png',
+        })
+      );
+    }
   }
 });
 
@@ -47,16 +66,22 @@ self.addEventListener('notificationclick', (event) => {
   
   if (event.action === 'open' || !event.action) {
     event.waitUntil(
-      self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        // Check if app is already open
         for (const client of clientList) {
-          if (client.url === '/' && 'focus' in client) {
+          if (client.url.includes(self.location.origin) && 'focus' in client) {
             return client.focus();
           }
         }
+        // Open new window if app is not open
         if (self.clients.openWindow) {
           return self.clients.openWindow('/');
         }
       })
     );
   }
+});
+
+self.addEventListener('notificationclose', (event) => {
+  console.log('Notification closed:', event);
 });

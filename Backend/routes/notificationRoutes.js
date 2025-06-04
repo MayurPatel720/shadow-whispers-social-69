@@ -4,9 +4,22 @@ const express = require("express");
 const router = express.Router();
 const Notification = require("../models/Notification");
 const { protect } = require("../middleware/authMiddleware");
+const webpush = require('web-push');
 
 // Mock subscription storage (in production, use a database)
 const pushSubscriptions = new Map();
+
+// Configure web-push with VAPID keys
+const vapidKeys = {
+  publicKey: 'BJKz8xKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN',
+  privateKey: 'your-private-vapid-key-here' // In production, use environment variables
+};
+
+webpush.setVapidDetails(
+  'mailto:your-email@example.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
 // POST /api/notifications/subscribe - Subscribe to push notifications
 router.post("/subscribe", protect, async (req, res) => {
@@ -20,7 +33,7 @@ router.post("/subscribe", protect, async (req, res) => {
 		// Store subscription (in production, save to database)
 		pushSubscriptions.set(userId, subscription);
 		
-		console.log(`Push subscription saved for user ${userId}`);
+		console.log(`Push subscription saved for user ${userId}:`, subscription);
 
 		res.status(200).json({ 
 			message: "Subscription saved successfully",
@@ -62,20 +75,47 @@ router.post("/send-push", protect, async (req, res) => {
 		// Get subscription for user
 		const subscription = pushSubscriptions.get(userId);
 		
+		let pushSent = false;
 		if (subscription) {
-			// In a real implementation, you would use the web-push library here
-			// const webpush = require('web-push');
-			// await webpush.sendNotification(subscription, JSON.stringify({
-			//   title: notificationData.title,
-			//   body: notificationData.message,
-			//   icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
-			//   tag: `notification-${notification._id}`
-			// }));
-			
-			console.log(`Push notification would be sent to user ${userId}`);
+			try {
+				const payload = JSON.stringify({
+					title: notificationData.title,
+					body: notificationData.message,
+					icon: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
+					badge: "/lovable-uploads/3284e0d6-4a6b-4a45-9681-a18bf2a0f69f.png",
+					tag: `notification-${notification._id}`,
+					data: {
+						notificationId: notification._id,
+						userId: userId,
+						timestamp: Date.now()
+					},
+					requireInteraction: true,
+					actions: [
+						{
+							action: 'open',
+							title: 'Open App'
+						},
+						{
+							action: 'close',
+							title: 'Close'
+						}
+					]
+				});
+
+				await webpush.sendNotification(subscription, payload);
+				pushSent = true;
+				console.log(`Push notification sent to user ${userId}`);
+			} catch (pushError) {
+				console.error('Push notification failed:', pushError);
+				// If push fails, remove invalid subscription
+				if (pushError.statusCode === 410) {
+					pushSubscriptions.delete(userId);
+					console.log(`Removed invalid subscription for user ${userId}`);
+				}
+			}
 		}
 
-		// Fallback to Socket.IO
+		// Fallback to Socket.IO for in-app notifications
 		if (global.io) {
 			const socketData = {
 				title: notificationData.title,
@@ -90,14 +130,14 @@ router.post("/send-push", protect, async (req, res) => {
 		}
 
 		res.status(200).json({ 
-			message: "Notification sent successfully", 
+			message: pushSent ? "Push notification sent successfully" : "Notification sent via socket", 
 			data: {
 				id: notification._id,
 				title: notification.title,
 				message: notification.message,
 				timestamp: notification.createdAt,
 				platform: notificationData.metadata.platform,
-				pushSent: !!subscription
+				pushSent: pushSent
 			}
 		});
 	} catch (error) {

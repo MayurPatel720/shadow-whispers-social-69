@@ -10,13 +10,19 @@ export interface PushSubscription {
 }
 
 class NotificationService {
-  private vapidPublicKey = 'BJKz8xKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN'; // This should be generated on backend
+  private vapidPublicKey = 'BJKz8xKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN7r2YnKVjWZONn8r8ZGZjUjJqYjKa2V8vKrqN';
 
   async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
     if ('serviceWorker' in navigator) {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js');
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
+        });
         console.log('Service Worker registered:', registration);
+        
+        // Wait for service worker to be ready
+        await navigator.serviceWorker.ready;
+        
         return registration;
       } catch (error) {
         console.error('Service Worker registration failed:', error);
@@ -32,6 +38,7 @@ class NotificationService {
     }
 
     const permission = await Notification.requestPermission();
+    console.log('Notification permission:', permission);
     return permission;
   }
 
@@ -42,30 +49,37 @@ class NotificationService {
         throw new Error('Service Worker not available');
       }
 
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
-      });
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription();
+      
+      if (!subscription) {
+        // Create new subscription
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
+        });
+      }
 
-      // Send subscription to backend
-      await api.post('/api/notifications/subscribe', {
-        userId,
-        subscription: {
-          endpoint: subscription.endpoint,
-          keys: {
-            p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh') as ArrayBuffer))),
-            auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth') as ArrayBuffer))),
-          },
-        },
-      });
+      console.log('Push subscription created:', subscription);
 
-      return {
+      // Convert subscription to our format
+      const subscriptionData = {
         endpoint: subscription.endpoint,
         keys: {
           p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh') as ArrayBuffer))),
           auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth') as ArrayBuffer))),
         },
       };
+
+      // Send subscription to backend
+      await api.post('/api/notifications/subscribe', {
+        userId,
+        subscription: subscriptionData,
+      });
+
+      console.log('Subscription sent to backend successfully');
+
+      return subscriptionData;
     } catch (error) {
       console.error('Push subscription failed:', error);
       return null;
@@ -89,14 +103,28 @@ class NotificationService {
 
   async sendTestNotification(userId: string, title: string, message: string): Promise<void> {
     try {
-      await api.post('/api/notifications/send-push', {
+      const response = await api.post('/api/notifications/send-push', {
         userId,
         title,
         message,
       });
+      console.log('Test notification response:', response.data);
     } catch (error) {
       console.error('Failed to send test notification:', error);
       throw error;
+    }
+  }
+
+  async checkSubscription(): Promise<boolean> {
+    try {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) return false;
+      
+      const subscription = await registration.pushManager.getSubscription();
+      return !!subscription;
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return false;
     }
   }
 }
