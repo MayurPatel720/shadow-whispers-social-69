@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api";
-import { Ghost, ImageIcon, Video, Loader2, X, Plus } from "lucide-react";
+import { Ghost, ImageIcon, Video, Loader2, X, Plus, Upload } from "lucide-react";
 import ImageSlider from "@/components/ui/image-slider";
 
 interface CreatePostModalProps {
@@ -35,6 +35,13 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   const [videoFiles, setVideoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Refs for mobile file inputs
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if we're on mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   const compressVideo = async (file: File): Promise<File> => {
     // For now, return the original file
@@ -42,7 +49,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
     return file;
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     
     if (imageFiles.length + videoFiles.length + files.length > 10) {
@@ -54,23 +61,63 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       return;
     }
 
-    files.forEach(file => {
-      if (file.size > 5 * 1024 * 1024) {
+    // Enhanced validation for mobile
+    const validFiles = files.filter(file => {
+      // Check file type
+      if (!file.type.startsWith('image/')) {
         toast({
-          title: "File too large",
-          description: "Each image must be under 5MB.",
+          title: "Invalid file type",
+          description: `${file.name} is not an image file.`,
           variant: "destructive",
         });
-        return;
+        return false;
       }
-
-      setImageFiles(prev => [...prev, file]);
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImages(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
+      
+      // Check file size (increased limit for mobile photos which are often larger)
+      const maxSize = isMobile ? 10 * 1024 * 1024 : 5 * 1024 * 1024; // 10MB on mobile, 5MB on desktop
+      if (file.size > maxSize) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is too large. Maximum size is ${isMobile ? '10MB' : '5MB'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
     });
+
+    // Process valid files
+    for (const file of validFiles) {
+      try {
+        setImageFiles(prev => [...prev, file]);
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImages(prev => [...prev, reader.result as string]);
+        };
+        reader.onerror = () => {
+          toast({
+            title: "File read error",
+            description: `Could not read ${file.name}. Please try again.`,
+            variant: "destructive",
+          });
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        toast({
+          title: "Image processing failed",
+          description: `Could not process ${file.name}.`,
+          variant: "destructive",
+        });
+      }
+    }
+
+    // Clear input for mobile compatibility
+    if (e.target) {
+      e.target.value = '';
+    }
   };
 
   const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,16 +132,34 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       return;
     }
 
-    for (const file of files) {
-      if (file.size > 50 * 1024 * 1024) { // 50MB limit for videos
+    // Enhanced validation for mobile
+    const validFiles = files.filter(file => {
+      // Check file type
+      if (!file.type.startsWith('video/')) {
         toast({
-          title: "Video too large",
-          description: "Each video must be under 50MB.",
+          title: "Invalid file type",
+          description: `${file.name} is not a video file.`,
           variant: "destructive",
         });
-        continue;
+        return false;
       }
+      
+      // Check file size (increased limit for mobile videos)
+      const maxSize = isMobile ? 100 * 1024 * 1024 : 50 * 1024 * 1024; // 100MB on mobile, 50MB on desktop
+      if (file.size > maxSize) {
+        toast({
+          title: "Video too large",
+          description: `${file.name} is too large. Maximum size is ${isMobile ? '100MB' : '50MB'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      return true;
+    });
 
+    // Process valid files
+    for (const file of validFiles) {
       try {
         const compressedFile = await compressVideo(file);
         setVideoFiles(prev => [...prev, compressedFile]);
@@ -103,15 +168,40 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
         reader.onload = () => {
           setVideos(prev => [...prev, { url: reader.result as string }]);
         };
+        reader.onerror = () => {
+          toast({
+            title: "File read error",
+            description: `Could not read ${file.name}. Please try again.`,
+            variant: "destructive",
+          });
+        };
         reader.readAsDataURL(compressedFile);
       } catch (error) {
         console.error('Error processing video:', error);
         toast({
           title: "Video processing failed",
-          description: "Could not process the video file.",
+          description: `Could not process ${file.name}.`,
           variant: "destructive",
         });
       }
+    }
+
+    // Clear input for mobile compatibility
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  // Enhanced mobile-friendly file picker functions
+  const triggerImagePicker = () => {
+    if (imageInputRef.current) {
+      imageInputRef.current.click();
+    }
+  };
+
+  const triggerVideoPicker = () => {
+    if (videoInputRef.current) {
+      videoInputRef.current.click();
     }
   };
 
@@ -160,6 +250,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             body: formData,
           });
 
+          if (!res.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+
           const data = await res.json();
           uploadedImageUrls.push(data.secure_url);
         }
@@ -177,6 +271,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             body: formData,
           });
 
+          if (!res.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+
           const data = await res.json();
           uploadedVideoUrls.push({
             url: data.secure_url,
@@ -189,8 +287,9 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       console.log("Media uploaded:", { images: uploadedImageUrls, videos: uploadedVideoUrls });
       setIsUploading(false);
 
-      // Fix: Pass the correct arguments to createPost (content, ghostCircleId, imageUrl, images, videos)
       await createPost(content, ghostCircleId, uploadedImageUrls[0], uploadedImageUrls, uploadedVideoUrls);
+      
+      // Reset form
       setContent("");
       setImages([]);
       setVideos([]);
@@ -205,6 +304,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       });
 
       onSuccess?.();
+      onOpenChange(false);
     } catch (error) {
       console.error("Error creating post:", error);
       toast({
@@ -322,24 +422,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
           )}
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={() => document.getElementById("image-upload")?.click()}
+                className={`text-purple-300 border-purple-700 flex-1 sm:flex-none ${isMobile ? 'p-3' : ''}`}
+                onClick={triggerImagePicker}
                 disabled={isUploading || isSubmitting || totalFiles >= 10}
               >
                 <ImageIcon className="mr-2 w-4 h-4" />
-                Images
+                {isMobile ? 'Photos' : 'Images'}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="text-purple-300 border-purple-700"
-                onClick={() => document.getElementById("video-upload")?.click()}
+                className={`text-purple-300 border-purple-700 flex-1 sm:flex-none ${isMobile ? 'p-3' : ''}`}
+                onClick={triggerVideoPicker}
                 disabled={isUploading || isSubmitting || totalFiles >= 10}
               >
                 <Video className="mr-2 w-4 h-4" />
@@ -347,21 +447,24 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
               </Button>
             </div>
             
+            {/* Enhanced file inputs for mobile */}
             <input
+              ref={imageInputRef}
               type="file"
-              id="image-upload"
               accept="image/*"
               multiple
               className="hidden"
               onChange={handleImageUpload}
+              capture="environment"  // This helps on mobile to access camera
             />
             <input
+              ref={videoInputRef}
               type="file"
-              id="video-upload"
               accept="video/*"
               multiple
               className="hidden"
               onChange={handleVideoUpload}
+              capture="environment"  // This helps on mobile to access camera
             />
 
             <div className="text-xs text-gray-400 flex items-center gap-2">
@@ -376,6 +479,16 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             </div>
           </div>
 
+          {/* Mobile-specific upload status */}
+          {isUploading && (
+            <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-purple-300">
+                <Loader2 size={16} className="animate-spin" />
+                <span className="text-sm">Uploading files... Please wait</span>
+              </div>
+            </div>
+          )}
+
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
@@ -389,12 +502,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
             <Button
               type="submit"
               className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
-              disabled={(!content.trim() && totalFiles === 0) || isSubmitting}
+              disabled={(!content.trim() && totalFiles === 0) || isSubmitting || isUploading}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="animate-spin mr-2" />
                   Posting...
+                </>
+              ) : isUploading ? (
+                <>
+                  <Upload size={16} className="animate-pulse mr-2" />
+                  Uploading...
                 </>
               ) : (
                 "Post Anonymously"
