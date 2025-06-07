@@ -118,26 +118,34 @@ router.get('/users/:id', adminAuth, async (req, res) => {
   }
 });
 
-// PUT /api/admin/users/:id/ban - Ban/unban a user
+// PUT /api/admin/users/:id/ban - Ban/unban a user with proper persistence
 router.put('/users/:id/ban', adminAuth, async (req, res) => {
   try {
     console.log('Toggling user ban status:', req.params.id);
     const { banned } = req.body;
     
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { banned: banned },
-      { new: true }
-    ).select('-password');
-    
+    // Ensure the banned field is properly set and saved
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    console.log(`User ${banned ? 'banned' : 'unbanned'} successfully`);
+    user.banned = banned;
+    if (banned) {
+      user.bannedAt = new Date();
+    } else {
+      user.bannedAt = null;
+    }
+    
+    await user.save();
+    
+    // Return user without password
+    const updatedUser = await User.findById(req.params.id).select('-password');
+    
+    console.log(`User ${banned ? 'banned' : 'unbanned'} successfully, new status:`, updatedUser.banned);
     res.json({ 
       message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
-      user 
+      user: updatedUser
     });
   } catch (error) {
     console.error('Error updating user ban status:', error);
@@ -181,24 +189,25 @@ router.get('/stats', adminAuth, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/users/:id - Delete a user (soft delete by banning)
+// DELETE /api/admin/users/:id - Soft delete a user (ban them permanently)
 router.delete('/users/:id', adminAuth, async (req, res) => {
   try {
-    console.log('Deleting user:', req.params.id);
+    console.log('Soft deleting user:', req.params.id);
     
-    // Instead of actual deletion, we ban the user to preserve data integrity
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { banned: true, deletedAt: new Date() },
-      { new: true }
-    ).select('-password');
-    
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
     
+    user.banned = true;
+    user.bannedAt = new Date();
+    user.deletedAt = new Date();
+    await user.save();
+    
+    const updatedUser = await User.findById(req.params.id).select('-password');
+    
     console.log('User soft-deleted (banned) successfully');
-    res.json({ message: 'User deleted successfully', user });
+    res.json({ message: 'User deleted successfully', user: updatedUser });
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

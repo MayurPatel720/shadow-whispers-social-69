@@ -66,11 +66,30 @@ const AdminPanel = () => {
     fetchData();
   }, []);
 
+  const calculateStats = (fetchedPosts: AdminPost[], fetchedUsers: AdminUser[]) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const postsToday = fetchedPosts.filter(post => 
+      new Date(post.createdAt) >= today
+    ).length;
+    
+    const activeUsers = fetchedUsers.filter(user => !user.banned).length;
+    const bannedUsers = fetchedUsers.filter(user => user.banned).length;
+    
+    return {
+      totalUsers: fetchedUsers.length,
+      totalPosts: fetchedPosts.length,
+      activeUsers,
+      bannedUsers,
+      postsToday
+    };
+  };
+
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Set admin token in headers
       const token = localStorage.getItem('adminAuth');
       if (token) {
         api.defaults.headers['Authorization'] = `Bearer admin-${token}`;
@@ -78,7 +97,6 @@ const AdminPanel = () => {
       
       console.log('Fetching admin data...');
       
-      // Fetch posts and users
       const [postsResponse, usersResponse] = await Promise.all([
         api.get('/api/admin/posts'),
         api.get('/api/admin/users')
@@ -90,24 +108,9 @@ const AdminPanel = () => {
       setPosts(fetchedPosts);
       setUsers(fetchedUsers);
       
-      // Calculate stats
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const postsToday = fetchedPosts.filter(post => 
-        new Date(post.createdAt) >= today
-      ).length;
-      
-      const activeUsers = fetchedUsers.filter(user => !user.banned).length;
-      const bannedUsers = fetchedUsers.filter(user => user.banned).length;
-      
-      setStats({
-        totalUsers: fetchedUsers.length,
-        totalPosts: fetchedPosts.length,
-        activeUsers,
-        bannedUsers,
-        postsToday
-      });
+      // Calculate and set stats
+      const calculatedStats = calculateStats(fetchedPosts, fetchedUsers);
+      setStats(calculatedStats);
       
       console.log(`Loaded ${fetchedPosts.length} posts and ${fetchedUsers.length} users`);
     } catch (error) {
@@ -127,7 +130,13 @@ const AdminPanel = () => {
     
     try {
       await api.delete(`/api/admin/posts/${postId}`);
-      setPosts(posts.filter(post => post._id !== postId));
+      const updatedPosts = posts.filter(post => post._id !== postId);
+      setPosts(updatedPosts);
+      
+      // Recalculate stats
+      const updatedStats = calculateStats(updatedPosts, users);
+      setStats(updatedStats);
+      
       toast({
         title: "Post deleted",
         description: "Post has been successfully deleted.",
@@ -148,9 +157,16 @@ const AdminPanel = () => {
     
     try {
       await api.put(`/api/admin/users/${userId}/ban`, { banned });
-      setUsers(users.map(user => 
+      
+      const updatedUsers = users.map(user => 
         user._id === userId ? { ...user, banned } : user
-      ));
+      );
+      setUsers(updatedUsers);
+      
+      // Recalculate stats after user ban/unban
+      const updatedStats = calculateStats(posts, updatedUsers);
+      setStats(updatedStats);
+      
       toast({
         title: `User ${action}ned`,
         description: `User has been successfully ${action}ned.`,
@@ -243,7 +259,7 @@ const AdminPanel = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Enhanced Stats */}
+        {/* Stats Dashboard */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-6">
@@ -346,74 +362,76 @@ const AdminPanel = () => {
                 <CardTitle className="text-white">Posts Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-700">
-                      <TableHead className="text-gray-300">Content</TableHead>
-                      <TableHead className="text-gray-300">Author</TableHead>
-                      <TableHead className="text-gray-300">Real User</TableHead>
-                      <TableHead className="text-gray-300">Anonymous</TableHead>
-                      <TableHead className="text-gray-300">Engagement</TableHead>
-                      <TableHead className="text-gray-300">Created</TableHead>
-                      <TableHead className="text-gray-300">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPosts.map((post) => (
-                      <TableRow key={post._id} className="border-gray-700">
-                        <TableCell className="text-white max-w-xs">
-                          <p className="truncate">{post.content}</p>
-                        </TableCell>
-                        <TableCell className="text-white">
-                          <div>
-                            <p className="font-medium">{post.user?.username || 'Unknown'}</p>
-                            <p className="text-sm text-gray-400">{post.user?.email || 'N/A'}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-white">
-                          <Badge variant="outline" className="border-blue-500 text-blue-400">
-                            {post.user?.fullName || 'Unknown'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-white">
-                          <div className="flex items-center gap-2">
-                            <span>{post.avatarEmoji}</span>
-                            <span>{post.anonymousAlias}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-white">
-                          <div className="text-sm">
-                            <div>❤️ {post.likes?.length || 0}</div>
-                            <div>💬 {post.comments?.length || 0}</div>
-                            <div>📤 {post.shareCount || 0}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-400">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEditPost(post)}
-                              className="border-gray-600"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeletePost(post._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gray-700">
+                        <TableHead className="text-gray-300">Content</TableHead>
+                        <TableHead className="text-gray-300">Author</TableHead>
+                        <TableHead className="text-gray-300">Real User</TableHead>
+                        <TableHead className="text-gray-300">Anonymous</TableHead>
+                        <TableHead className="text-gray-300">Engagement</TableHead>
+                        <TableHead className="text-gray-300">Created</TableHead>
+                        <TableHead className="text-gray-300">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPosts.map((post) => (
+                        <TableRow key={post._id} className="border-gray-700">
+                          <TableCell className="text-white max-w-xs">
+                            <p className="truncate">{post.content}</p>
+                          </TableCell>
+                          <TableCell className="text-white">
+                            <div>
+                              <p className="font-medium">{post.user?.username || 'Unknown'}</p>
+                              <p className="text-sm text-gray-400">{post.user?.email || 'N/A'}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-white">
+                            <Badge variant="outline" className="border-blue-500 text-blue-400">
+                              {post.user?.fullName || 'Unknown'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-white">
+                            <div className="flex items-center gap-2">
+                              <span>{post.avatarEmoji}</span>
+                              <span>{post.anonymousAlias}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-white">
+                            <div className="text-sm">
+                              <div>❤️ {post.likes?.length || 0}</div>
+                              <div>💬 {post.comments?.length || 0}</div>
+                              <div>📤 {post.shareCount || 0}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-400">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditPost(post)}
+                                className="border-gray-600"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeletePost(post._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -424,65 +442,67 @@ const AdminPanel = () => {
                 <CardTitle className="text-white">Users Management</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-700">
-                      <TableHead className="text-gray-300">User</TableHead>
-                      <TableHead className="text-gray-300">Email</TableHead>
-                      <TableHead className="text-gray-300">Anonymous Alias</TableHead>
-                      <TableHead className="text-gray-300">Posts Count</TableHead>
-                      <TableHead className="text-gray-300">Status</TableHead>
-                      <TableHead className="text-gray-300">Joined</TableHead>
-                      <TableHead className="text-gray-300">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user._id} className="border-gray-700">
-                        <TableCell className="text-white">
-                          <div className="flex items-center gap-3">
-                            <span className="text-lg">{user.avatarEmoji || '🎭'}</span>
-                            <div>
-                              <p className="font-medium">{user.fullName}</p>
-                              <p className="text-sm text-gray-400">@{user.username}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-white">{user.email}</TableCell>
-                        <TableCell className="text-white">{user.anonymousAlias}</TableCell>
-                        <TableCell className="text-white">{user.posts?.length || 0}</TableCell>
-                        <TableCell>
-                          {user.banned ? (
-                            <Badge variant="destructive">Banned</Badge>
-                          ) : (
-                            <Badge variant="default" className="bg-green-500">Active</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-gray-400">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-gray-600"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={user.banned ? "default" : "destructive"}
-                              onClick={() => handleBanUser(user._id, !user.banned)}
-                            >
-                              {user.banned ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gray-700">
+                        <TableHead className="text-gray-300">User</TableHead>
+                        <TableHead className="text-gray-300">Email</TableHead>
+                        <TableHead className="text-gray-300">Anonymous Alias</TableHead>
+                        <TableHead className="text-gray-300">Posts Count</TableHead>
+                        <TableHead className="text-gray-300">Status</TableHead>
+                        <TableHead className="text-gray-300">Joined</TableHead>
+                        <TableHead className="text-gray-300">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user._id} className="border-gray-700">
+                          <TableCell className="text-white">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{user.avatarEmoji || '🎭'}</span>
+                              <div>
+                                <p className="font-medium">{user.fullName}</p>
+                                <p className="text-sm text-gray-400">@{user.username}</p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-white">{user.email}</TableCell>
+                          <TableCell className="text-white">{user.anonymousAlias}</TableCell>
+                          <TableCell className="text-white">{user.posts?.length || 0}</TableCell>
+                          <TableCell>
+                            {user.banned ? (
+                              <Badge variant="destructive">Banned</Badge>
+                            ) : (
+                              <Badge variant="default" className="bg-green-500">Active</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-gray-400">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-gray-600"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={user.banned ? "default" : "destructive"}
+                                onClick={() => handleBanUser(user._id, !user.banned)}
+                              >
+                                {user.banned ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
