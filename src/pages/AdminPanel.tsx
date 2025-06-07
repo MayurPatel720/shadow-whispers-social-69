@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Users, FileText, Trash2, Edit, Eye, LogOut, Search, Ban } from 'lucide-react';
+import { Shield, Users, FileText, Trash2, Edit, Eye, LogOut, Search, Ban, UserCheck, AlertTriangle, BarChart3 } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
@@ -41,6 +41,8 @@ interface AdminUser {
   avatarEmoji: string;
   posts: string[];
   createdAt: string;
+  banned?: boolean;
+  isActive?: boolean;
 }
 
 const AdminPanel = () => {
@@ -52,6 +54,13 @@ const AdminPanel = () => {
   const [editingPost, setEditingPost] = useState<AdminPost | null>(null);
   const [editContent, setEditContent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalPosts: 0,
+    activeUsers: 0,
+    bannedUsers: 0,
+    postsToday: 0
+  });
 
   useEffect(() => {
     fetchData();
@@ -61,67 +70,61 @@ const AdminPanel = () => {
     try {
       setLoading(true);
       
-      // Add admin token to headers
+      // Set admin token in headers
       const token = localStorage.getItem('adminAuth');
       if (token) {
         api.defaults.headers['Authorization'] = `Bearer admin-${token}`;
       }
       
-      // Fetch posts with user details
-      const postsResponse = await api.get('/api/admin/posts');
-      setPosts(postsResponse.data);
+      console.log('Fetching admin data...');
       
-      // Fetch users
-      const usersResponse = await api.get('/api/admin/users');
-      setUsers(usersResponse.data);
+      // Fetch posts and users
+      const [postsResponse, usersResponse] = await Promise.all([
+        api.get('/api/admin/posts'),
+        api.get('/api/admin/users')
+      ]);
+      
+      const fetchedPosts = postsResponse.data || [];
+      const fetchedUsers = usersResponse.data || [];
+      
+      setPosts(fetchedPosts);
+      setUsers(fetchedUsers);
+      
+      // Calculate stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const postsToday = fetchedPosts.filter(post => 
+        new Date(post.createdAt) >= today
+      ).length;
+      
+      const activeUsers = fetchedUsers.filter(user => !user.banned).length;
+      const bannedUsers = fetchedUsers.filter(user => user.banned).length;
+      
+      setStats({
+        totalUsers: fetchedUsers.length,
+        totalPosts: fetchedPosts.length,
+        activeUsers,
+        bannedUsers,
+        postsToday
+      });
+      
+      console.log(`Loaded ${fetchedPosts.length} posts and ${fetchedUsers.length} users`);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch data. Using mock data for demo.",
+        description: "Failed to fetch data. Please check your admin credentials.",
       });
-      
-      // Mock data for demo
-      setPosts([
-        {
-          _id: '1',
-          content: 'This is a sample post content',
-          anonymousAlias: 'ShadowWolf',
-          avatarEmoji: '🎭',
-          likes: [],
-          comments: [],
-          createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          shareCount: 5,
-          user: {
-            _id: 'user1',
-            username: 'john_doe',
-            email: 'john@example.com',
-            fullName: 'John Doe',
-            anonymousAlias: 'ShadowWolf'
-          }
-        }
-      ]);
-      
-      setUsers([
-        {
-          _id: 'user1',
-          username: 'john_doe',
-          email: 'john@example.com',
-          fullName: 'John Doe',
-          anonymousAlias: 'ShadowWolf',
-          avatarEmoji: '🎭',
-          posts: ['1'],
-          createdAt: new Date().toISOString()
-        }
-      ]);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
     try {
       await api.delete(`/api/admin/posts/${postId}`);
       setPosts(posts.filter(post => post._id !== postId));
@@ -131,11 +134,33 @@ const AdminPanel = () => {
       });
     } catch (error) {
       console.error('Error deleting post:', error);
-      // For demo, remove from local state
-      setPosts(posts.filter(post => post._id !== postId));
       toast({
-        title: "Post deleted",
-        description: "Post has been successfully deleted.",
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete post. Please try again.",
+      });
+    }
+  };
+
+  const handleBanUser = async (userId: string, banned: boolean) => {
+    const action = banned ? 'ban' : 'unban';
+    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    
+    try {
+      await api.put(`/api/admin/users/${userId}/ban`, { banned });
+      setUsers(users.map(user => 
+        user._id === userId ? { ...user, banned } : user
+      ));
+      toast({
+        title: `User ${action}ned`,
+        description: `User has been successfully ${action}ned.`,
+      });
+    } catch (error) {
+      console.error(`Error ${action}ning user:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `Failed to ${action} user. Please try again.`,
       });
     }
   };
@@ -149,7 +174,7 @@ const AdminPanel = () => {
     if (!editingPost) return;
     
     try {
-      await api.put(`/api/admin/posts/${editingPost._id}`, {
+      const response = await api.put(`/api/admin/posts/${editingPost._id}`, {
         content: editContent
       });
       
@@ -168,19 +193,10 @@ const AdminPanel = () => {
       });
     } catch (error) {
       console.error('Error updating post:', error);
-      // For demo, update local state
-      setPosts(posts.map(post => 
-        post._id === editingPost._id 
-          ? { ...post, content: editContent }
-          : post
-      ));
-      
-      setEditingPost(null);
-      setEditContent('');
-      
       toast({
-        title: "Post updated",
-        description: "Post has been successfully updated.",
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update post. Please try again.",
       });
     }
   };
@@ -227,8 +243,8 @@ const AdminPanel = () => {
       </div>
 
       <div className="max-w-7xl mx-auto p-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Enhanced Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -236,7 +252,7 @@ const AdminPanel = () => {
                   <Users className="h-6 w-6 text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{users.length}</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalUsers}</p>
                   <p className="text-gray-400">Total Users</p>
                 </div>
               </div>
@@ -250,7 +266,7 @@ const AdminPanel = () => {
                   <FileText className="h-6 w-6 text-green-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">{posts.length}</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalPosts}</p>
                   <p className="text-gray-400">Total Posts</p>
                 </div>
               </div>
@@ -260,12 +276,40 @@ const AdminPanel = () => {
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-500/20 rounded-full">
-                  <Shield className="h-6 w-6 text-purple-400" />
+                <div className="p-3 bg-emerald-500/20 rounded-full">
+                  <UserCheck className="h-6 w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-white">Admin</p>
-                  <p className="text-gray-400">Panel Access</p>
+                  <p className="text-2xl font-bold text-white">{stats.activeUsers}</p>
+                  <p className="text-gray-400">Active Users</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-red-500/20 rounded-full">
+                  <Ban className="h-6 w-6 text-red-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{stats.bannedUsers}</p>
+                  <p className="text-gray-400">Banned Users</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-800 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-yellow-500/20 rounded-full">
+                  <BarChart3 className="h-6 w-6 text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{stats.postsToday}</p>
+                  <p className="text-gray-400">Posts Today</p>
                 </div>
               </div>
             </CardContent>
@@ -309,6 +353,7 @@ const AdminPanel = () => {
                       <TableHead className="text-gray-300">Author</TableHead>
                       <TableHead className="text-gray-300">Real User</TableHead>
                       <TableHead className="text-gray-300">Anonymous</TableHead>
+                      <TableHead className="text-gray-300">Engagement</TableHead>
                       <TableHead className="text-gray-300">Created</TableHead>
                       <TableHead className="text-gray-300">Actions</TableHead>
                     </TableRow>
@@ -334,6 +379,13 @@ const AdminPanel = () => {
                           <div className="flex items-center gap-2">
                             <span>{post.avatarEmoji}</span>
                             <span>{post.anonymousAlias}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-white">
+                          <div className="text-sm">
+                            <div>❤️ {post.likes?.length || 0}</div>
+                            <div>💬 {post.comments?.length || 0}</div>
+                            <div>📤 {post.shareCount || 0}</div>
                           </div>
                         </TableCell>
                         <TableCell className="text-gray-400">
@@ -379,6 +431,7 @@ const AdminPanel = () => {
                       <TableHead className="text-gray-300">Email</TableHead>
                       <TableHead className="text-gray-300">Anonymous Alias</TableHead>
                       <TableHead className="text-gray-300">Posts Count</TableHead>
+                      <TableHead className="text-gray-300">Status</TableHead>
                       <TableHead className="text-gray-300">Joined</TableHead>
                       <TableHead className="text-gray-300">Actions</TableHead>
                     </TableRow>
@@ -388,7 +441,7 @@ const AdminPanel = () => {
                       <TableRow key={user._id} className="border-gray-700">
                         <TableCell className="text-white">
                           <div className="flex items-center gap-3">
-                            <span className="text-lg">{user.avatarEmoji}</span>
+                            <span className="text-lg">{user.avatarEmoji || '🎭'}</span>
                             <div>
                               <p className="font-medium">{user.fullName}</p>
                               <p className="text-sm text-gray-400">@{user.username}</p>
@@ -397,7 +450,14 @@ const AdminPanel = () => {
                         </TableCell>
                         <TableCell className="text-white">{user.email}</TableCell>
                         <TableCell className="text-white">{user.anonymousAlias}</TableCell>
-                        <TableCell className="text-white">{user.posts.length}</TableCell>
+                        <TableCell className="text-white">{user.posts?.length || 0}</TableCell>
+                        <TableCell>
+                          {user.banned ? (
+                            <Badge variant="destructive">Banned</Badge>
+                          ) : (
+                            <Badge variant="default" className="bg-green-500">Active</Badge>
+                          )}
+                        </TableCell>
                         <TableCell className="text-gray-400">
                           {new Date(user.createdAt).toLocaleDateString()}
                         </TableCell>
@@ -412,9 +472,10 @@ const AdminPanel = () => {
                             </Button>
                             <Button
                               size="sm"
-                              variant="destructive"
+                              variant={user.banned ? "default" : "destructive"}
+                              onClick={() => handleBanUser(user._id, !user.banned)}
                             >
-                              <Ban className="h-4 w-4" />
+                              {user.banned ? <UserCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
                             </Button>
                           </div>
                         </TableCell>

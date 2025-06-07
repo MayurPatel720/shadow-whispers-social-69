@@ -8,11 +8,14 @@ const User = require('../models/userModel');
 const adminAuth = (req, res, next) => {
   const { authorization } = req.headers;
   
+  console.log('Admin auth check, authorization:', authorization);
+  
   // Check for admin token in different formats
   if (authorization && (
     authorization.includes('admin') || 
     authorization.includes('Bearer admin-true') ||
-    authorization === 'Bearer admin-true'
+    authorization === 'Bearer admin-true' ||
+    authorization.includes('admin-true')
   )) {
     console.log('Admin access granted');
     next();
@@ -138,6 +141,66 @@ router.put('/users/:id/ban', adminAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating user ban status:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// GET /api/admin/stats - Get admin statistics
+router.get('/stats', adminAuth, async (req, res) => {
+  try {
+    console.log('Fetching admin stats...');
+    
+    const totalUsers = await User.countDocuments();
+    const totalPosts = await Post.countDocuments();
+    const bannedUsers = await User.countDocuments({ banned: true });
+    const activeUsers = totalUsers - bannedUsers;
+    
+    // Posts created today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const postsToday = await Post.countDocuments({
+      createdAt: { $gte: today, $lt: tomorrow }
+    });
+    
+    const stats = {
+      totalUsers,
+      totalPosts,
+      activeUsers,
+      bannedUsers,
+      postsToday
+    };
+    
+    console.log('Admin stats:', stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// DELETE /api/admin/users/:id - Delete a user (soft delete by banning)
+router.delete('/users/:id', adminAuth, async (req, res) => {
+  try {
+    console.log('Deleting user:', req.params.id);
+    
+    // Instead of actual deletion, we ban the user to preserve data integrity
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { banned: true, deletedAt: new Date() },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    console.log('User soft-deleted (banned) successfully');
+    res.json({ message: 'User deleted successfully', user });
+  } catch (error) {
+    console.error('Error deleting user:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
