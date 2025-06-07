@@ -22,9 +22,9 @@ import "./App.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <AdminProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <AdminProvider>
           <div className="App">
             <Routes>
               <Route path="/login" element={<Login />} />
@@ -98,9 +98,9 @@ function App() {
             </Routes>
             <Toaster />
           </div>
-        </Router>
-      </AdminProvider>
-    </AuthProvider>
+        </AdminProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
