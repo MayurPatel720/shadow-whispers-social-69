@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,9 +11,17 @@ import { useAdmin } from '@/context/AdminContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
-import { Post } from '@/types/user';
 
-interface AdminPost extends Post {
+interface AdminPost {
+  _id: string;
+  content: string;
+  anonymousAlias: string;
+  avatarEmoji: string;
+  likes: any[];
+  comments: any[];
+  createdAt: string;
+  expiresAt: string;
+  shareCount: number;
   user: {
     _id: string;
     username: string;
