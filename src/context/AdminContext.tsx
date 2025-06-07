@@ -20,15 +20,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const login = (email: string, password: string): boolean => {
+    console.log('Admin login attempt:', { email, password });
     if (email === 'admin@gmail.com' && password === 'admin123') {
       setIsAdminAuthenticated(true);
       localStorage.setItem('adminAuth', 'true');
+      console.log('Admin login successful');
       return true;
     }
+    console.log('Admin login failed');
     return false;
   };
 
   const logout = () => {
+    console.log('Admin logout');
     setIsAdminAuthenticated(false);
     localStorage.removeItem('adminAuth');
   };

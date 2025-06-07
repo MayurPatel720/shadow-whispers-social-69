@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ interface AdminPost {
     email: string;
     fullName: string;
     anonymousAlias: string;
-  };
+  } | null;
 }
 
 interface AdminUser {
@@ -59,6 +60,12 @@ const AdminPanel = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      // Add admin token to headers
+      const token = localStorage.getItem('adminAuth');
+      if (token) {
+        api.defaults.headers['Authorization'] = `Bearer admin-${token}`;
+      }
       
       // Fetch posts with user details
       const postsResponse = await api.get('/api/admin/posts');
@@ -185,8 +192,8 @@ const AdminPanel = () => {
 
   const filteredPosts = posts.filter(post => 
     post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (post.user?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (post.user?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredUsers = users.filter(user => 
@@ -314,13 +321,13 @@ const AdminPanel = () => {
                         </TableCell>
                         <TableCell className="text-white">
                           <div>
-                            <p className="font-medium">{post.user.username}</p>
-                            <p className="text-sm text-gray-400">{post.user.email}</p>
+                            <p className="font-medium">{post.user?.username || 'Unknown'}</p>
+                            <p className="text-sm text-gray-400">{post.user?.email || 'N/A'}</p>
                           </div>
                         </TableCell>
                         <TableCell className="text-white">
                           <Badge variant="outline" className="border-blue-500 text-blue-400">
-                            {post.user.fullName}
+                            {post.user?.fullName || 'Unknown'}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-white">

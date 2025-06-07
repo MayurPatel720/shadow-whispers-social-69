@@ -18,6 +18,7 @@ import InvitePage from "./pages/InvitePage";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminPanel from "./pages/AdminPanel";
+import AppShell from "./components/layout/AppShell";
 import "./App.css";
 
 function App() {
@@ -42,7 +43,9 @@ function App() {
                 path="/"
                 element={
                   <ProtectedRoute>
-                    <Index />
+                    <AppShell>
+                      <Index />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -50,7 +53,9 @@ function App() {
                 path="/profile/:userId?"
                 element={
                   <ProtectedRoute>
-                    <ProfilePage />
+                    <AppShell>
+                      <ProfilePage />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -58,7 +63,9 @@ function App() {
                 path="/referral"
                 element={
                   <ProtectedRoute>
-                    <ReferralPage />
+                    <AppShell>
+                      <ReferralPage />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -66,7 +73,9 @@ function App() {
                 path="/recognitions"
                 element={
                   <ProtectedRoute>
-                    <RecognitionsPage />
+                    <AppShell>
+                      <RecognitionsPage />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -74,7 +83,9 @@ function App() {
                 path="/ghost-circles"
                 element={
                   <ProtectedRoute>
-                    <GhostCircles />
+                    <AppShell>
+                      <GhostCircles />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -82,7 +93,9 @@ function App() {
                 path="/whispers"
                 element={
                   <ProtectedRoute>
-                    <WhispersPage />
+                    <AppShell>
+                      <WhispersPage />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
@@ -90,7 +103,9 @@ function App() {
                 path="/invite/:circleId"
                 element={
                   <ProtectedRoute>
-                    <InvitePage />
+                    <AppShell>
+                      <InvitePage />
+                    </AppShell>
                   </ProtectedRoute>
                 }
               />
