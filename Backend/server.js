@@ -1,3 +1,4 @@
+
 // server.js
 require("dotenv").config({ path: "./.env" });
 const express = require("express");
@@ -12,6 +13,7 @@ const ghostCircleRoutes = require("./routes/ghostCircleRoutes");
 const postRoutes = require("./routes/postRoutes");
 const whisperRoutes = require("./routes/whisperRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -73,6 +75,7 @@ app.use("/api/ghost-circles", ghostCircleRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/whispers", whisperRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Healthcheck Route
 app.get("/healthcheck", (req, res) => {
@@ -88,5 +91,5 @@ app.use((err, req, res, next) => {
 	});
 });
 
-const PORT = process.env.PORT || 8900; // Updated to match logs
+const PORT = process.env.PORT || 8900;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

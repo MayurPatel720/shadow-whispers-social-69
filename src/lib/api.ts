@@ -21,6 +21,15 @@ api.interceptors.request.use(
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
+		
+		// Add admin auth for admin routes
+		if (config.url?.includes('/admin/')) {
+			const adminAuth = localStorage.getItem('adminAuth');
+			if (adminAuth === 'true') {
+				config.headers.Authorization = `Bearer admin-token`;
+			}
+		}
+		
 		return config;
 	},
 	(error) => Promise.reject(error)
@@ -400,4 +409,38 @@ export const deleteConversation = async (userId: string): Promise<any> => {
 		console.error("Error deleting conversation:", error);
 		throw error?.response?.data || error;
 	}
+};
+
+// Admin API calls
+export const getAdminPosts = async (): Promise<any[]> => {
+	const response = await api.get("/api/admin/posts");
+	return response.data;
+};
+
+export const getAdminUsers = async (): Promise<any[]> => {
+	const response = await api.get("/api/admin/users");
+	return response.data;
+};
+
+export const deleteAdminPost = async (postId: string): Promise<void> => {
+	await api.delete(`/api/admin/posts/${postId}`);
+};
+
+export const updateAdminPost = async (
+	postId: string,
+	content: string,
+	images?: string[],
+	videos?: any[]
+): Promise<any> => {
+	const response = await api.put(`/api/admin/posts/${postId}`, {
+		content,
+		images: images || [],
+		videos: videos || [],
+	});
+	return response.data;
+};
+
+export const getAdminUser = async (userId: string): Promise<any> => {
+	const response = await api.get(`/api/admin/users/${userId}`);
+	return response.data;
 };
