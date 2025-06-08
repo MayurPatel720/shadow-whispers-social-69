@@ -38,93 +38,91 @@ function App() {
       <Router>
         <AuthProvider>
           <AdminProvider>
-            <div className="App">
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route 
-                  path="/admin" 
-                  element={
-                    <ProtectedAdminRoute>
-                      <AdminPanel />
-                    </ProtectedAdminRoute>
-                  } 
-                />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <Index />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile/:userId?"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <ProfilePage />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/referral"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <ReferralPage />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/recognitions"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <RecognitionsPage />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ghost-circles"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <GhostCircles />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/whispers"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <WhispersPage />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/invite/:circleId"
-                  element={
-                    <ProtectedRoute>
-                      <AppShell>
-                        <InvitePage />
-                      </AppShell>
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              <Toaster />
-            </div>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route 
+                path="/admin" 
+                element={
+                  <ProtectedAdminRoute>
+                    <AdminPanel />
+                  </ProtectedAdminRoute>
+                } 
+              />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Index />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/:userId?"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <ProfilePage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/referral"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <ReferralPage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/recognitions"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <RecognitionsPage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ghost-circles"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <GhostCircles />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/whispers"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <WhispersPage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/invite/:circleId"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <InvitePage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
           </AdminProvider>
         </AuthProvider>
       </Router>
