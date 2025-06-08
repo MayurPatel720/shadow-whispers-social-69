@@ -127,7 +127,7 @@ const ModernVideoPlayer: React.FC<ModernVideoPlayerProps> = ({
   return (
     <>
       <div
-        className={cn("relative group cursor-pointer overflow-hidden rounded-xl", className)}
+        className={cn("relative group cursor-pointer overflow-hidden rounded-xl bg-gray-900", className)}
         onMouseEnter={() => setShowControls(true)}
         onMouseLeave={() => setShowControls(false)}
         onTouchStart={showControlsTemporarily}

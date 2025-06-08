@@ -27,6 +27,7 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startX, setStartX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Combine images and videos into a single media array
@@ -56,22 +57,24 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartX(e.touches[0].clientX);
     setIsDragging(true);
+    setDragOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging) return;
-    e.preventDefault();
+    
+    const currentX = e.touches[0].clientX;
+    const diff = startX - currentX;
+    setDragOffset(diff);
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = () => {
     if (!isDragging) return;
     
-    const endX = e.changedTouches[0].clientX;
-    const diffX = startX - endX;
     const threshold = 50;
 
-    if (Math.abs(diffX) > threshold) {
-      if (diffX > 0) {
+    if (Math.abs(dragOffset) > threshold) {
+      if (dragOffset > 0) {
         nextSlide();
       } else {
         prevSlide();
@@ -79,6 +82,39 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
     }
 
     setIsDragging(false);
+    setDragOffset(0);
+  };
+
+  // Mouse handlers for desktop drag
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setStartX(e.clientX);
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    
+    const currentX = e.clientX;
+    const diff = startX - currentX;
+    setDragOffset(diff);
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging) return;
+    
+    const threshold = 50;
+
+    if (Math.abs(dragOffset) > threshold) {
+      if (dragOffset > 0) {
+        nextSlide();
+      } else {
+        prevSlide();
+      }
+    }
+
+    setIsDragging(false);
+    setDragOffset(0);
   };
 
   if (!mediaItems || mediaItems.length === 0) return null;
@@ -87,7 +123,7 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
     const item = mediaItems[0];
     return (
       <div className={cn("relative w-full", className)}>
-        <div className="w-full overflow-hidden rounded-xl bg-gray-100">
+        <div className="w-full overflow-hidden rounded-xl bg-gray-900">
           {item.type === 'image' ? (
             <img
               src={item.url}
@@ -107,17 +143,24 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
   }
 
   return (
-    <div className={cn("relative w-full", className)}>
+    <div className={cn("relative w-full group", className)}>
       <div 
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded-xl bg-gray-100"
+        className="relative w-full overflow-hidden rounded-xl bg-gray-900 cursor-grab active:cursor-grabbing"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
       >
         <div 
           className="flex transition-transform duration-300 ease-out"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          style={{ 
+            transform: `translateX(-${currentIndex * 100}%)`,
+            ...(isDragging && { transform: `translateX(-${currentIndex * 100}% - ${dragOffset}px)` })
+          }}
         >
           {mediaItems.map((item, index) => (
             <div key={index} className="w-full flex-shrink-0">
@@ -126,6 +169,7 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
                   src={item.url}
                   alt={`Media ${index + 1}`}
                   className="w-full h-auto object-cover aspect-video"
+                  draggable={false}
                 />
               ) : (
                 <ModernVideoPlayer
@@ -139,14 +183,14 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
           ))}
         </div>
 
-        {/* Navigation Arrows */}
+        {/* Navigation Arrows - Only show on hover for desktop */}
         {mediaItems.length > 1 && (
           <>
             <Button
               variant="ghost"
               size="icon"
               onClick={prevSlide}
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
             >
               <ChevronLeft size={16} />
             </Button>
@@ -155,7 +199,7 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
               variant="ghost"
               size="icon"
               onClick={nextSlide}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
             >
               <ChevronRight size={16} />
             </Button>
@@ -180,8 +224,8 @@ const ModernImageSlider: React.FC<ModernImageSliderProps> = ({
               className={cn(
                 "w-2 h-2 rounded-full transition-all duration-300 cursor-pointer",
                 index === currentIndex 
-                  ? "bg-undercover-purple scale-125" 
-                  : "bg-gray-300 hover:bg-gray-400"
+                  ? "bg-purple-500 scale-125" 
+                  : "bg-gray-600 hover:bg-gray-500"
               )}
             />
           ))}

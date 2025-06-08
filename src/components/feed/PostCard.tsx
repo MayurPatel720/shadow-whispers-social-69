@@ -355,9 +355,9 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayVideos = post.videos || [];
 
   return (
-    <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200 mb-6 mx-auto max-w-lg rounded-2xl overflow-hidden">
+    <Card className="border border-gray-800 bg-gray-900 shadow-xl hover:shadow-2xl transition-all duration-200 mb-6 mx-auto max-w-lg rounded-2xl overflow-hidden">
       {/* Header */}
-      <CardHeader className="p-4 pb-3" onClick={() => handleAliasClick(post.user, post.anonymousAlias)}>
+      <CardHeader className="p-4 pb-3 cursor-pointer" onClick={() => handleAliasClick(post.user, post.anonymousAlias)}>
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <AvatarGenerator
@@ -367,27 +367,27 @@ const PostCard: React.FC<PostCardProps> = ({
               size="md"
             />
             <div className="flex flex-col">
-              <span className="font-semibold text-sm text-gray-900">{identity.nickname}</span>
-              <span className="text-xs text-gray-500">{postTime}</span>
+              <span className="font-semibold text-sm text-gray-100">{identity.nickname}</span>
+              <span className="text-xs text-gray-400">{postTime}</span>
             </div>
           </div>
 
           {showOptions && isOwnPost && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 rounded-full">
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-800 rounded-full text-gray-400">
                   <MoreVertical size={16} />
                   <span className="sr-only">More options</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+              <DropdownMenuContent align="end" className="w-48 bg-gray-800 border-gray-700">
+                <DropdownMenuItem onClick={() => setEditModalOpen(true)} className="text-gray-200 hover:bg-gray-700">
                   <Edit size={16} className="mr-2" />
                   Edit Post
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setDeleteDialogOpen(true)}
-                  className="text-red-500 focus:text-red-500"
+                  className="text-red-400 focus:text-red-400 hover:bg-gray-700"
                 >
                   <Trash size={16} className="mr-2" />
                   Delete Post
@@ -403,7 +403,7 @@ const PostCard: React.FC<PostCardProps> = ({
         {/* Text Content */}
         {post.content && (
           <div className="px-4 pb-3">
-            <p className="text-gray-900 leading-relaxed">{post.content}</p>
+            <p className="text-gray-200 leading-relaxed">{post.content}</p>
           </div>
         )}
 
@@ -419,7 +419,7 @@ const PostCard: React.FC<PostCardProps> = ({
         {/* Like Animation */}
         {showLikeAnimation && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
-            <div className="bg-white rounded-full p-4 shadow-lg animate-pulse">
+            <div className="bg-gray-800 rounded-full p-4 shadow-lg animate-pulse">
               <Heart 
                 size={48} 
                 className="text-red-500 fill-red-500" 
@@ -445,12 +445,12 @@ const PostCard: React.FC<PostCardProps> = ({
                   "transition-all duration-200",
                   isLiked 
                     ? 'fill-red-500 text-red-500 scale-110' 
-                    : 'text-gray-700 group-hover:text-red-500 group-active:scale-110'
+                    : 'text-gray-400 group-hover:text-red-500 group-active:scale-110'
                 )}
               />
               <span className={cn(
                 "text-sm font-medium transition-colors",
-                isLiked ? 'text-red-500' : 'text-gray-700'
+                isLiked ? 'text-red-500' : 'text-gray-400'
               )}>
                 {likeCount}
               </span>
@@ -461,8 +461,8 @@ const PostCard: React.FC<PostCardProps> = ({
               className="flex items-center space-x-2 group"
               onClick={handleToggleComments}
             >
-              <MessageCircle size={24} className="text-gray-700 group-hover:text-blue-500 group-active:scale-110 transition-all duration-200" />
-              <span className="text-sm font-medium text-gray-700">
+              <MessageCircle size={24} className="text-gray-400 group-hover:text-blue-400 group-active:scale-110 transition-all duration-200" />
+              <span className="text-sm font-medium text-gray-400">
                 {comments.length || post.comments?.length || 0}
               </span>
             </button>
@@ -474,18 +474,18 @@ const PostCard: React.FC<PostCardProps> = ({
                   className="flex items-center space-x-2 group"
                   disabled={isSharing}
                 >
-                  <Share2 size={24} className="text-gray-700 group-hover:text-green-500 group-active:scale-110 transition-all duration-200" />
-                  <span className="text-sm font-medium text-gray-700">{shareCount}</span>
+                  <Share2 size={24} className="text-gray-400 group-hover:text-green-400 group-active:scale-110 transition-all duration-200" />
+                  <span className="text-sm font-medium text-gray-400">{shareCount}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={() => handleShare('whatsapp')}>
+              <DropdownMenuContent align="end" className="w-48 bg-gray-800 border-gray-700">
+                <DropdownMenuItem onClick={() => handleShare('whatsapp')} className="text-gray-200 hover:bg-gray-700">
                   Share via WhatsApp
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShare('instagram')}>
+                <DropdownMenuItem onClick={() => handleShare('instagram')} className="text-gray-200 hover:bg-gray-700">
                   Share via Instagram
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleShare('link')}>
+                <DropdownMenuItem onClick={() => handleShare('link')} className="text-gray-200 hover:bg-gray-700">
                   Copy Link
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -498,7 +498,7 @@ const PostCard: React.FC<PostCardProps> = ({
               size="sm"
               variant="outline"
               onClick={() => setGuessModalOpen(true)}
-              className="px-4 py-2 text-sm border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 rounded-full font-medium"
+              className="px-4 py-2 text-sm border-purple-500 text-purple-400 hover:bg-purple-900/20 hover:border-purple-400 rounded-full font-medium bg-transparent"
             >
               <Eye size={16} className="mr-1" /> 
               Guess?
@@ -508,7 +508,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
         {/* Comments Section */}
         {showComments && (
-          <div className="w-full border-t border-gray-100 pt-4 mt-2">
+          <div className="w-full border-t border-gray-700 pt-4 mt-2">
             {isLoadingComments ? (
               <div className="flex justify-center py-6">
                 <div className="animate-spin h-6 w-6 border-2 border-purple-500 rounded-full border-t-transparent"></div>
@@ -539,7 +539,7 @@ const PostCard: React.FC<PostCardProps> = ({
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment..."
-                  className="resize-none border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-purple-300 focus:ring-purple-200"
+                  className="resize-none border-gray-700 bg-gray-800 text-gray-200 rounded-xl px-4 py-3 text-sm focus:border-purple-500 focus:ring-purple-500/20 placeholder:text-gray-500"
                   rows={1}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
