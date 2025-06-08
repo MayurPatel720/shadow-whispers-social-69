@@ -3,14 +3,12 @@ import React, { useState, useEffect } from 'react';
 import {
   Heart,
   MessageCircle,
-  Info,
   MoreVertical,
   Trash,
   Edit,
   Send,
   Eye,
   Share2,
-  MousePointer2,
 } from 'lucide-react';
 import {
   Card,
@@ -20,12 +18,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +30,6 @@ import {
   likePost,
   addComment,
   getComments,
-  deletePost,
   editComment,
   deleteComment,
   replyToComment,
@@ -52,7 +43,7 @@ import CommentItem from './CommentItem';
 import GuessIdentityModal from '@/components/recognition/GuessIdentityModal';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
-import ImageSlider from '@/components/ui/image-slider';
+import ModernImageSlider from '@/components/ui/modern-image-slider';
 
 interface Post {
   _id: string;
@@ -111,6 +102,7 @@ const PostCard: React.FC<PostCardProps> = ({
   const [lastTap, setLastTap] = useState(0);
 
   const isOwnPost = post.user === currentUserId;
+
   const handleAliasClick = (userId: string, alias: string) => {
     navigate(`/profile/${userId}`, { state: { anonymousAlias: alias } });
   };
@@ -124,6 +116,12 @@ const PostCard: React.FC<PostCardProps> = ({
 
       setLikeCount(response.likes.length);
       setIsLiked(!isLiked);
+
+      // Like animation
+      if (!isLiked) {
+        setShowLikeAnimation(true);
+        setTimeout(() => setShowLikeAnimation(false), 1000);
+      }
 
       if (onRefresh) {
         onRefresh();
@@ -148,8 +146,6 @@ const PostCard: React.FC<PostCardProps> = ({
       // Double tap detected
       if (!isLiked) {
         handleLike();
-        setShowLikeAnimation(true);
-        setTimeout(() => setShowLikeAnimation(false), 1000);
       }
     }
     setLastTap(now);
@@ -228,8 +224,6 @@ const PostCard: React.FC<PostCardProps> = ({
     try {
       setIsLoadingComments(true);
       const fetchedComments = await getComments(post._id);
-      console.log('Fetching comments for post with ID:', post._id);
-
       setComments(fetchedComments);
     } catch (error) {
       console.error('Error loading comments:', error);
@@ -248,7 +242,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
     try {
       setIsSubmitting(true);
-      const response = await addComment(
+      await addComment(
         post._id,
         newComment.trim(),
         user.anonymousAlias
@@ -360,107 +354,130 @@ const PostCard: React.FC<PostCardProps> = ({
   const displayVideos = post.videos || [];
 
   return (
-    <Card className="border border-undercover-purple/20 bg-card shadow-md hover:shadow-lg transition-shadow mb-4">
-      <CardHeader className="p-4 pb-2" onClick={() => handleAliasClick(post.user, post.anonymousAlias)}>
+    <Card className="border-0 bg-white shadow-sm hover:shadow-md transition-all duration-200 mb-6 mx-auto max-w-lg rounded-2xl overflow-hidden">
+      {/* Header */}
+      <CardHeader className="p-4 pb-3" onClick={() => handleAliasClick(post.user, post.anonymousAlias)}>
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <AvatarGenerator
               emoji={identity.emoji}
               nickname={identity.nickname}
               color={identity.color}
+              className="w-10 h-10"
             />
-            <span className="font-medium text-sm">{identity.nickname}</span>
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm text-gray-900">{identity.nickname}</span>
+              <span className="text-xs text-gray-500">{postTime}</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{postTime}</span>
-            {showOptions && isOwnPost && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical size={16} />
-                    <span className="sr-only">More options</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
-                    <Edit size={16} className="mr-2" />
-                    Edit Post
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setDeleteDialogOpen(true)}
-                    className="text-red-500 focus:text-red-500"
-                  >
-                    <Trash size={16} className="mr-2" />
-                    Delete Post
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          {showOptions && isOwnPost && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 rounded-full">
+                  <MoreVertical size={16} />
+                  <span className="sr-only">More options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setEditModalOpen(true)}>
+                  <Edit size={16} className="mr-2" />
+                  Edit Post
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteDialogOpen(true)}
+                  className="text-red-500 focus:text-red-500"
+                >
+                  <Trash size={16} className="mr-2" />
+                  Delete Post
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-2 relative" onTouchEnd={handleDoubleTap} onClick={handleDoubleTap}>
-        <p className="text-sm text-foreground mb-2">{post.content}</p>
 
-        {(displayImages.length > 0 || displayVideos.length > 0) && (
-          <div className="mt-3">
-            <ImageSlider 
-              images={displayImages}
-              videos={displayVideos}
-              className="rounded-lg overflow-hidden" 
-            />
+      {/* Content */}
+      <CardContent className="p-0 relative" onTouchEnd={handleDoubleTap} onClick={handleDoubleTap}>
+        {/* Text Content */}
+        {post.content && (
+          <div className="px-4 pb-3">
+            <p className="text-gray-900 leading-relaxed">{post.content}</p>
           </div>
+        )}
+
+        {/* Media Content */}
+        {(displayImages.length > 0 || displayVideos.length > 0) && (
+          <ModernImageSlider 
+            images={displayImages}
+            videos={displayVideos}
+            className="mb-0" 
+          />
         )}
 
         {/* Like Animation */}
         {showLikeAnimation && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-            <Heart 
-              size={80} 
-              className="text-red-500 fill-red-500 animate-ping opacity-75" 
-            />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20 bg-black/10">
+            <div className="bg-white rounded-full p-4 shadow-lg animate-pulse">
+              <Heart 
+                size={48} 
+                className="text-red-500 fill-red-500" 
+              />
+            </div>
           </div>
         )}
       </CardContent>
-      <CardFooter className="p-4 pt-0 flex flex-col">
-        <div className="flex items-center justify-between w-full gap-2">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center space-x-1 text-xs"
+
+      {/* Actions */}
+      <CardFooter className="p-4 pt-3 flex flex-col space-y-3">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-6">
+            {/* Like Button */}
+            <button
+              className="flex items-center space-x-2 group"
               onClick={handleLike}
               disabled={isLiking}
             >
               <Heart
-                size={16}
-                className={isLiked ? 'fill-red-500 text-red-500' : ''}
+                size={24}
+                className={cn(
+                  "transition-all duration-200",
+                  isLiked 
+                    ? 'fill-red-500 text-red-500 scale-110' 
+                    : 'text-gray-700 group-hover:text-red-500 group-active:scale-110'
+                )}
               />
-              <span>{likeCount}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex items-center space-x-1 text-xs"
+              <span className={cn(
+                "text-sm font-medium transition-colors",
+                isLiked ? 'text-red-500' : 'text-gray-700'
+              )}>
+                {likeCount}
+              </span>
+            </button>
+
+            {/* Comment Button */}
+            <button
+              className="flex items-center space-x-2 group"
               onClick={handleToggleComments}
             >
-              <MessageCircle size={16} />
-              <span>{comments.length || post.comments?.length || 0}</span>
-            </Button>
+              <MessageCircle size={24} className="text-gray-700 group-hover:text-blue-500 group-active:scale-110 transition-all duration-200" />
+              <span className="text-sm font-medium text-gray-700">
+                {comments.length || post.comments?.length || 0}
+              </span>
+            </button>
+
+            {/* Share Button */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center space-x-1 text-xs"
+                <button
+                  className="flex items-center space-x-2 group"
                   disabled={isSharing}
                 >
-                  <MousePointer2 size={16} className="rotate-90" />
-                  <span>{shareCount}</span>
-                </Button>
+                  <Share2 size={24} className="text-gray-700 group-hover:text-green-500 group-active:scale-110 transition-all duration-200" />
+                  <span className="text-sm font-medium text-gray-700">{shareCount}</span>
+                </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => handleShare('whatsapp')}>
                   Share via WhatsApp
                 </DropdownMenuItem>
@@ -473,65 +490,77 @@ const PostCard: React.FC<PostCardProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Guess Identity Button */}
           {!isOwnPost && (
             <Button
               size="sm"
               variant="outline"
               onClick={() => setGuessModalOpen(true)}
-              title="Guess identity"
-              className="flex items-center space-x-1 text-xs border-undercover-purple/20 hover:bg-undercover-purple/10"
+              className="px-4 py-2 text-sm border-purple-200 text-purple-600 hover:bg-purple-50 hover:border-purple-300 rounded-full font-medium"
             >
-              <Eye size={14} /> <span>Guess?</span>
+              <Eye size={16} className="mr-1" /> 
+              Guess?
             </Button>
           )}
         </div>
 
+        {/* Comments Section */}
         {showComments && (
-          <div className="mt-4 w-full">
-            <div className="border-t border-border pt-4">
-              {isLoadingComments ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin h-5 w-5 border-2 border-undercover-purple rounded-full border-t-transparent"></div>
-                </div>
-              ) : comments.length > 0 ? (
-                <div className="space-y-4 max-h-60 overflow-y-auto">
-                  {comments.map((comment) => (
-                    <CommentItem
-                      key={comment._id}
-                      comment={comment}
-                      postId={post._id}
-                      onDelete={handleDeleteComment}
-                      onEdit={handleEditComment}
-                      onReply={handleReplyToComment}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-muted-foreground text-sm py-2">
-                  No comments yet
-                </p>
-              )}
+          <div className="w-full border-t border-gray-100 pt-4 mt-2">
+            {isLoadingComments ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin h-6 w-6 border-2 border-purple-500 rounded-full border-t-transparent"></div>
+              </div>
+            ) : comments.length > 0 ? (
+              <div className="space-y-4 max-h-80 overflow-y-auto">
+                {comments.map((comment) => (
+                  <CommentItem
+                    key={comment._id}
+                    comment={comment}
+                    postId={post._id}
+                    onDelete={handleDeleteComment}
+                    onEdit={handleEditComment}
+                    onReply={handleReplyToComment}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 text-sm py-4">
+                No comments yet
+              </p>
+            )}
 
-              <div className="mt-4 flex space-x-2">
+            {/* Add Comment */}
+            <div className="mt-4 flex space-x-3">
+              <div className="flex-1">
                 <Textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment..."
-                  className="resize-none h-10 py-2"
+                  className="resize-none border-gray-200 rounded-xl px-4 py-3 text-sm focus:border-purple-300 focus:ring-purple-200"
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmitComment();
+                    }
+                  }}
                 />
-                <Button
-                  onClick={handleSubmitComment}
-                  className="bg-undercover-purple hover:bg-undercover-deep-purple"
-                  disabled={!newComment.trim() || isSubmitting}
-                >
-                  <Send size={16} />
-                </Button>
               </div>
+              <Button
+                onClick={handleSubmitComment}
+                className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-4 py-3 self-end"
+                disabled={!newComment.trim() || isSubmitting}
+              >
+                <Send size={16} />
+              </Button>
             </div>
           </div>
         )}
       </CardFooter>
 
+      {/* Modals */}
       {isOwnPost && (
         <>
           <EditPostModal
