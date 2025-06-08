@@ -44,6 +44,7 @@ import GuessIdentityModal from '@/components/recognition/GuessIdentityModal';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 import ModernImageSlider from '@/components/ui/modern-image-slider';
+import { cn } from '@/lib/utils';
 
 interface Post {
   _id: string;
@@ -363,7 +364,7 @@ const PostCard: React.FC<PostCardProps> = ({
               emoji={identity.emoji}
               nickname={identity.nickname}
               color={identity.color}
-              className="w-10 h-10"
+              size="md"
             />
             <div className="flex flex-col">
               <span className="font-semibold text-sm text-gray-900">{identity.nickname}</span>
