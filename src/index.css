@@ -3,31 +3,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Locomotive Scroll styles */
-html.has-scroll-smooth {
-  overflow: hidden;
-}
-
-html.has-scroll-dragging {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.has-scroll-smooth body {
-  overflow: hidden;
-}
-
-.locomotive-scroll-container {
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Smooth scroll reveal animations */
+/* Remove problematic Locomotive Scroll styles that cause elements to disappear */
 [data-scroll] {
-  opacity: 0;
-  transform: translateY(30px);
+  /* Remove the opacity: 0 and transform that was causing issues */
   transition: opacity 0.8s ease-out, transform 0.8s ease-out;
 }
 
@@ -81,7 +59,7 @@ html.has-scroll-dragging {
   }
 
   html {
-    scroll-behavior: auto; /* Override to let Locomotive Scroll handle */
+    scroll-behavior: smooth;
   }
 }
 
@@ -143,6 +121,7 @@ html.has-scroll-dragging {
 
 .animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
+  opacity: 1; /* Ensure elements are visible by default */
 }
 
 .animate-slide-up {
@@ -161,36 +140,28 @@ html.has-scroll-dragging {
   transform: scale(1.05);
 }
 
-/* Custom scrollbar for webkit browsers */
-.locomotive-scroll-container::-webkit-scrollbar {
-  width: 8px;
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  .hover-scale:hover {
+    transform: scale(1.02); /* Gentler scale on mobile */
+  }
+  
+  /* Ensure floating button doesn't interfere with scrolling */
+  .fixed.bottom-6.right-6 {
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
 }
 
-.locomotive-scroll-container::-webkit-scrollbar-track {
-  background: rgba(139, 92, 246, 0.1);
-  border-radius: 4px;
+/* Improve backdrop blur support */
+@supports (backdrop-filter: blur(8px)) {
+  .backdrop-blur-sm {
+    backdrop-filter: blur(8px);
+  }
 }
 
-.locomotive-scroll-container::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.5);
-  border-radius: 4px;
-}
-
-.locomotive-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 0.7);
-}
-
-/* Prevent layout shifts */
-.locomotive-scroll-container {
-  will-change: transform;
-}
-
-/* Ensure smooth loading */
-.locomotive-scroll-container[data-scroll-container] {
-  opacity: 1;
-  transition: opacity 0.3s ease-out;
-}
-
-.locomotive-scroll-container[data-scroll-container]:not([data-scroll-container-initialized]) {
-  opacity: 0;
+@supports not (backdrop-filter: blur(8px)) {
+  .backdrop-blur-sm {
+    background: rgba(26, 31, 44, 0.95);
+  }
 }
