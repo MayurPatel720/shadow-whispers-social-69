@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,11 +6,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Users, FileText, Trash2, Edit, Eye, LogOut, Search, Ban, UserCheck, AlertTriangle, BarChart3 } from 'lucide-react';
+import { Shield, Users, FileText, Trash2, Edit, Eye, LogOut, Search, Ban, UserCheck, AlertTriangle, BarChart3, Bell } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
+import NotificationAdminPanel from '@/components/admin/NotificationAdminPanel';
 
 interface AdminPost {
   _id: string;
@@ -354,6 +354,10 @@ const AdminPanel = () => {
             <TabsTrigger value="users" className="data-[state=active]:bg-purple-600">
               Users Management
             </TabsTrigger>
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-purple-600">
+              <Bell className="h-4 w-4 mr-2" />
+              Push Notifications
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts">
@@ -505,6 +509,10 @@ const AdminPanel = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <NotificationAdminPanel />
           </TabsContent>
         </Tabs>
 

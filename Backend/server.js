@@ -12,7 +12,7 @@ const userRoutes = require("./routes/userRoutes");
 const ghostCircleRoutes = require("./routes/ghostCircleRoutes");
 const postRoutes = require("./routes/postRoutes");
 const whisperRoutes = require("./routes/whisperRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
+const oneSignalRoutes = require("./routes/oneSignalRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
@@ -74,7 +74,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/ghost-circles", ghostCircleRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/whispers", whisperRoutes);
-app.use("/api/notifications", notificationRoutes);
+app.use("/api/notifications", oneSignalRoutes);
 app.use("/api/admin", adminRoutes);
 
 // Healthcheck Route
