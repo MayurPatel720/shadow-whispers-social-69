@@ -86,7 +86,7 @@ const GlobalFeed = () => {
 
       {/* Feed Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {posts.length === 0 ? (
+        {Array.isArray(posts) && posts.length === 0 ? (
           <div 
             className="text-center py-16 space-y-4"
             data-scroll
@@ -105,7 +105,7 @@ const GlobalFeed = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map((post: Post, index: number) => (
+            {Array.isArray(posts) && posts.map((post: Post, index: number) => (
               <div
                 key={post._id}
                 data-scroll
