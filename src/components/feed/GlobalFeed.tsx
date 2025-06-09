@@ -6,31 +6,7 @@ import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
-
-// Use the Post interface that matches the API response and PostCard expectations
-interface Post {
-  _id: string;
-  user: string;
-  username?: string;
-  anonymousAlias: string;
-  avatarEmoji: string;
-  content: string;
-  imageUrl?: string;
-  images?: string[];
-  videos?: Array<{
-    url: string;
-    thumbnail?: string;
-    duration?: number;
-    size?: number;
-  }>;
-  likes: { user: string }[];
-  comments: any[];
-  createdAt: string;
-  updatedAt: string;
-  shareCount?: number;
-  expiresAt: string;
-  ghostCircle?: string;
-}
+import { Post } from "@/types/index";
 
 const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
