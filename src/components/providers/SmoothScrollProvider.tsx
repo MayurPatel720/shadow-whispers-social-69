@@ -1,7 +1,5 @@
 
 import React, { useEffect, useRef } from 'react';
-import LocomotiveScroll from 'locomotive-scroll';
-import 'locomotive-scroll/dist/locomotive-scroll.css';
 
 interface SmoothScrollProviderProps {
   children: React.ReactNode;
@@ -9,46 +7,87 @@ interface SmoothScrollProviderProps {
 
 const SmoothScrollProvider: React.FC<SmoothScrollProviderProps> = ({ children }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const locomotiveScrollRef = useRef<LocomotiveScroll | null>(null);
+  const locomotiveScrollRef = useRef<any>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      locomotiveScrollRef.current = new LocomotiveScroll({
-        el: scrollRef.current,
-        smooth: true,
-        multiplier: 1,
-        class: 'is-revealed',
-        scrollFromAnywhere: false,
-        touchMultiplier: 2,
-        smoothMobile: true,
-      });
+    let LocoScroll: any = null;
 
-      // Update locomotive scroll on route changes
-      const handleRouteChange = () => {
-        setTimeout(() => {
-          locomotiveScrollRef.current?.update();
-        }, 100);
-      };
+    const initializeLocomotiveScroll = async () => {
+      try {
+        // Dynamically import Locomotive Scroll to avoid SSR issues
+        const LocomotiveScroll = (await import('locomotive-scroll')).default;
+        
+        if (scrollRef.current && !locomotiveScrollRef.current) {
+          locomotiveScrollRef.current = new LocomotiveScroll({
+            el: scrollRef.current,
+            smooth: true,
+            multiplier: 0.8,
+            class: 'is-revealed',
+            scrollFromAnywhere: false,
+            touchMultiplier: 2,
+            smoothMobile: true,
+            getDirection: true,
+            getSpeed: true,
+          });
 
-      // Listen for route changes
-      window.addEventListener('popstate', handleRouteChange);
+          LocoScroll = locomotiveScrollRef.current;
 
-      return () => {
-        locomotiveScrollRef.current?.destroy();
-        window.removeEventListener('popstate', handleRouteChange);
-      };
-    }
+          // Update on resize
+          const handleResize = () => {
+            setTimeout(() => {
+              if (locomotiveScrollRef.current) {
+                locomotiveScrollRef.current.update();
+              }
+            }, 150);
+          };
+
+          window.addEventListener('resize', handleResize);
+
+          return () => {
+            window.removeEventListener('resize', handleResize);
+          };
+        }
+      } catch (error) {
+        console.warn('Locomotive Scroll failed to load:', error);
+      }
+    };
+
+    initializeLocomotiveScroll();
+
+    return () => {
+      if (locomotiveScrollRef.current) {
+        try {
+          locomotiveScrollRef.current.destroy();
+          locomotiveScrollRef.current = null;
+        } catch (error) {
+          console.warn('Error destroying Locomotive Scroll:', error);
+        }
+      }
+    };
   }, []);
 
-  // Update scroll on children change
+  // Update scroll when children change
   useEffect(() => {
-    setTimeout(() => {
-      locomotiveScrollRef.current?.update();
+    const timer = setTimeout(() => {
+      if (locomotiveScrollRef.current) {
+        try {
+          locomotiveScrollRef.current.update();
+        } catch (error) {
+          console.warn('Error updating Locomotive Scroll:', error);
+        }
+      }
     }, 100);
+
+    return () => clearTimeout(timer);
   }, [children]);
 
   return (
-    <div ref={scrollRef} data-scroll-container className="locomotive-scroll-container">
+    <div 
+      ref={scrollRef} 
+      data-scroll-container 
+      id="scroll-container"
+      className="locomotive-scroll-container"
+    >
       {children}
     </div>
   );

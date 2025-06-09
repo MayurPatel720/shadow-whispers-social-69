@@ -17,7 +17,7 @@ const GlobalFeed = () => {
     isLoading,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<Post[]>({
     queryKey: ["posts"],
     queryFn: getAllPosts,
     refetchInterval: 30000,
