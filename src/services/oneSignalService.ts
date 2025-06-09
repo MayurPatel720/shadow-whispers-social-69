@@ -97,9 +97,11 @@ class OneSignalService {
       }
 
       // Request permission
-      const hasPermission = await OneSignal.Notifications.requestPermission();
+      await OneSignal.Notifications.requestPermission();
       
-      if (!hasPermission) {
+      // Check if permission was granted
+      const permissionGranted = OneSignal.Notifications.permission;
+      if (!permissionGranted) {
         return { success: false, error: 'Permission denied' };
       }
 
