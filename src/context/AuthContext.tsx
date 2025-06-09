@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -10,10 +11,12 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  showLoginAnimation: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, fullName: string, email: string, password: string, referralCode?: string) => Promise<void>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
+  setShowLoginAnimation: (show: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,6 +24,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoginAnimation, setShowLoginAnimation] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -47,11 +51,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await loginUser(email, password);
       localStorage.setItem('token', data.token);
       setUser(data);
+      
+      // Show the login animation
+      setShowLoginAnimation(true);
+      
       toast({
         title: 'Login successful',
         description: `Welcome back, ${data.username}!`,
       });
-      navigate('/');
+      
+      // Navigate after animation completes
+      setTimeout(() => {
+        navigate('/');
+      }, 4000);
     } catch (error: any) {
       console.error('Login failed', error);
       toast({
@@ -73,6 +85,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       localStorage.setItem('token', data.token);
       setUser(data);
+      
+      // Show the login animation for registration too
+      setShowLoginAnimation(true);
+      
       toast({
         title: 'Registration successful',
         description: `Welcome, ${data.anonymousAlias}! Your anonymous identity has been created.`,
@@ -83,7 +99,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           description: 'The referral code has been successfully applied.',
         });
       }
-      navigate('/');
+      
+      // Navigate after animation completes
+      setTimeout(() => {
+        navigate('/');
+      }, 4000);
     } catch (error: any) {
       console.error('Registration failed', error);
 
@@ -146,10 +166,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated: !!user,
         isLoading,
+        showLoginAnimation,
         login,
         register,
         logout,
         updateProfile,
+        setShowLoginAnimation,
       }}
     >
       {children}
