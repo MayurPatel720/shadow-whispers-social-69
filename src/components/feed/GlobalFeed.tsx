@@ -6,7 +6,7 @@ import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
-import { Post } from "@/types";
+import { Post } from "@/types/index";
 
 const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
