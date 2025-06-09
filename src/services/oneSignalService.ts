@@ -97,9 +97,9 @@ class OneSignalService {
       }
 
       // Request permission
-      const permission = await OneSignal.Notifications.requestPermission();
+      const hasPermission = await OneSignal.Notifications.requestPermission();
       
-      if (!permission) {
+      if (!hasPermission) {
         return { success: false, error: 'Permission denied' };
       }
 
@@ -161,12 +161,27 @@ class OneSignalService {
     try {
       const isSubscribed = OneSignal.User.PushSubscription.optedIn;
       const playerId = OneSignal.User.PushSubscription.id;
-      const permission = OneSignal.Notifications.permission;
+      
+      // Get permission status safely
+      let permission: NotificationPermission = 'default';
+      try {
+        const permissionStatus = OneSignal.Notifications.permission;
+        if (permissionStatus === true) {
+          permission = 'granted';
+        } else if (permissionStatus === false) {
+          permission = 'denied';
+        } else {
+          permission = 'default';
+        }
+      } catch (permError) {
+        console.warn('Could not get permission status:', permError);
+        permission = 'default';
+      }
       
       return {
         isSubscribed: Boolean(isSubscribed),
         playerId: playerId || undefined,
-        permission: (permission as NotificationPermission) || 'default',
+        permission,
       };
     } catch (error) {
       console.error('Failed to get subscription status:', error);
