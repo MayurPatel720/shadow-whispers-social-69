@@ -41,11 +41,8 @@ class OneSignalService {
       await OneSignal.init({
         appId: this.config.appId,
         safariWebId: this.config.safariWebId,
-        notifyButton: {
-          enable: false, // We'll handle permission requests manually
-        },
         allowLocalhostAsSecureOrigin: process.env.NODE_ENV === 'development',
-        autoRegister: false, // Manual registration for better UX
+        autoRegister: false,
         autoResubscribe: true,
         persistNotification: true,
         showCredit: false,
@@ -66,27 +63,21 @@ class OneSignalService {
    * Set up OneSignal event listeners
    */
   private setupEventListeners(): void {
-    // Listen for subscription changes
-    OneSignal.on('subscriptionChange', (isSubscribed) => {
-      console.log('Subscription changed:', isSubscribed);
-      this.handleSubscriptionChange(isSubscribed);
-    });
+    try {
+      // Listen for subscription changes
+      OneSignal.User.PushSubscription.addEventListener('change', (event) => {
+        console.log('Subscription changed:', event);
+        this.handleSubscriptionChange(event.current.optedIn);
+      });
 
-    // Listen for notification permission changes
-    OneSignal.on('notificationPermissionChange', (permission) => {
-      console.log('Permission changed:', permission);
-    });
-
-    // Listen for notification display
-    OneSignal.on('notificationDisplay', (event) => {
-      console.log('Notification displayed:', event);
-    });
-
-    // Listen for notification clicks
-    OneSignal.on('notificationClick', (event) => {
-      console.log('Notification clicked:', event);
-      this.handleNotificationClick(event);
-    });
+      // Listen for notification clicks
+      OneSignal.Notifications.addEventListener('click', (event) => {
+        console.log('Notification clicked:', event);
+        this.handleNotificationClick(event);
+      });
+    } catch (error) {
+      console.error('Failed to setup event listeners:', error);
+    }
   }
 
   /**
@@ -99,24 +90,24 @@ class OneSignalService {
       }
 
       // Check if already subscribed
-      const isSubscribed = await OneSignal.isPushNotificationsEnabled();
+      const isSubscribed = OneSignal.User.PushSubscription.optedIn;
       if (isSubscribed) {
-        const playerId = await OneSignal.getPlayerId();
+        const playerId = OneSignal.User.PushSubscription.id;
         return { success: true, playerId: playerId || undefined };
       }
 
       // Request permission
-      const permission = await OneSignal.requestPermission();
+      const permission = await OneSignal.Notifications.requestPermission();
       
       if (!permission) {
         return { success: false, error: 'Permission denied' };
       }
 
-      // Register for push notifications
-      await OneSignal.registerForPushNotifications();
+      // Opt in to push notifications
+      await OneSignal.User.PushSubscription.optIn();
       
       // Get player ID
-      const playerId = await OneSignal.getPlayerId();
+      const playerId = OneSignal.User.PushSubscription.id;
       
       if (!playerId) {
         return { success: false, error: 'Failed to get player ID' };
@@ -135,7 +126,7 @@ class OneSignalService {
    */
   async unsubscribe(): Promise<{ success: boolean; error?: string }> {
     try {
-      await OneSignal.setSubscription(false);
+      await OneSignal.User.PushSubscription.optOut();
       console.log('Successfully unsubscribed from notifications');
       return { success: true };
     } catch (error) {
@@ -149,8 +140,8 @@ class OneSignalService {
    */
   async resubscribe(): Promise<{ success: boolean; playerId?: string; error?: string }> {
     try {
-      await OneSignal.setSubscription(true);
-      const playerId = await OneSignal.getPlayerId();
+      await OneSignal.User.PushSubscription.optIn();
+      const playerId = OneSignal.User.PushSubscription.id;
       console.log('Successfully re-subscribed with player ID:', playerId);
       return { success: true, playerId: playerId || undefined };
     } catch (error) {
@@ -168,9 +159,9 @@ class OneSignalService {
     permission?: NotificationPermission;
   }> {
     try {
-      const isSubscribed = await OneSignal.isPushNotificationsEnabled();
-      const playerId = await OneSignal.getPlayerId();
-      const permission = await OneSignal.getNotificationPermission();
+      const isSubscribed = OneSignal.User.PushSubscription.optedIn;
+      const playerId = OneSignal.User.PushSubscription.id;
+      const permission = OneSignal.Notifications.permission;
       
       return {
         isSubscribed,
@@ -188,7 +179,7 @@ class OneSignalService {
    */
   async setExternalUserId(userId: string): Promise<{ success: boolean; error?: string }> {
     try {
-      await OneSignal.setExternalUserId(userId);
+      OneSignal.login(userId);
       console.log('External user ID set:', userId);
       return { success: true };
     } catch (error) {
@@ -202,7 +193,7 @@ class OneSignalService {
    */
   async removeExternalUserId(): Promise<{ success: boolean; error?: string }> {
     try {
-      await OneSignal.removeExternalUserId();
+      OneSignal.logout();
       console.log('External user ID removed');
       return { success: true };
     } catch (error) {
@@ -216,7 +207,7 @@ class OneSignalService {
    */
   async setUserTags(tags: Record<string, string>): Promise<{ success: boolean; error?: string }> {
     try {
-      await OneSignal.sendTags(tags);
+      OneSignal.User.addTags(tags);
       console.log('User tags set:', tags);
       return { success: true };
     } catch (error) {
@@ -228,9 +219,9 @@ class OneSignalService {
   /**
    * Handle subscription changes
    */
-  private async handleSubscriptionChange(isSubscribed: boolean): void {
+  private async handleSubscriptionChange(isSubscribed: boolean): Promise<void> {
     if (isSubscribed) {
-      const playerId = await OneSignal.getPlayerId();
+      const playerId = OneSignal.User.PushSubscription.id;
       console.log('User subscribed with player ID:', playerId);
       
       // You can emit events or call callbacks here
@@ -250,8 +241,8 @@ class OneSignalService {
     console.log('Notification clicked:', event);
     
     // Handle URL redirects
-    if (event.data?.url) {
-      window.open(event.data.url, '_blank');
+    if (event.result?.url) {
+      window.open(event.result.url, '_blank');
     }
     
     // Emit custom event for app-specific handling
@@ -264,14 +255,14 @@ class OneSignalService {
    * Check if OneSignal is supported in current environment
    */
   static isSupported(): boolean {
-    return OneSignal.isPushNotificationsSupported();
+    return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
   }
 }
 
 // Export singleton instance
 const oneSignalConfig: OneSignalConfig = {
-  appId: process.env.VITE_ONESIGNAL_APP_ID || 'your-onesignal-app-id',
-  safariWebId: process.env.VITE_ONESIGNAL_SAFARI_WEB_ID,
+  appId: import.meta.env.VITE_ONESIGNAL_APP_ID || 'your-onesignal-app-id',
+  safariWebId: import.meta.env.VITE_ONESIGNAL_SAFARI_WEB_ID,
 };
 
 export const oneSignalService = new OneSignalService(oneSignalConfig);
