@@ -105,7 +105,7 @@ const GlobalFeed = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {Array.isArray(posts) && posts.map((post: Post, index: number) => (
+            {Array.isArray(posts) && (posts as Post[]).map((post: Post, index: number) => (
               <div
                 key={post._id}
                 className="animate-fade-in opacity-100"

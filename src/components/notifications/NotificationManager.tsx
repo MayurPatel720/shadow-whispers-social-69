@@ -41,9 +41,9 @@ const NotificationManager: React.FC<NotificationManagerProps> = ({
   const initializeNotifications = async () => {
     try {
       // Check if OneSignal is supported
-      setIsSupported(oneSignalService.constructor.isSupported());
+      setIsSupported(oneSignalService.isSupported());
       
-      if (!oneSignalService.constructor.isSupported()) {
+      if (!oneSignalService.isSupported()) {
         console.log('Push notifications not supported in this browser');
         return;
       }

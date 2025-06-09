@@ -166,7 +166,7 @@ class OneSignalService {
       return {
         isSubscribed,
         playerId: playerId || undefined,
-        permission: permission as NotificationPermission,
+        permission: permission ? permission as NotificationPermission : 'default',
       };
     } catch (error) {
       console.error('Failed to get subscription status:', error);
@@ -254,7 +254,7 @@ class OneSignalService {
   /**
    * Check if OneSignal is supported in current environment
    */
-  static isSupported(): boolean {
+  isSupported(): boolean {
     return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
   }
 }

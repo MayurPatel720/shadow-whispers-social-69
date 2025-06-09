@@ -15,7 +15,7 @@ import WhisperModal from "../whisper/WhisperModal";
 import { useAuth } from "@/context/AuthContext";
 import AvatarGenerator from "../user/AvatarGenerator";
 import { useLocation, useNavigate } from "react-router-dom";
-import NotificationButton from "../whisper/Not";
+import NotificationButton from "../whisper/NotificationButton";
 
 const NavItem: React.FC<{
 	icon: React.ReactNode;
