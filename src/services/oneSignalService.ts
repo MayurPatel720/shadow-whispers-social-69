@@ -104,7 +104,7 @@ class OneSignalService {
       }
 
       // Opt in to push notifications
-      await OneSignal.User.PushSubscription.optIn();
+      OneSignal.User.PushSubscription.optIn();
       
       // Get player ID
       const playerId = OneSignal.User.PushSubscription.id;
@@ -126,7 +126,7 @@ class OneSignalService {
    */
   async unsubscribe(): Promise<{ success: boolean; error?: string }> {
     try {
-      await OneSignal.User.PushSubscription.optOut();
+      OneSignal.User.PushSubscription.optOut();
       console.log('Successfully unsubscribed from notifications');
       return { success: true };
     } catch (error) {
@@ -140,7 +140,7 @@ class OneSignalService {
    */
   async resubscribe(): Promise<{ success: boolean; playerId?: string; error?: string }> {
     try {
-      await OneSignal.User.PushSubscription.optIn();
+      OneSignal.User.PushSubscription.optIn();
       const playerId = OneSignal.User.PushSubscription.id;
       console.log('Successfully re-subscribed with player ID:', playerId);
       return { success: true, playerId: playerId || undefined };
@@ -166,7 +166,7 @@ class OneSignalService {
       return {
         isSubscribed: Boolean(isSubscribed),
         playerId: playerId || undefined,
-        permission: permission || 'default',
+        permission: (permission as NotificationPermission) || 'default',
       };
     } catch (error) {
       console.error('Failed to get subscription status:', error);
