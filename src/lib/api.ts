@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
@@ -238,6 +239,12 @@ export const getUserPosts = async (userId: string): Promise<Post[]> => {
 };
 
 export const getGlobalFeed = async (): Promise<Post[]> => {
+	const response = await api.get("/api/posts/global");
+	return response.data;
+};
+
+// Add the missing getAllPosts function
+export const getAllPosts = async (): Promise<Post[]> => {
 	const response = await api.get("/api/posts/global");
 	return response.data;
 };
