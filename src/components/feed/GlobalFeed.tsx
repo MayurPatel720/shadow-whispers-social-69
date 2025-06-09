@@ -6,7 +6,31 @@ import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
-import { Post } from "@/types/index";
+
+// Use the Post interface that matches the API response and PostCard expectations
+interface Post {
+  _id: string;
+  user: string;
+  username?: string;
+  anonymousAlias: string;
+  avatarEmoji: string;
+  content: string;
+  imageUrl?: string;
+  images?: string[];
+  videos?: Array<{
+    url: string;
+    thumbnail?: string;
+    duration?: number;
+    size?: number;
+  }>;
+  likes: { user: string }[];
+  comments: any[];
+  createdAt: string;
+  updatedAt: string;
+  shareCount?: number;
+  expiresAt: string;
+  ghostCircle?: string;
+}
 
 const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -76,7 +100,7 @@ const GlobalFeed = () => {
       {/* Mobile Floating Action Button */}
       <Button
         onClick={() => setIsCreatePostOpen(true)}
-        className="sm:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover-scale glow-effect"
+        className="sm:hidden fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover-scale glow-effect floating-button"
         size="icon"
       >
         <Plus className="h-6 w-6" />
