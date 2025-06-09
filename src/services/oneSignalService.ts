@@ -164,13 +164,13 @@ class OneSignalService {
       const permission = OneSignal.Notifications.permission;
       
       return {
-        isSubscribed,
+        isSubscribed: Boolean(isSubscribed),
         playerId: playerId || undefined,
-        permission: permission ? permission as NotificationPermission : 'default',
+        permission: permission || 'default',
       };
     } catch (error) {
       console.error('Failed to get subscription status:', error);
-      return { isSubscribed: false };
+      return { isSubscribed: false, permission: 'default' };
     }
   }
 
