@@ -148,11 +148,21 @@ const LoginSuccessAnimation: React.FC<LoginSuccessAnimationProps> = ({ onComplet
         </Canvas>
       </Suspense>
       
-      {/* Text Overlay */}
+      {/* Logo and Text Overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-6">
+          {/* Animated Logo */}
+          <div className="relative">
+            <img 
+              src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+              alt="UnderKover Logo"
+              className="w-32 h-32 mx-auto animate-pulse drop-shadow-2xl"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full animate-ping"></div>
+          </div>
+          
           <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 animate-pulse">
-            🕶️ UnderCover
+            UnderKover
           </h1>
           <p className="text-xl text-purple-300 animate-fade-in">
             Welcome to the shadows...

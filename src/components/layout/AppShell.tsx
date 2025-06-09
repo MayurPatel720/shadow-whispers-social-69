@@ -1,3 +1,4 @@
+
 // src/components/AppShell.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
@@ -82,12 +83,19 @@ const AppShell = ({ children }: AppShellProps) => {
 			{/* Desktop Sidebar */}
 			<div className="hidden md:flex flex-col w-64 border-r border-border bg-card h-screen sticky top-0">
 				<div className="p-4 border-b border-border">
-					<h1
-						className="text-xl font-bold text-purple-500 flex items-center hover:cursor-pointer"
+					<div
+						className="flex items-center space-x-3 hover:cursor-pointer group"
 						onClick={() => navigate("/")}
 					>
-						<span className="text-2xl mr-2">🕶️</span> Undercover
-					</h1>
+						<img 
+							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+							alt="UnderKover Logo"
+							className="w-8 h-8 transition-transform group-hover:scale-110"
+						/>
+						<h1 className="text-xl font-bold text-purple-500 transition-colors group-hover:text-purple-400">
+							UnderKover
+						</h1>
+					</div>
 				</div>
 
 				<div className="p-4 flex-1">
@@ -163,9 +171,16 @@ const AppShell = ({ children }: AppShellProps) => {
 			{mobileMenuOpen && (
 				<div className="fixed inset-0 bg-background/95 z-50 flex md:hidden flex-col animate-fade-in">
 					<div className="p-4 flex justify-between items-center border-b border-border">
-						<h1 className="text-xl font-bold text-purple-500 flex items-center">
-							<span className="text-2xl mr-2">🕶️</span> Undercover
-						</h1>
+						<div className="flex items-center space-x-3">
+							<img 
+								src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+								alt="UnderKover Logo"
+								className="w-6 h-6"
+							/>
+							<h1 className="text-xl font-bold text-purple-500">
+								UnderKover
+							</h1>
+						</div>
 						<Button
 							variant="ghost"
 							size="icon"
@@ -249,12 +264,19 @@ const AppShell = ({ children }: AppShellProps) => {
 			<div className="flex-1 flex flex-col">
 				{/* Mobile Top Bar */}
 				<div className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border p-4 flex justify-between items-center">
-					<h1
-						className="text-lg font-bold text-purple-500 flex items-center"
+					<div 
+						className="flex items-center space-x-3 hover:cursor-pointer"
 						onClick={() => navigate("/")}
 					>
-						<span className="text-xl mr-2">🕶️</span> Undercover
-					</h1>
+						<img 
+							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+							alt="UnderKover Logo"
+							className="w-6 h-6"
+						/>
+						<h1 className="text-lg font-bold text-purple-500">
+							UnderKover
+						</h1>
+					</div>
 					<div className="flex items-center space-x-2">
 						<Button
 							variant="ghost"
