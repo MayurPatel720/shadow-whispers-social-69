@@ -1,3 +1,4 @@
+
 // src/components/AppShell.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import {
@@ -15,7 +16,6 @@ import WhisperModal from "../whisper/WhisperModal";
 import { useAuth } from "@/context/AuthContext";
 import AvatarGenerator from "../user/AvatarGenerator";
 import { useLocation, useNavigate } from "react-router-dom";
-import NotificationButton from "../whisper/NotificationButton";
 
 const NavItem: React.FC<{
 	icon: React.ReactNode;
@@ -86,7 +86,12 @@ const AppShell = ({ children }: AppShellProps) => {
 						className="text-xl font-bold text-purple-500 flex items-center hover:cursor-pointer"
 						onClick={() => navigate("/")}
 					>
-						<span className="text-2xl mr-2">🕶️</span> Undercover
+						<img 
+							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+							alt="UnderKover" 
+							className="w-8 h-8 mr-2"
+						/>
+						UnderKover
 					</h1>
 				</div>
 
@@ -134,10 +139,6 @@ const AppShell = ({ children }: AppShellProps) => {
 							active={currentTab === "Profile"}
 							onClick={() => navigate("/profile")}
 						/>
-						{/* Add NotificationButton */}
-						<div className="mt-4">
-							<NotificationButton />
-						</div>
 					</div>
 
 					<button
@@ -164,7 +165,12 @@ const AppShell = ({ children }: AppShellProps) => {
 				<div className="fixed inset-0 bg-background/95 z-50 flex md:hidden flex-col animate-fade-in">
 					<div className="p-4 flex justify-between items-center border-b border-border">
 						<h1 className="text-xl font-bold text-purple-500 flex items-center">
-							<span className="text-2xl mr-2">🕶️</span> Undercover
+							<img 
+								src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+								alt="UnderKover" 
+								className="w-8 h-8 mr-2"
+							/>
+							UnderKover
 						</h1>
 						<Button
 							variant="ghost"
@@ -219,10 +225,6 @@ const AppShell = ({ children }: AppShellProps) => {
 								active={currentTab === "Profile"}
 								onClick={() => navigate("/profile")}
 							/>
-							{/* Add NotificationButton */}
-							<div className="mt-4">
-								<NotificationButton />
-							</div>
 						</div>
 
 						<Button
@@ -253,7 +255,12 @@ const AppShell = ({ children }: AppShellProps) => {
 						className="text-lg font-bold text-purple-500 flex items-center"
 						onClick={() => navigate("/")}
 					>
-						<span className="text-xl mr-2">🕶️</span> Undercover
+						<img 
+							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
+							alt="UnderKover" 
+							className="w-6 h-6 mr-2"
+						/>
+						UnderKover
 					</h1>
 					<div className="flex items-center space-x-2">
 						<Button
