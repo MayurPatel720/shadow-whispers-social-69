@@ -1,11 +1,12 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
 // Create axios instance with base URL
-// const API_URL = "http://localhost:8900";
-const API_URL = "https://undercover-service.onrender.com";
+const API_URL = "http://localhost:8900";
+// const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
 	baseURL: API_URL,
@@ -21,15 +22,15 @@ api.interceptors.request.use(
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
-
+		
 		// Add admin auth for admin routes
-		if (config.url?.includes("/admin/")) {
-			const adminAuth = localStorage.getItem("adminAuth");
-			if (adminAuth === "true") {
+		if (config.url?.includes('/admin/')) {
+			const adminAuth = localStorage.getItem('adminAuth');
+			if (adminAuth === 'true') {
 				config.headers.Authorization = `Bearer admin-token`;
 			}
 		}
-
+		
 		return config;
 	},
 	(error) => Promise.reject(error)
