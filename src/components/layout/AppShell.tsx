@@ -1,6 +1,6 @@
-
 // src/components/AppShell.tsx
 import React, { useState, useEffect, useMemo } from "react";
+import "../../../public/lovable-uploads/UnderKover_logo2.png";
 import {
 	Home,
 	MessageSquare,
@@ -86,9 +86,9 @@ const AppShell = ({ children }: AppShellProps) => {
 						className="text-xl font-bold text-purple-500 flex items-center hover:cursor-pointer"
 						onClick={() => navigate("/")}
 					>
-						<img 
-							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
-							alt="UnderKover" 
+						<img
+							src="/lovable-uploads/UnderKover_logo2.png"
+							alt="UnderKover"
 							className="w-8 h-8 mr-2"
 						/>
 						UnderKover
@@ -165,9 +165,9 @@ const AppShell = ({ children }: AppShellProps) => {
 				<div className="fixed inset-0 bg-background/95 z-50 flex md:hidden flex-col animate-fade-in">
 					<div className="p-4 flex justify-between items-center border-b border-border">
 						<h1 className="text-xl font-bold text-purple-500 flex items-center">
-							<img 
-								src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
-								alt="UnderKover" 
+							<img
+								src="/lovable-uploads/UnderKover_logo2.png"
+								alt="UnderKover"
 								className="w-8 h-8 mr-2"
 							/>
 							UnderKover
@@ -255,9 +255,9 @@ const AppShell = ({ children }: AppShellProps) => {
 						className="text-lg font-bold text-purple-500 flex items-center"
 						onClick={() => navigate("/")}
 					>
-						<img 
-							src="/lovable-uploads/0b07ac36-3509-4791-b17a-17f80720810e.png" 
-							alt="UnderKover" 
+						<img
+							src="/lovable-uploads/UnderKover_logo2.png"
+							alt="UnderKover"
 							className="w-6 h-6 mr-2"
 						/>
 						UnderKover
