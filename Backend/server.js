@@ -1,4 +1,3 @@
-
 // server.js
 require("dotenv").config({ path: "./.env" });
 const express = require("express");
@@ -19,6 +18,8 @@ const ghostCircleRoutes = require("./routes/ghostCircleRoutes");
 const postRoutes = require("./routes/postRoutes");
 const whisperRoutes = require("./routes/whisperRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const promptEventRoutes = require("./routes/promptEventRoutes");
+const whisperMatchRoutes = require("./routes/whisperMatchRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -130,6 +131,8 @@ app.use("/api/ghost-circles", ghostCircleRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/whispers", whisperRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/prompts", promptEventRoutes);
+app.use("/api/whisper-match", whisperMatchRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
