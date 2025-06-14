@@ -60,10 +60,28 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
 	const { email, password } = req.body;
 
-	// Check for user email
-	const user = await User.findOne({ email });
+	console.log("LOGIN ATTEMPT: email ->", email);
 
-	if (user && (await user.matchPassword(password))) {
+	try {
+		// Check for user email
+		const user = await User.findOne({ email });
+
+		if (!user) {
+			console.error("Login error: User not found for email:", email);
+			res.status(400);
+			throw new Error("No account with this email. Please sign up first.");
+		}
+
+		const validPassword = await user.matchPassword(password);
+
+		if (!validPassword) {
+			console.error("Login error: Wrong password for email:", email);
+			res.status(400);
+			throw new Error("Incorrect password. Please try again.");
+		}
+
+		console.log("Login successful:", user.username, user._id);
+
 		res.json({
 			_id: user._id,
 			username: user.username,
@@ -73,9 +91,12 @@ const loginUser = asyncHandler(async (req, res) => {
 			avatarEmoji: user.avatarEmoji,
 			token: generateToken(user._id),
 		});
-	} else {
-		res.status(400);
-		throw new Error("Invalid credentials");
+	} catch (err) {
+		console.error("Critical error in loginUser:", err.message, err.stack);
+		res.status(500).json({
+			message: "An unexpected error occurred while logging in.",
+			error: err.message
+		});
 	}
 });
 
