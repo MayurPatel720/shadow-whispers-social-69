@@ -1,3 +1,4 @@
+
 // controllers/whisperController.js
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../models/whisperModel");
@@ -32,6 +33,28 @@ const saveWhisper = asyncHandler(
 				read: false,
 				visibilityLevel,
 			});
+
+			// Send push notification to receiver if they have a OneSignal player ID
+			if (receiver.oneSignalPlayerId && global.oneSignalClient) {
+				try {
+					await global.oneSignalClient.createNotification({
+						include_player_ids: [receiver.oneSignalPlayerId],
+						headings: { en: "New Whisper" },
+						contents: { en: `${senderAlias}: ${content}` },
+						data: {
+							type: "whisper",
+							senderId: senderId.toString(),
+							senderAlias,
+							conversationId: receiverId.toString()
+						},
+						url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/whispers`
+					});
+					console.log(`Push notification sent to ${receiver.oneSignalPlayerId}`);
+				} catch (notificationError) {
+					console.error("Failed to send push notification:", notificationError);
+					// Don't fail the whisper creation if notification fails
+				}
+			}
 
 			// Emit Socket.IO event to receiver's individual room and conversation room
 			if (global.io) {

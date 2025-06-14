@@ -26,6 +26,18 @@ const server = http.createServer(app);
 // Initialize Redis for caching (optional, falls back gracefully)
 initRedis();
 
+// Initialize OneSignal Client
+if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
+	const OneSignal = require('onesignal-node');
+	global.oneSignalClient = new OneSignal.Client(
+		process.env.ONESIGNAL_APP_ID,
+		process.env.ONESIGNAL_REST_API_KEY
+	);
+	console.log("OneSignal client initialized");
+} else {
+	console.warn("OneSignal credentials not found in environment variables");
+}
+
 // Trust proxy for rate limiting
 app.set('trust proxy', 1);
 

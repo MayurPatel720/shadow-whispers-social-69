@@ -3,9 +3,10 @@
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginUser, registerUser, getUserProfile, updateUserProfile } from '@/lib/api';
+import { loginUser, registerUser, getUserProfile, updateUserProfile, updateOneSignalPlayerId } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 import { User } from '@/types/user'; // Import shared User type
+import oneSignalService from '@/components/oneSignalService';
 
 interface AuthContextType {
   user: User | null;
@@ -27,6 +28,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [showLoginAnimation, setShowLoginAnimation] = useState(false);
   const navigate = useNavigate();
 
+  const setupOneSignalForUser = async () => {
+    try {
+      if (!oneSignalService.isSupported()) {
+        console.log("OneSignal not supported on this device");
+        return;
+      }
+
+      const status = await oneSignalService.getSubscriptionStatus();
+      if (!status.isSubscribed) {
+        const result = await oneSignalService.requestPermissionAndSubscribe();
+        if (result.success && result.playerId) {
+          await updateOneSignalPlayerId(result.playerId);
+          console.log("OneSignal player ID registered:", result.playerId);
+        }
+      } else if (status.playerId) {
+        await updateOneSignalPlayerId(status.playerId);
+        console.log("Existing OneSignal player ID registered:", status.playerId);
+      }
+    } catch (error) {
+      console.error("Failed to setup OneSignal:", error);
+      // Don't show error to user as this is not critical
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token');
@@ -34,6 +59,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         try {
           const userData = await getUserProfile();
           setUser(userData);
+          // Setup OneSignal after successful auth check
+          await setupOneSignalForUser();
         } catch (error) {
           console.error('Auth token invalid', error);
           localStorage.removeItem('token');
@@ -51,6 +78,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const data = await loginUser(email, password);
       localStorage.setItem('token', data.token);
       setUser(data);
+      
+      // Setup OneSignal for the logged-in user
+      await setupOneSignalForUser();
       
       // Show the login animation
       setShowLoginAnimation(true);
@@ -85,6 +115,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       localStorage.setItem('token', data.token);
       setUser(data);
+      
+      // Setup OneSignal for the newly registered user
+      await setupOneSignalForUser();
       
       // Show the login animation for registration too
       setShowLoginAnimation(true);

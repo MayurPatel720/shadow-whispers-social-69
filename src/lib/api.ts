@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 import { io, Socket } from "socket.io-client";
@@ -450,4 +449,15 @@ export const updateAdminPost = async (
 export const getAdminUser = async (userId: string): Promise<any> => {
 	const response = await api.get(`/api/admin/users/${userId}`);
 	return response.data;
+};
+
+// OneSignal API calls
+export const updateOneSignalPlayerId = async (playerId: string): Promise<any> => {
+	try {
+		const response = await api.post("/api/users/onesignal-player-id", { playerId });
+		return response.data;
+	} catch (error: any) {
+		console.error("Error updating OneSignal player ID:", error);
+		throw error?.response?.data || error;
+	}
 };
