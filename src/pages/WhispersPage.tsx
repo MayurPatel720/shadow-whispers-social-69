@@ -25,6 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
+import WhisperSidebar from "@/components/whisper/WhisperSidebar";
 
 const WhispersPage = () => {
   const { user } = useAuth();
@@ -150,165 +151,23 @@ const WhispersPage = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen">
       <div className="flex-1 flex flex-col md:flex-row">
-        <div className={`md:w-1/3 max-w-md border-r border-border flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
-          <div className="p-4 border-b border-border">
-            <h2 className="text-lg font-semibold text-undercover-light-purple">Whispers</h2>
-            <p className="text-sm text-muted-foreground">Anonymous messages</p>
-          </div>
-          
-          <div className="p-4 border-b border-border flex flex-col gap-2">
-            <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
-          </div>
-
-          <div className="p-2 sticky top-0 bg-background z-10">
-            <div className="relative">
-              <Input
-                placeholder="Search conversations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8 bg-card"
-              />
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              {searchTerm && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2 h-full"
-                  onClick={() => setSearchTerm("")}
-                >
-                  ✕
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {filteredConversations && filteredConversations.length > 0 ? (
-            <div className="divide-y divide-border overflow-auto flex-1">
-              {filteredConversations.map((convo) => (
-                <div 
-                  key={convo._id}
-                  className={`group p-3 hover:bg-undercover-purple/5 cursor-pointer relative ${
-                    selectedConversation && selectedConversation._id === convo._id 
-                      ? 'bg-undercover-purple/10' 
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center space-x-3" onClick={() => handleSelectConversation(convo)}>
-                    <AvatarGenerator
-                      emoji={convo.partner.avatarEmoji || "🎭"} 
-                      nickname={convo.partner.anonymousAlias}
-                      color="#6E59A5"
-                      size="md"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium truncate">
-                          {convo.partner.anonymousAlias || "Anonymous"}
-                        </span>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {getLastMessageTime(convo.lastMessage.createdAt)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <p className="text-sm text-muted-foreground truncate pr-2">
-                          {convo.lastMessage.content}
-                        </p>
-                        {convo.unreadCount > 0 && (
-                          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-undercover-purple text-white text-xs">
-                            {convo.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {/* Three dots (MoreVertical) context menu, no button styling */}
-                    <div
-                      className="relative"
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <ContextMenu>
-                        <ContextMenuTrigger asChild>
-                          <span
-                            className="flex items-center justify-center cursor-pointer opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground focus:outline-none"
-                            tabIndex={0}
-                            aria-label="Conversation menu"
-                            role="button"
-                          >
-                            <MoreVertical className="w-5 h-5" />
-                          </span>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent className="z-30">
-                          <ContextMenuItem
-                            className="text-red-500 focus:bg-red-100"
-                            onClick={() => {
-                              setDeletingId(convo._id);
-                              setShowDeleteDialog(true);
-                            }}
-                          >
-                            Delete Conversation
-                          </ContextMenuItem>
-                          {/* Additional options can be added here */}
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </div>
-                  </div>
-                  {/* Delete confirmation dialog (remains outside context menu for accessibility) */}
-                  <AlertDialog open={showDeleteDialog && deletingId === convo._id} onOpenChange={(open) => {
-                    if (!open) setDeletingId(null);
-                    setShowDeleteDialog(open);
-                  }}>
-                    <AlertDialogTrigger asChild>
-                      <div />
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete all messages with <b>{convo.partner.anonymousAlias}</b>. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          disabled={deleteConversationMutation.isPending}
-                          onClick={() => deleteConversationMutation.mutate(convo._id)}
-                        >
-                          {deleteConversationMutation.isPending && deletingId === convo._id ? (
-                            <Loader className="h-4 w-4 animate-spin mr-1" />
-                          ) : null}
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="p-8 flex flex-col items-center justify-center flex-1">
-              <MessageSquare className="h-12 w-12 text-muted-foreground mb-2" />
-              <p className="text-center text-muted-foreground">
-                {searchTerm ? "No matching conversations" : "No whispers yet."}
-              </p>
-              <Button className="mt-4 bg-undercover-purple" onClick={() => setIsWhisperModalOpen(true)}>
-                Start a whisper
-              </Button>
-              <div className="mt-3 w-full">
-                <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
-              </div>
-            </div>
-          )}
-          
-          <div className="p-4 border-t border-border">
-            <Button 
-              className="w-full bg-undercover-purple hover:bg-undercover-deep-purple"
-              onClick={() => setIsWhisperModalOpen(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Whisper
-            </Button>
-          </div>
-        </div>
-        
+        <WhisperSidebar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          filteredConversations={filteredConversations}
+          selectedConversation={selectedConversation}
+          onSelectConversation={handleSelectConversation}
+          isWhisperModalOpen={isWhisperModalOpen}
+          setIsWhisperModalOpen={setIsWhisperModalOpen}
+          setIsYourMatchesOpen={setIsYourMatchesOpen}
+          deletingId={deletingId}
+          showDeleteDialog={showDeleteDialog}
+          setShowDeleteDialog={setShowDeleteDialog}
+          setDeletingId={setDeletingId}
+          onDeleteConversation={(partnerId) => deleteConversationMutation.mutate(partnerId)}
+          deletePendingId={deleteConversationMutation.isPending ? deletingId : null}
+          getLastMessageTime={getLastMessageTime}
+        />
         <div className={`flex-1 flex flex-col ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
           {selectedConversation ? (
             <WhisperConversation 
