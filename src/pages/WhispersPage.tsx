@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMyWhispers } from "@/lib/api";
+import { getMyWhispers, joinWhisperMatch } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Loader, MessageSquare, Search, Plus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,34 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import WhisperMatchEntry from "@/components/feed/WhisperMatchEntry";
+import YourMatchesModal from "@/components/whisper/YourMatchesModal";
 
 const WhispersPage = () => {
   const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isWhisperModalOpen, setIsWhisperModalOpen] = useState(false);
-  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
+  const [isYourMatchesOpen, setIsYourMatchesOpen] = useState(false);
+  const [joinedMatch, setJoinedMatch] = useState(false);
   const queryClient = useQueryClient();
   
+  // Automatically join whisper match session when user enters page
+  useEffect(() => {
+    if (user && !joinedMatch) {
+      joinWhisperMatch()
+        .then(() => setJoinedMatch(true))
+        .catch(() => {
+          toast({
+            variant: "destructive",
+            title: "Error joining match session",
+            description: "Could not start whisper match session. Please try again later."
+          });
+        });
+    }
+    // ignore exhaustive-deps for initial mount only
+    // eslint-disable-next-line
+  }, [user]);
+
   const { data: conversations, isLoading, error } = useQuery({
     queryKey: ['whispers'],
     queryFn: getMyWhispers,
@@ -40,7 +60,6 @@ const WhispersPage = () => {
   const filteredConversations = React.useMemo(() => {
     if (!conversations) return [];
     if (!searchTerm.trim()) return conversations;
-    
     return conversations.filter(convo => 
       convo.partner.anonymousAlias.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (convo.partner.username && convo.partner.username.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -55,17 +74,14 @@ const WhispersPage = () => {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     const now = new Date();
-    
     if (date.toDateString() === now.toDateString()) {
       return format(date, 'h:mm a');
     }
-    
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
     if (date > weekAgo) {
       return format(date, 'EEE');
     }
-    
     return format(date, 'MMM d');
   };
 
@@ -86,10 +102,12 @@ const WhispersPage = () => {
             <p className="text-sm text-muted-foreground">Anonymous messages</p>
           </div>
           
+          {/* No more WhisperMatchEntry at the top, show "Your Matches" button */}
           <div className="p-4 border-b border-border flex flex-col gap-2">
-            <WhisperMatchEntry />
+            <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
           </div>
 
+          {/* Search bar */}
           <div className="p-2 sticky top-0 bg-background z-10">
             <div className="relative">
               <Input
@@ -164,8 +182,9 @@ const WhispersPage = () => {
               <Button className="mt-4 bg-undercover-purple" onClick={() => setIsWhisperModalOpen(true)}>
                 Start a whisper
               </Button>
+              {/* Your Matches Button shown here */}
               <div className="mt-3 w-full">
-                <WhisperMatchEntry />
+                <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
               </div>
             </div>
           )}
@@ -197,13 +216,19 @@ const WhispersPage = () => {
                 Select a conversation to view your whispers. 
                 All messages are anonymous until someone correctly guesses your identity.
               </p>
+              {/* Matches button here */}
               <div className="mt-4">
-                <WhisperMatchEntry />
+                <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <YourMatchesModal
+        open={isYourMatchesOpen}
+        onOpenChange={setIsYourMatchesOpen}
+      />
 
       <WhisperModal
         open={isWhisperModalOpen}
