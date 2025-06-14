@@ -208,9 +208,9 @@ const ProfileComponent = ({
 					<div className="border-t border-border my-2 sm:my-3"></div>
 					<div className="space-y-3">
 						<h3 className="text-sm sm:text-base font-medium">
-							{isOwnProfile ? "Your Bio" : "About this user"}
+							{isOwnProfile ? "Your Anonymous Identity" : "About this user"}
 						</h3>
-						<div className="text-[15px] sm:text-base text-muted-foreground mb-3 break-words whitespace-pre-line min-h-[32px]">
+						<div className="text-sm text-muted-foreground mb-3 break-words whitespace-pre-line ">
 							{profileBio}
 						</div>
 						<ProfileStats
