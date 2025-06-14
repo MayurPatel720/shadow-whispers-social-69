@@ -21,6 +21,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const promptEventRoutes = require("./routes/promptEventRoutes");
 const whisperMatchRoutes = require("./routes/whisperMatchRoutes");
 const amaRoutes = require("./routes/amaRoutes");
+const matchRoutes = require("./routes/matchRoutes");
+const adminMatchRoutes = require("./routes/adminMatchRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -135,6 +137,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptEventRoutes);
 app.use("/api/whisper-match", whisperMatchRoutes);
 app.use("/api/ama", amaRoutes);
+
+// ----- NEW ROUTES FOR MATCH FEATURES AND ADMIN -----
+app.use("/api/match", matchRoutes);
+app.use("/api/admin", adminMatchRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
