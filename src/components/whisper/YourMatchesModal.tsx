@@ -24,10 +24,10 @@ interface YourMatchesModalProps {
 
 const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange, requireProfileEdit }) => {
   const [page, setPage] = useState(1);
-  const [premiumUnlocked, setPremiumUnlocked] = useState(false); // Local (simulate purchase)
   const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Remove local 'premiumUnlocked'. Only trust backend flag.
   const {
     data,
     isLoading,
@@ -35,7 +35,7 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
     error,
     refetch
   } = useQuery({
-    queryKey: ["matches", page, premiumUnlocked],
+    queryKey: ["matches", page],
     queryFn: () => fetchMatches(page),
     enabled: open,
     retry: false,
@@ -69,9 +69,9 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
     }
   }
 
-  // Effective premium flag (simulate unlock)
-  const isPremium = (data && data.isPremium) || premiumUnlocked;
-
+  // Premium flag comes only from backend
+  const isPremium = data && data.isPremium;
+  
   // --- Razorpay Integration ---
   const handleUnlockClick = async () => {
     setIsRazorpayLoading(true);
@@ -87,9 +87,8 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
         handler: async function (response: any) {
           toast({ title: "Payment successful!", description: "Unlocking premium matches..." });
           try {
-            // Call backend to unlock premium (makes user premium)
+            // Unlock on backend after payment
             await unlockPremiumMatches();
-            setPremiumUnlocked(true);
             setTimeout(() => {
               refetch();
               toast({ title: "Premium Unlocked!", description: "You can now view up to 10 matches." });
@@ -176,11 +175,7 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                         <div className="text-xs">
                           Gender: <span className="capitalize">{profile.gender || "N/A"}</span>
                         </div>
-                        {!isPremium && idx >= 3 && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 rounded-md">
-                            <span className="text-yellow-300 font-semibold text-lg">Upgrade Now</span>
-                          </div>
-                        )}
+                        {/* NO manual logic for premium overlays */}
                       </div>
                     </Card>
                   </button>
@@ -236,9 +231,14 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                   className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
                   onClick={handleUnlockClick}
                   disabled={isRazorpayLoading}
-                  loading={isRazorpayLoading}
                 >
-                  {isRazorpayLoading ? "Processing..." : "Unlock Now"}
+                  {isRazorpayLoading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" /> Processing...
+                    </>
+                  ) : (
+                    "Unlock Now"
+                  )}
                 </Button>
                 <p className="text-xs text-gray-600">See up to 10 matched users instantly!</p>
               </div>
