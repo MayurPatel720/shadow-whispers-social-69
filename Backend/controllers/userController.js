@@ -1,7 +1,9 @@
+
 // controllers/userController.js
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
-const generateToken = require("../utils/jwtHelper");
+// FIXED: correct import for generateToken as a destructured object
+const { generateToken } = require("../utils/jwtHelper"); 
 const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
 
 // @desc    Register a new user
