@@ -27,6 +27,8 @@ import { toast } from "@/hooks/use-toast";
 import { User, Recognition } from "@/types/user";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import { Loader2, X } from "lucide-react";
+import RecognitionStatsBox from "./RecognitionStatsBox";
+import RecognitionUserList from "./RecognitionUserList";
 
 interface RecognitionModalProps {
   open: boolean;
@@ -85,50 +87,6 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
     }
   };
 
-  const renderUserList = (users: User[] = []) => {
-    if (users.length === 0) {
-      return (
-        <div className="text-center py-10">
-          <p className="text-muted-foreground">No users found</p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="divide-y">
-        {users.map((user) => (
-          <div
-            key={user._id}
-            className="flex items-center justify-between py-3"
-          >
-            <div className="flex items-center gap-3">
-              <AvatarGenerator
-                emoji={user.avatarEmoji}
-                nickname={user.anonymousAlias}
-                size="md"
-              />
-              <div>
-                <p className="font-medium">{user.anonymousAlias}</p>
-                <p className="text-sm text-muted-foreground">@{user.username}</p>
-              </div>
-            </div>
-            {activeTab === "recognized" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleRevokeRecognition(user._id)}
-                className="text-destructive hover:text-destructive"
-              >
-                <X size={16} className="mr-1" />
-                Revoke
-              </Button>
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
@@ -142,46 +100,16 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
           </div>
         ) : (
           <>
-            <div className="flex flex-col gap-4 mb-4">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="border rounded-lg p-4">
-                  <p className="text-lg font-semibold">
-                    {totalRecognized}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Users you recognized
-                  </p>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <p className="text-lg font-semibold">
-                    {totalRecognizers}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Users who recognized you
-                  </p>
-                </div>
-              </div>
-              <div className="border rounded-lg p-4">
-                <div className="flex justify-between">
-                  <p className="text-sm font-medium">Recognition Rate</p>
-                  <p className="text-sm font-semibold">
-                    {recognitionRate}%
-                  </p>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <p>
-                    {successfulRecognitions}/{recognitionAttempts} guesses
-                    correct
-                  </p>
-                </div>
-              </div>
-            </div>
+            <RecognitionStatsBox
+              totalRecognized={totalRecognized}
+              totalRecognizers={totalRecognizers}
+              recognitionRate={recognitionRate}
+              successfulRecognitions={successfulRecognitions}
+              recognitionAttempts={recognitionAttempts}
+            />
 
             <div className="flex justify-end mb-4">
-              <Select
-                value={filter}
-                onValueChange={setFilter}
-              >
+              <Select value={filter} onValueChange={setFilter}>
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Filter" />
                 </SelectTrigger>
@@ -202,10 +130,17 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
                 <TabsTrigger value="recognizers">Recognized Me</TabsTrigger>
               </TabsList>
               <TabsContent value="recognized">
-                {renderUserList((recognitionData?.recognized ?? []) as User[])}
+                <RecognitionUserList
+                  users={(recognitionData?.recognized ?? []) as User[]}
+                  activeTab="recognized"
+                  onRevoke={handleRevokeRecognition}
+                />
               </TabsContent>
               <TabsContent value="recognizers">
-                {renderUserList((recognitionData?.recognizers ?? []) as User[])}
+                <RecognitionUserList
+                  users={(recognitionData?.recognizers ?? []) as User[]}
+                  activeTab="recognizers"
+                />
               </TabsContent>
             </Tabs>
           </>
