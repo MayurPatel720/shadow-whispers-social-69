@@ -25,6 +25,7 @@ import MatchesPage from "./pages/MatchesPage";
 import AdminMatchStats from "./pages/AdminMatchStats";
 import "./App.css";
 import oneSignalService from "./components/oneSignalService";
+import WhisperChatPage from "./components/whisper/WhisperChatPage";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -147,6 +148,14 @@ const AppContent: React.FC = () => {
 								<AppShell>
 									<MatchesPage />
 								</AppShell>
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/chat/:partnerId"
+						element={
+							<ProtectedRoute>
+								<WhisperChatPage />
 							</ProtectedRoute>
 						}
 					/>
