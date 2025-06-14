@@ -14,6 +14,7 @@ import CircleDetailsTabs from "@/components/ghost-circle/CircleDetailsTabs";
 const GhostCircles = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
+  const [circleTab, setCircleTab] = useState<string | undefined>(undefined); // For initial tab
 
   const { data: ghostCircles = [], isLoading, refetch } = useQuery({
     queryKey: ["ghostCircles"],
@@ -25,12 +26,14 @@ const GhostCircles = () => {
     setIsCreateModalOpen(false);
   };
 
-  const handleCircleSelect = (circleId: string) => {
+  const handleCircleSelect = (circleId: string, tab?: string) => {
     setSelectedCircleId(circleId);
+    setCircleTab(tab);
   };
 
   const handleBackToCircles = () => {
     setSelectedCircleId(null);
+    setCircleTab(undefined);
   };
 
   // Custom ghost SVG for illustrations
@@ -139,6 +142,7 @@ const GhostCircles = () => {
           <CircleDetailsTabs
             circle={selectedCircle}
             onBack={handleBackToCircles}
+            initialTab={circleTab}
           />
         )}
       </motion.div>
