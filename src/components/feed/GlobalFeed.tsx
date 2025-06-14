@@ -1,18 +1,19 @@
+
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader, Plus, TrendingUp, HelpCircle } from "lucide-react";
+import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
 import { Post } from "@/types/index";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 import WhisperMatchEntry from "./WhisperMatchEntry";
-import AMASessionList from "../ama/AMASessionList";
+// import AMASessionList from "../ama/AMASessionList"; // REMOVED
 
 const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [showAMA, setShowAMA] = useState(false);
+  // const [showAMA, setShowAMA] = useState(false); // REMOVED
   const queryClient = useQueryClient();
 
   const {
@@ -85,22 +86,23 @@ const GlobalFeed = () => {
         {/* Feature buttons */}
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <WhisperMatchEntry />
-          <Button
+          {/* AMA button removed */}
+          {/* <Button
             variant="outline"
             className="flex items-center gap-2"
             onClick={() => setShowAMA((s) => !s)}
           >
             <HelpCircle size={18} />
             {showAMA ? "Hide Q&A" : "Q&A / AMA Sessions"}
-          </Button>
+          </Button> */}
         </div>
 
-        {/* Show AMA sessions (toggleable) */}
-        {showAMA && (
+        {/* AMA session display removed! */}
+        {/* {showAMA && (
           <div className="mb-6">
             <AMASessionList />
           </div>
-        )}
+        )} */}
 
         {Array.isArray(posts) && posts.length === 0 ? (
           <div className="text-center py-16 space-y-4">

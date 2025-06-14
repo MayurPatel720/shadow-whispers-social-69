@@ -33,6 +33,8 @@ import { useAdmin } from "@/context/AdminContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
+import { getWeeklyPrompt, setWeeklyPrompt } from "@/lib/api";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 interface AdminPost {
 	_id: string;
@@ -81,6 +83,33 @@ const AdminPanel = () => {
 		activeUsers: 0,
 		bannedUsers: 0,
 		postsToday: 0,
+	});
+	const [promptInput, setPromptInput] = useState<string>("");
+	const {
+		data: currentPrompt,
+		isLoading: promptLoading,
+		refetch: refetchPrompt,
+	} = useQuery({
+		queryKey: ["weeklyPrompt"],
+		queryFn: getWeeklyPrompt,
+	});
+	const { mutate: updatePrompt, isPending: updatingPrompt } = useMutation({
+		mutationFn: (newPrompt: string) => setWeeklyPrompt(newPrompt),
+		onSuccess: () => {
+			refetchPrompt();
+			toast({
+				title: "Prompt Updated",
+				description: "Weekly prompt has been changed.",
+			});
+			setPromptInput("");
+		},
+		onError: () => {
+			toast({
+				variant: "destructive",
+				title: "Error",
+				description: "Failed to update prompt.",
+			});
+		},
 	});
 
 	useEffect(() => {
@@ -296,6 +325,48 @@ const AdminPanel = () => {
 			</div>
 
 			<div className="max-w-7xl mx-auto p-6">
+				{/* --- Weekly Prompt Card at Top --- */}
+				<div className="mb-8">
+					<section className="bg-purple-800 border border-purple-700 rounded-xl p-6 mb-6 flex flex-col md:flex-row items-center gap-4 shadow-md">
+						<div className="flex-1">
+							<h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+								Weekly Prompt
+							</h3>
+							{promptLoading ? (
+								<p className="text-white/60">Loading...</p>
+							) : (
+								<p className="text-white/90">
+									{currentPrompt?.promptText || "No prompt set."}
+								</p>
+							)}
+						</div>
+						<form
+							className="flex flex-col md:flex-row gap-2 items-center"
+							onSubmit={e => {
+								e.preventDefault();
+								if (promptInput.trim()) {
+									updatePrompt(promptInput.trim());
+								}
+							}}
+						>
+							<input
+								type="text"
+								value={promptInput}
+								onChange={e => setPromptInput(e.target.value)}
+								placeholder="Set new prompt..."
+								className="text-black rounded px-3 py-2 border border-gray-300 text-sm md:w-80 mb-2 md:mb-0"
+							/>
+							<Button
+								type="submit"
+								className="bg-purple-600 hover:bg-purple-700 text-white"
+								disabled={updatingPrompt || !promptInput.trim()}
+							>
+								{updatingPrompt ? "Updating..." : "Update"}
+							</Button>
+						</form>
+					</section>
+				</div>
+
 				{/* Stats Dashboard */}
 				<div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
 					<Card className="bg-gray-800 border-gray-700">
