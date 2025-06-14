@@ -33,27 +33,14 @@ const saveWhisper = asyncHandler(
 				visibilityLevel,
 			});
 
-			// Save notification
-			const notification = await Notification.create({
-				title: `New Whisper from ${senderAlias} ${senderEmoji}`,
-				message: content,
-				userId: receiverId,
-			});
-
 			// Emit Socket.IO event to receiver's individual room and conversation room
 			if (global.io) {
-				global.io.to(receiverId.toString()).emit("notification", {
-					title: `New Whisper from ${senderAlias} ${senderEmoji}`,
-					body: content,
-				});
 				const room = [senderId.toString(), receiverId.toString()]
 					.sort()
 					.join(":");
-				global.io.to(room).emit("notification", {
-					title: `New Whisper from ${senderAlias} ${senderEmoji}`,
-					body: content,
-				});
-				console.log(`Notification emitted to ${receiverId} and room ${room}`);
+				global.io.to(receiverId.toString()).emit("receiveWhisper", whisper);
+				global.io.to(room).emit("receiveWhisper", whisper);
+				console.log(`Whisper emitted to ${receiverId} and room ${room}`);
 			} else {
 				console.warn("global.io not initialized");
 			}
