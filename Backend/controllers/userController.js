@@ -60,27 +60,35 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
 	const { email, password } = req.body;
 
-	console.log("LOGIN ATTEMPT: email ->", email);
+	console.log("[LOGIN ATTEMPT]", email);
 
 	try {
-		// Check for user email
 		const user = await User.findOne({ email });
+		console.log("[LOGIN] User record fetched:", user ? user.username : null);
 
 		if (!user) {
-			console.error("Login error: User not found for email:", email);
+			console.error("[LOGIN ERROR] User not found for email:", email);
 			res.status(400);
 			throw new Error("No account with this email. Please sign up first.");
 		}
 
+		if (!user.password) {
+			console.error("[LOGIN ERROR] User has no password property:", user);
+			res.status(500);
+			throw new Error("User invalid: no password set.");
+		}
+
 		const validPassword = await user.matchPassword(password);
 
+		console.log("[LOGIN] Password validation result:", validPassword);
+
 		if (!validPassword) {
-			console.error("Login error: Wrong password for email:", email);
+			console.error("[LOGIN ERROR] Wrong password for email:", email);
 			res.status(400);
 			throw new Error("Incorrect password. Please try again.");
 		}
 
-		console.log("Login successful:", user.username, user._id);
+		console.log("[LOGIN SUCCESS]:", user.username, user._id);
 
 		res.json({
 			_id: user._id,
@@ -89,13 +97,14 @@ const loginUser = asyncHandler(async (req, res) => {
 			email: user.email,
 			anonymousAlias: user.anonymousAlias,
 			avatarEmoji: user.avatarEmoji,
-			token: generateToken(user._id),
+			token: generateToken(user._id)
 		});
 	} catch (err) {
-		console.error("Critical error in loginUser:", err.message, err.stack);
+		console.error("[LOGIN CRITICAL ERROR]:", err);
 		res.status(500).json({
 			message: "An unexpected error occurred while logging in.",
-			error: err.message
+			error: err.message,
+			stack: err.stack
 		});
 	}
 });
