@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import { MoreVertical, Loader } from "lucide-react";
 import {
@@ -41,6 +41,9 @@ const WhisperConversationEntry: React.FC<ConversationEntryProps> = ({
   deletePending,
   getLastMessageTime,
 }) => {
+  // Control the menu open state
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
     <div
       className={`group p-3 hover:bg-undercover-purple/5 cursor-pointer relative ${
@@ -74,27 +77,39 @@ const WhisperConversationEntry: React.FC<ConversationEntryProps> = ({
             )}
           </div>
         </div>
-        {/* Three dots menu */}
+        {/* Three dots: normal color, opens menu on click */}
         <div
           className="relative"
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()} // prevent parent click
           tabIndex={-1}
         >
-          <ContextMenu>
+          <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <ContextMenuTrigger asChild>
-              <span
-                className="flex items-center justify-center cursor-pointer opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+              <button
+                type="button"
+                className="flex items-center justify-center cursor-pointer rounded-full p-1 
+                  opacity-70 group-hover:opacity-100 
+                  text-muted-foreground 
+                  hover:bg-undercover-purple/15 hover:text-undercover-purple 
+                  focus:bg-undercover-purple/15 focus:text-undercover-purple 
+                  transition"
                 tabIndex={0}
                 aria-label="Conversation menu"
-                role="button"
+                onClick={e => {
+                  e.preventDefault();
+                  setMenuOpen((v) => !v);
+                }}
               >
                 <MoreVertical className="w-5 h-5" />
-              </span>
+              </button>
             </ContextMenuTrigger>
-            <ContextMenuContent className="z-30">
+            <ContextMenuContent align="end" className="z-30">
               <ContextMenuItem
                 className="text-red-500 focus:bg-red-100"
-                onClick={() => onShowDeleteDialog(true)}
+                onClick={() => {
+                  setMenuOpen(false);
+                  onShowDeleteDialog(true);
+                }}
               >
                 Delete Conversation
               </ContextMenuItem>
@@ -135,3 +150,4 @@ const WhisperConversationEntry: React.FC<ConversationEntryProps> = ({
 };
 
 export default WhisperConversationEntry;
+
