@@ -17,6 +17,8 @@ const INTERESTS = [
   "Travel", "Art", "Cooking", "Fitness", "Tech", "Fashion",
 ];
 
+type Gender = "male" | "female" | "other" | "";
+
 interface EditProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -26,12 +28,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const { user, updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
-  const [gender, setGender] = useState(user?.gender || "");
+  const [gender, setGender] = useState<Gender>((user?.gender as Gender) || "");
   const [interests, setInterests] = useState<string[]>(user?.interests || []);
 
   useEffect(() => {
     setBio(user?.bio || "");
-    setGender(user?.gender || "");
+    setGender((user?.gender as Gender) || "");
     setInterests(user?.interests || []);
   }, [user?.bio, user?.gender, user?.interests]);
 
@@ -104,7 +106,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             <select
               id="gender"
               value={gender}
-              onChange={(e) => setGender(e.target.value)}
+              onChange={(e) => setGender(e.target.value as Gender)}
               className="w-full bg-background border rounded p-2"
               required
             >
@@ -186,4 +188,3 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 };
 
 export default EditProfileModal;
-

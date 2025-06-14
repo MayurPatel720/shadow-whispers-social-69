@@ -1,14 +1,17 @@
+
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getWeeklyPrompt } from "@/lib/api";
 import { Sparkles } from "lucide-react";
 
+type WeeklyPromptData = {
+  promptText: string;
+};
+
 const WeeklyPromptBanner = () => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<WeeklyPromptData>({
     queryKey: ["weeklyPrompt"],
     queryFn: getWeeklyPrompt,
-    cacheTime: 0,
-    staleTime: 0,
     refetchOnWindowFocus: true,
   });
 
