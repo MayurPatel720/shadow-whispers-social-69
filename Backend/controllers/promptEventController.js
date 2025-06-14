@@ -10,20 +10,30 @@ const getCurrentWeekNumber = () => {
   return Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
 };
 
-// GET /api/prompts/current - Get current week's prompt
+// GET /api/prompts/current - Get current week's active prompt
 const getCurrentPrompt = asyncHandler(async (_req, res) => {
   const week = getCurrentWeekNumber();
-  let prompt = await PromptEvent.findOne({ weekNumber: week });
+  // First, try to find the ACTIVE prompt for this week
+  let prompt = await PromptEvent.findOne({ weekNumber: week, active: true });
 
   if (!prompt) {
-    // Default prompt if none exists
+    // If no active prompt, fallback: find any prompt for week (even if inactive)
+    prompt = await PromptEvent.findOne({ weekNumber: week });
+  }
+  if (!prompt) {
+    // Fallback: create default prompt for this week if none exists at all
     prompt = await PromptEvent.create({
       promptText: "Share your most mysterious moment.",
       weekNumber: week,
       active: true,
     });
   }
-  res.json(prompt);
+  res.json({
+    promptText: prompt.promptText,
+    weekNumber: prompt.weekNumber,
+    active: prompt.active,
+    _id: prompt._id,
+  });
 });
 
 // POST /api/prompts - Admin creates/sets this week's prompt
@@ -31,8 +41,9 @@ const setWeeklyPrompt = asyncHandler(async (req, res) => {
   const { promptText } = req.body;
   const week = getCurrentWeekNumber();
 
-  // Deactivate previous
-  await PromptEvent.updateMany({ active: true }, { active: false });
+  // Deactivate all old prompts (including old for this week)
+  await PromptEvent.updateMany({ weekNumber: week }, { active: false });
+  // Save new active prompt for this week
   const prompt = await PromptEvent.create({
     promptText,
     weekNumber: week,
