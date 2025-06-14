@@ -282,10 +282,10 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				{/* Children (Page Content) */}
-				<div className="flex-1 pb-16 md:pb-0">{children}</div>
+				<div className="flex-1 min-h-0">{children}</div>
 
 				{/* Bottom Navigation (Mobile) */}
-				<div className="md:hidden fixed bottom-0 w-full bg-card border-t border-border p-2 flex justify-around">
+				<div className="md:hidden fixed bottom-0 w-full bg-card border-t border-border p-2 flex justify-around z-50">
 					<Button
 						variant="ghost"
 						size="icon"
