@@ -4,8 +4,8 @@ import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
 // Create axios instance with base URL
-const API_URL = "http://localhost:8900";
-// const API_URL = "https://undercover-service.onrender.com";
+// const API_URL = "http://localhost:8900";
+const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
 	baseURL: API_URL,
@@ -505,7 +505,12 @@ export const setWeeklyPrompt = async (promptText: string) => {
 
 // Edit a whisper message
 export async function editWhisper(messageId: string, content: string) {
-	console.log("Frontend: Editing whisper messageId:", messageId, "with content:", content);
+	console.log(
+		"Frontend: Editing whisper messageId:",
+		messageId,
+		"with content:",
+		content
+	);
 	const res = await api.put(`/api/whispers/message/${messageId}`, { content });
 	return res.data;
 }

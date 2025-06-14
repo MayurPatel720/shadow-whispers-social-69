@@ -1,4 +1,3 @@
-
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,7 +82,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 									Your Matches
 								</Button>
 								{onShowRecognitions && (
-									<Button variant="outline" size="sm" onClick={onShowRecognitions}>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={onShowRecognitions}
+									>
 										<Eye size={16} className="mr-2" />
 										Recognitions
 									</Button>
@@ -103,7 +106,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 					</div>
 				</div>
 			) : (
-			/* MOBILE layout: keep current version for mobile, actions below */
+				/* MOBILE layout: keep current version for mobile, actions below */
 				<>
 					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex items-center gap-3 w-full min-w-0">
@@ -111,7 +114,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 								{profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
 							</div>
 							<div className="flex-1 flex items-center min-w-0">
-								<div className="flex flex-col min-w-0 flex-1">
+								<div className="flex  flex-col min-w-0 flex-1">
 									<div className="flex items-center gap-1 min-w-0">
 										<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1 min-w-0">
 											<span className="truncate">{displayedAlias}</span>
@@ -152,10 +155,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 					<div className="flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-3">
 						{isOwnProfile ? (
 							<>
-								<Button variant="outline" size="sm" onClick={onEdit}>
+								{/* <Button variant="outline" size="sm" onClick={onEdit}>
 									<Edit size={16} className="mr-2" />
 									Edit
-								</Button>
+								</Button> */}
 								<Button variant="outline" size="sm" onClick={onShowMatches}>
 									<UserRound size={16} className="mr-2" />
 									Your Matches
@@ -166,7 +169,12 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 								</Button>
 							</>
 						) : (
-							<Button variant="outline" size="sm" onClick={onWhisper} className="w-full sm:w-auto">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={onWhisper}
+								className="w-full sm:w-auto"
+							>
 								<UserRound size={16} className="mr-2" />
 								Whisper
 							</Button>
