@@ -27,11 +27,23 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onShowMessages,
   onWhisper,
 }) => {
-  // Always left-align for others, more balanced for self
+  // For others: always align top-left, for self: more balanced
   return (
     <CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
-      <div className={`flex flex-col gap-2 ${isOwnProfile ? 'sm:flex-row sm:items-center sm:justify-between' : ''}`}>
-        <div className={`flex flex-col xs:flex-row items-start gap-1 w-full`}>
+      <div
+        className={
+          isOwnProfile
+            ? "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+            : "flex flex-col gap-2 items-start" // always left/top
+        }
+      >
+        <div
+          className={
+            isOwnProfile
+              ? "flex flex-col xs:flex-row items-start gap-1 w-full"
+              : "flex flex-row items-start gap-1 w-full"
+          }
+        >
           {/* Top-left alignment for avatar/name/username */}
           <div className="flex items-center gap-3">
             <div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl">
@@ -63,14 +75,25 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
           {/* Edit button only for own profile on mobile */}
           {isOwnProfile && (
             <div className="block sm:hidden mt-2">
-              <Button variant="outline" size="icon" className="h-8 w-8" onClick={onEdit}>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onEdit}
+              >
                 <Edit size={16} />
               </Button>
             </div>
           )}
         </div>
-        {/* Right controls for own profile, top for others */}
-        <div className={`flex gap-2 w-full ${isOwnProfile ? 'hidden sm:flex sm:w-auto sm:justify-end' : 'justify-end mt-2 sm:mt-0'}`}>
+        {/* Right controls for own profile, top for others (but left/top for others!) */}
+        <div
+          className={
+            isOwnProfile
+              ? "flex gap-2 w-full hidden sm:flex sm:w-auto sm:justify-end"
+              : "flex gap-2 w-full mt-2 sm:mt-0 justify-start"
+          }
+        >
           {isOwnProfile ? (
             <>
               <Button variant="outline" size="sm" onClick={onEdit}>
@@ -96,15 +119,30 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         {/* Mobile-only bottom row for controls */}
         {isOwnProfile && (
           <div className="flex sm:hidden gap-2 mt-1 w-full">
-            <Button variant="outline" size="sm" className="flex-1" onClick={onEdit}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onEdit}
+            >
               <Edit size={16} className="mr-2" />
               Edit
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={onShowMatches}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onShowMatches}
+            >
               <UserRound size={16} className="mr-2" />
               Your Matches
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={onShowMessages}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onShowMessages}
+            >
               <MessageSquare size={16} className="mr-2" />
               Messages
             </Button>
@@ -129,4 +167,3 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 };
 
 export default ProfileHeader;
-
