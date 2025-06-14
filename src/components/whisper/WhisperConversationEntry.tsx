@@ -1,13 +1,13 @@
 
-import React, { useState } from "react";
+import React from "react";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import { MoreVertical, Loader } from "lucide-react";
 import {
-  ContextMenu,
-  ContextMenuTrigger,
-  ContextMenuContent,
-  ContextMenuItem,
-} from "@/components/ui/context-menu";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -41,9 +41,6 @@ const WhisperConversationEntry: React.FC<ConversationEntryProps> = ({
   deletePending,
   getLastMessageTime,
 }) => {
-  // Control the menu open state
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
     <div
       className={`group p-3 hover:bg-undercover-purple/5 cursor-pointer relative ${
@@ -77,44 +74,42 @@ const WhisperConversationEntry: React.FC<ConversationEntryProps> = ({
             )}
           </div>
         </div>
-        {/* Three dots: normal color, opens menu on click */}
+        {/* Three dots button shows dropdown on click/tap */}
         <div
           className="relative"
           onClick={e => e.stopPropagation()} // prevent parent click
           tabIndex={-1}
         >
-          <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
-            <ContextMenuTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
                 type="button"
                 className="flex items-center justify-center cursor-pointer rounded-full p-1 
-                  opacity-70 group-hover:opacity-100 
+                  opacity-70 group-hover:opacity-100
                   text-muted-foreground 
-                  hover:bg-undercover-purple/15 hover:text-undercover-purple 
+                  hover:bg-undercover-purple/15 hover:text-undercover-purple
                   focus:bg-undercover-purple/15 focus:text-undercover-purple 
                   transition"
                 tabIndex={0}
                 aria-label="Conversation menu"
-                onClick={e => {
-                  e.preventDefault();
-                  setMenuOpen((v) => !v);
-                }}
               >
                 <MoreVertical className="w-5 h-5" />
               </button>
-            </ContextMenuTrigger>
-            <ContextMenuContent align="end" className="z-30">
-              <ContextMenuItem
-                className="text-red-500 focus:bg-red-100"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onShowDeleteDialog(true);
-                }}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="z-30"
+              sideOffset={6}
+              onClick={e => e.stopPropagation()}
+            >
+              <DropdownMenuItem
+                className="text-red-500 focus:bg-red-100 cursor-pointer"
+                onClick={() => onShowDeleteDialog(true)}
               >
                 Delete Conversation
-              </ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       {/* Delete confirmation dialog */}
