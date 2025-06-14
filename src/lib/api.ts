@@ -307,6 +307,22 @@ export const getComments = async (postId: string): Promise<any[]> => {
 	}
 };
 
+// WHISPER MATCH API
+export const joinWhisperMatch = async (): Promise<any> => {
+  const response = await api.post("/api/whisper-match/join");
+  return response.data;
+};
+
+export const sendWhisperMatchMessage = async ({ matchId, content }: { matchId: string, content: string }): Promise<any> => {
+  const response = await api.post("/api/whisper-match/message", { matchId, content });
+  return response.data;
+};
+
+export const leaveWhisperMatch = async (matchId: string): Promise<any> => {
+  const response = await api.post("/api/whisper-match/leave", { matchId });
+  return response.data;
+};
+
 // Whispers API calls
 export const sendWhisper = async (
 	receiverId: string,
