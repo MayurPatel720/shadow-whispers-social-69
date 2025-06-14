@@ -8,13 +8,22 @@ import { Loader } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-// New for select
-import { Select } from "@/components/ui/select";
+// Icons for interests demo
+import { Music, Dumbbell, Gamepad2, Globe2, Plane, BookOpen, Film, ChefHat, Paintbrush, Shirt } from "lucide-react";
+// Responsive interest box container
 
-// Add your own interests list
-const INTERESTS = [
-  "Music", "Movies", "Sports", "Reading", "Gaming",
-  "Travel", "Art", "Cooking", "Fitness", "Tech", "Fashion",
+const INTERESTS_LIST = [
+  { label: "Music", icon: <Music className="mr-1 inline" size={16}/> },
+  { label: "Movies", icon: <Film className="mr-1 inline" size={16}/> },
+  { label: "Sports", icon: <Dumbbell className="mr-1 inline" size={16}/> },
+  { label: "Reading", icon: <BookOpen className="mr-1 inline" size={16}/> },
+  { label: "Gaming", icon: <Gamepad2 className="mr-1 inline" size={16}/> },
+  { label: "Travel", icon: <Plane className="mr-1 inline" size={16}/> },
+  { label: "Art", icon: <Paintbrush className="mr-1 inline" size={16}/> },
+  { label: "Cooking", icon: <ChefHat className="mr-1 inline" size={16}/> },
+  { label: "Fitness", icon: <Dumbbell className="mr-1 inline" size={16}/> },
+  { label: "Tech", icon: <Globe2 className="mr-1 inline" size={16}/> },
+  { label: "Fashion", icon: <Shirt className="mr-1 inline" size={16}/> },
 ];
 
 type Gender = "male" | "female" | "other";
@@ -73,12 +82,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] w-[98vw] max-w-full p-4 md:p-6">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-xl p-4 md:p-6">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="anonymousAlias">Anonymous Alias</Label>
               <Input
@@ -87,11 +96,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 disabled
                 className="bg-muted w-full"
               />
-              <p className="text-xs text-muted-foreground">
-                Your anonymous alias cannot be changed
-              </p>
+              <p className="text-xs text-muted-foreground">Your anonymous alias cannot be changed</p>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="emojiAvatar">Emoji Avatar</Label>
               <Input
@@ -100,15 +106,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 disabled
                 className="bg-muted w-full"
               />
-              <p className="text-xs text-muted-foreground">
-                Your emoji avatar cannot be changed
-              </p>
+              <p className="text-xs text-muted-foreground">Your emoji avatar cannot be changed</p>
             </div>
           </div>
 
-          {/* GENDER (REQUIRED) */}
+          {/* GENDER */}
           <div className="space-y-2">
-            <Label htmlFor="gender">Gender <span className="text-red-500">*</span></Label>
+            <Label htmlFor="gender">
+              Gender <span className="text-red-500">*</span>
+            </Label>
             <select
               id="gender"
               value={gender}
@@ -121,37 +127,35 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <option value="female">Female</option>
               <option value="other">Other</option>
             </select>
-            <p className="text-xs text-muted-foreground">
-              Required for matchmaking.
-            </p>
+            <p className="text-xs text-muted-foreground">Required for matchmaking.</p>
           </div>
 
-          {/* INTERESTS (REQUIRED MULTISELECT) */}
+          {/* INTERESTS LIST */}
           <div className="space-y-2">
             <Label>Interests <span className="text-red-500">*</span></Label>
-            <div className="flex flex-wrap gap-2">
-              {INTERESTS.map((interest) => (
+            <div className="flex flex-wrap gap-2 justify-start">
+              {INTERESTS_LIST.map((item) => (
                 <button
-                  key={interest}
+                  key={item.label}
                   type="button"
-                  onClick={() => toggleInterest(interest)}
-                  className={`px-3 py-1 rounded-full border ${
-                    interests.includes(interest)
-                      ? "bg-purple-700 text-white border-purple-700"
-                      : "bg-muted border-gray-200 text-gray-800"
-                  }`}
-                  style={{minWidth: 78}}
+                  onClick={() => toggleInterest(item.label)}
+                  className={`flex items-center px-4 py-1.5 rounded-full border transition-all text-sm font-medium min-w-[90px] justify-center
+                    ${
+                      interests.includes(item.label)
+                        ? "bg-purple-700 text-white border-purple-700"
+                        : "bg-muted border-gray-300 text-gray-800 hover:border-purple-400"
+                    }
+                  `}
+                  style={{ marginBottom: 4, marginRight: 4 }}
                 >
-                  {interest}
+                  {item.icon}
+                  {item.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Select at least one interest for better matches!
-            </p>
+            <p className="text-xs text-muted-foreground">Select at least one interest for better matches!</p>
           </div>
-
-          {/* BIO */}
+          
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -160,7 +164,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us something about yourself..."
               className="resize-none min-h-[80px] max-h-[180px] bg-background"
-              style={{width: '100%'}}
+              style={{ width: "100%" }}
               maxLength={200}
             />
             <div className="flex justify-between text-xs text-muted-foreground">

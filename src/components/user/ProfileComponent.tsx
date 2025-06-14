@@ -130,6 +130,18 @@ const ProfileComponent = ({
     }
   };
 
+  const handleEditModal = () => {
+    setEditProfileOpen(true);
+  };
+
+  const handleShowMatches = () => {
+    setMatchesModalOpen(true);
+  };
+
+  const handleShowMessages = () => {
+    navigate("/whispers");
+  };
+
   const showMatchesModal = () => setMatchesModalOpen(true);
 
   // Callback sent to YourMatchesModal—to be called if matches can't be loaded due to missing gender/interests
@@ -187,10 +199,9 @@ const ProfileComponent = ({
           user={user}
           displayedAlias={displayedAlias}
           claimedBadges={claimedBadges}
-          onEdit={() => setEditProfileOpen(true)}
-          onShowMatches={() => setMatchesModalOpen(true)}
-          onShowMessages={() => navigate("/whispers")}
-          onShowRecognitions={() => setRecognitionModalOpen(true)}
+          onEdit={handleEditModal}
+          onShowMatches={handleShowMatches}
+          onShowMessages={handleShowMessages}
           onWhisper={handleWhisperClick}
         />
         <CardContent className="p-2 sm:p-4 md:p-6 pt-3">
