@@ -1,4 +1,3 @@
-
 // controllers/whisperController.js
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../models/whisperModel");
