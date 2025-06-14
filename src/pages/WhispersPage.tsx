@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getMyWhispers, joinWhisperMatch, deleteConversation } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Loader, MessageSquare, Search, Plus, ArrowLeft, Trash, Menu } from "lucide-react";
+import { Loader, MessageSquare, Search, Plus, ArrowLeft, Trash, Menu, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WhisperConversation from "@/components/whisper/WhisperConversation";
 import WhisperModal from "@/components/whisper/WhisperModal";
@@ -220,24 +220,22 @@ const WhispersPage = () => {
                         )}
                       </div>
                     </div>
-                    {/* Hamburger menu to open context menu */}
+                    {/* Three dots (MoreVertical) context menu, no button styling */}
                     <div
                       className="relative"
                       onClick={e => e.stopPropagation()}
                     >
-                      {/* Hamburger icon as context menu trigger */}
                       <ContextMenu>
                         <ContextMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
-                            aria-label="Conversation Menu"
+                          <span
+                            className="flex items-center justify-center cursor-pointer opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                            tabIndex={0}
+                            aria-label="Conversation menu"
                           >
-                            <Menu className="w-5 h-5" />
-                          </Button>
+                            <MoreVertical className="w-5 h-5" />
+                          </span>
                         </ContextMenuTrigger>
-                        <ContextMenuContent align="end" sideOffset={5} className="z-30">
+                        <ContextMenuContent sideOffset={5} className="z-30">
                           <ContextMenuItem
                             className="text-red-500 focus:bg-red-100"
                             onClick={() => {
@@ -247,7 +245,7 @@ const WhispersPage = () => {
                           >
                             Delete Conversation
                           </ContextMenuItem>
-                          {/* Add more options here if needed */}
+                          {/* Additional options can be added here */}
                         </ContextMenuContent>
                       </ContextMenu>
                     </div>

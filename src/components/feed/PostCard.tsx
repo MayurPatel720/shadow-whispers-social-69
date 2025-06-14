@@ -354,8 +354,9 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const displayVideos = post.videos || [];
 
+  // --- Responsive card style, matching WeeklyPromptBanner width ---
   return (
-    <Card className="border border-gray-800 bg-gray-900 shadow-xl hover:shadow-2xl transition-all duration-200 mb-6 mx-auto max-w-lg rounded-2xl overflow-hidden">
+    <Card className="w-full max-w-2xl mx-auto bg-gray-900 border border-gray-800 shadow-xl hover:shadow-2xl transition-all duration-200 mb-6 rounded-2xl overflow-hidden">
       {/* Header */}
       <CardHeader className="p-4 pb-3 cursor-pointer" onClick={() => handleAliasClick(post.user, post.anonymousAlias)}>
         <div className="flex justify-between items-center">
