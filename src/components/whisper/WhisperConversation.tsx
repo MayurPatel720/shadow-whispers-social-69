@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -238,7 +237,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	const groupMessagesByDate = (messages: Whisper[]) => {
 		if (!messages || messages.length === 0) return [];
 
-		const groups: { date: string | null; messages: Whisper[] }[] = [];
+		const groups: { date: string | null; messages: Whisper[]; groupId: string }[] = [];
 		let currentDate: string | null = null;
 		let currentGroup: Whisper[] = [];
 
@@ -250,6 +249,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 					groups.push({
 						date: currentDate,
 						messages: currentGroup,
+						groupId: `${currentDate}-${currentGroup[0]?._id}`,
 					});
 				}
 				currentDate = messageDate;
@@ -263,6 +263,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			groups.push({
 				date: currentDate,
 				messages: currentGroup,
+				groupId: `${currentDate}-${currentGroup[0]?._id}`,
 			});
 		}
 
@@ -393,8 +394,8 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 						<p>Start a conversation by sending a message.</p>
 					</div>
 				) : (
-					messageGroups.map((group, groupIndex) => (
-						<div key={`group-${groupIndex}`} className="space-y-4">
+					messageGroups.map((group) => (
+						<div key={group.groupId} className="space-y-4">
 							<div className="flex justify-center">
 								<span className="text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-400">
 									{group.date}
