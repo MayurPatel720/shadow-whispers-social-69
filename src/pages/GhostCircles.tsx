@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Ghost, Plus, Users, ArrowLeft } from "lucide-react";
@@ -10,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import CreateGhostCircleModal from "@/components/ghost-circle/CreateGhostCircleModal";
 import GhostCircleCard from "@/components/ghost-circle/GhostCircleCard";
 import CircleFeedView from "@/components/ghost-circle/CircleFeedView";
+import CircleDetailsTabs from "@/components/ghost-circle/CircleDetailsTabs";
 
 const GhostCircles = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -107,9 +107,8 @@ const GhostCircles = () => {
   }
 
   if (selectedCircleId) {
-    // Find the selected circle to get its name
+    // Find the selected circle to get its full object
     const selectedCircle = ghostCircles.find(circle => circle._id === selectedCircleId);
-    const circleName = selectedCircle?.name || "Ghost Circle";
 
     return (
       <motion.div
@@ -136,11 +135,12 @@ const GhostCircles = () => {
             </Button>
           </motion.div>
         </div>
-        <CircleFeedView 
-          circleId={selectedCircleId} 
-          circleName={circleName}
-          onBack={handleBackToCircles} 
-        />
+        {selectedCircle && (
+          <CircleDetailsTabs
+            circle={selectedCircle}
+            onBack={handleBackToCircles}
+          />
+        )}
       </motion.div>
     );
   }

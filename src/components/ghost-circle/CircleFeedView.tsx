@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -13,11 +12,9 @@ import { Post } from "@/types";
 
 interface CircleFeedViewProps {
   circleId: string;
-  circleName: string;
-  onBack?: () => void;
 }
 
-const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId, circleName, onBack }) => {
+const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId }) => {
   const { user } = useAuth();
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   
@@ -71,7 +68,7 @@ const CircleFeedView: React.FC<CircleFeedViewProps> = ({ circleId, circleName, o
   return (
     <div className="mx-auto max-w-2xl p-4">
       <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-purple-300">{circleName}</h2>
+        <h2 className="text-2xl font-bold text-purple-300">Posts</h2>
         <Button 
           variant="secondary" 
           className="bg-purple-600 hover:bg-purple-700 text-white"
