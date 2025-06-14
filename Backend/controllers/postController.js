@@ -1,10 +1,10 @@
-
 const asyncHandler = require('express-async-handler');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
 const GhostCircle = require('../models/ghostCircleModel');
 const mongoose = require('mongoose');
 const { getRedisClient } = require('../utils/redisClient');
+const cloudinary = require('cloudinary').v2;
 
 // Cache keys
 const CACHE_KEYS = {
@@ -19,6 +19,13 @@ const CACHE_TTL = {
   GHOST_CIRCLE_POSTS: 600, // 10 minutes
   POST_DETAIL: 1800, // 30 minutes
 };
+
+// Configure Cloudinary (load creds from env or config)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'ddtqri4py',
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Helper function to invalidate related caches
 const invalidatePostCaches = async (postId, ghostCircleId = null) => {
@@ -184,6 +191,59 @@ const deletepost = asyncHandler(async (req, res) => {
     res.status(403);
     throw new Error('Not authorized to delete this post');
   }
+
+  // --- Delete any associated Cloudinary images/videos ---
+  try {
+    // Helper to get public_id from Cloudinary URL
+    const extractPublicId = (url) => {
+      if (!url) return null;
+      const match = url.match(/upload\/(?:v\d+\/)?([^\.]+)\./);
+      if (match && match[1]) return match[1];
+      return null;
+    };
+
+    // Collect all image URLs
+    let imagesToDelete = [];
+    // Single deprecated imageUrl
+    if (post.imageUrl && post.imageUrl.includes('cloudinary')) {
+      imagesToDelete.push(post.imageUrl);
+    }
+    // Multiple images array
+    if (post.images && Array.isArray(post.images)) {
+      imagesToDelete.push(...post.images.filter((img) => img && img.includes('cloudinary')));
+    }
+    // Videos array - delete their main file and thumbnails (if any)
+    let videosToDelete = [];
+    if (post.videos && Array.isArray(post.videos)) {
+      post.videos.forEach((vid) => {
+        if (vid.url && vid.url.includes('cloudinary')) {
+          videosToDelete.push({ url: vid.url, resource_type: 'video' });
+        }
+        if (vid.thumbnail && vid.thumbnail.includes('cloudinary')) {
+          videosToDelete.push({ url: vid.thumbnail, resource_type: 'image' });
+        }
+      });
+    }
+
+    // Delete images
+    for (const imageUrl of imagesToDelete) {
+      const pubId = extractPublicId(imageUrl);
+      if (pubId) {
+        await cloudinary.uploader.destroy(pubId, { resource_type: "image" });
+      }
+    }
+    // Delete videos and thumbnails
+    for (const vidObj of videosToDelete) {
+      const pubId = extractPublicId(vidObj.url);
+      if (pubId) {
+        await cloudinary.uploader.destroy(pubId, { resource_type: vidObj.resource_type });
+      }
+    }
+  } catch (err) {
+    console.error('Cloudinary deletion error:', err);
+    // Don't throw, continue to delete post anyway
+  }
+  // --- END Cloudinary deletion ---
 
   await Post.findByIdAndDelete(req.params.postId);
 

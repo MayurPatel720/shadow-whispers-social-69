@@ -216,7 +216,7 @@ export const updatePost = async (
 	videos?: any[]
 ) => {
 	try {
-		const response = await api.put(`/posts/${postId}`, {
+		const response = await api.put(`/api/posts/${postId}`, {
 			content,
 			images: images || [],
 			videos: videos || [],
