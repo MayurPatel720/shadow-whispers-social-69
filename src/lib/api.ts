@@ -505,6 +505,7 @@ export const setWeeklyPrompt = async (promptText: string) => {
 
 // Edit a whisper message
 export async function editWhisper(messageId: string, content: string) {
+	console.log("Frontend: Editing whisper messageId:", messageId, "with content:", content);
 	const res = await fetch(`/api/whispers/message/${messageId}`, {
 		method: "PUT",
 		headers: {
@@ -518,6 +519,7 @@ export async function editWhisper(messageId: string, content: string) {
 
 // Delete a whisper message
 export async function deleteWhisperMessage(messageId: string) {
+	console.log("Frontend: Deleting whisper messageId:", messageId);
 	const res = await fetch(`/api/whispers/message/${messageId}`, {
 		method: "DELETE",
 	});
