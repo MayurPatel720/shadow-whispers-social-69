@@ -260,7 +260,10 @@ const recognizeUser = asyncHandler(async (req, res) => {
 		throw new Error("Target user not found");
 	}
 
-	if (guessedIdentity.toLowerCase() === targetUser.username.toLowerCase()) {
+	// Use case-insensitive and trim whitespace for comparison:
+	if (
+		guessedIdentity.trim().toLowerCase() === targetUser.username.trim().toLowerCase()
+	) {
 		const user = await User.findById(req.user._id);
 		if (!user) {
 			res.status(404);
