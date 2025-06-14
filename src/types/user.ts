@@ -1,4 +1,3 @@
-
 // types/user.ts
 export interface User {
     _id: string;
@@ -11,8 +10,8 @@ export interface User {
     referralCount?: number;
     referralCode?: string;
     referredBy?: string;
-    identityRecognizers?: string[] | User[]; // Array of user IDs who recognized this user
-    recognizedUsers?: string[] | User[]; // Array of user IDs this user recognized
+    identityRecognizers?: string[] | User[];
+    recognizedUsers?: string[] | User[];
     recognitionAttempts?: number;
     successfulRecognitions?: number;
     recognitionRate?: number;
@@ -24,8 +23,11 @@ export interface User {
       paymentDetails?: string;
       status: 'pending' | 'completed' | 'failed';
     }>;
-    friends?: string[]; // For addFriend feature
-    [x: string]: string | number | string[] | Array<{ tierLevel: number; rewardType: 'badge' | 'cash' | 'premium'; claimedAt: string; paymentMethod?: 'paypal' | 'venmo' | 'giftcard'; paymentDetails?: string; status: 'pending' | 'completed' | 'failed'; }> | undefined | User[]; // Permissive index signature
+    friends?: string[];
+    gender?: "male" | "female" | "other";
+    interests?: string[];
+    premiumMatchUnlocks?: number;
+    [x: string]: any;
   }
 
   export interface Post {

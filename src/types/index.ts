@@ -1,4 +1,3 @@
-
 export interface User {
   _id: string;
   username: string;
@@ -16,6 +15,9 @@ export interface User {
     userId: string;
     recognizedAt: string;
   }>;
+  gender?: "male" | "female" | "other";
+  interests?: string[];
+  premiumMatchUnlocks?: number;
 }
 
 export interface Video {

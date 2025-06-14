@@ -10,7 +10,7 @@ const Post = require("../models/postModel");
 // @route   POST /api/users/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-	const { username, fullName, email, password, referralCode } = req.body;
+	const { username, fullName, email, password, referralCode, gender, interests } = req.body;
 
 	if (!username || !fullName || !email || !password) {
 		res.status(400);
@@ -38,6 +38,8 @@ const registerUser = asyncHandler(async (req, res) => {
 		anonymousAlias,
 		avatarEmoji,
 		referralCode,
+		gender: gender || undefined,
+		interests: interests || [],
 	});
 
 	if (user) {
@@ -49,6 +51,9 @@ const registerUser = asyncHandler(async (req, res) => {
 			anonymousAlias: user.anonymousAlias,
 			avatarEmoji: user.avatarEmoji,
 			token: generateToken(user._id),
+			gender: user.gender,
+			interests: user.interests,
+			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
 		});
 	} else {
 		res.status(400);
@@ -129,7 +134,10 @@ const getUserProfile = asyncHandler(async (req, res) => {
 			recognizedUsers: user.recognizedUsers,
 			referralCode: user.referralCode,
 			oneSignalPlayerId: user.oneSignalPlayerId,
-			bio: user.bio || "", // ADD THIS
+			bio: user.bio || "",
+			gender: user.gender,
+			interests: user.interests || [],
+			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
 		});
 	} else {
 		res.status(404);
@@ -152,7 +160,12 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 	user.fullName = req.body.fullName || user.fullName;
 	user.email = req.body.email || user.email;
 	user.avatarEmoji = req.body.avatarEmoji || user.avatarEmoji;
-	user.bio = req.body.bio !== undefined ? req.body.bio : user.bio;  // BIO support
+	user.bio = req.body.bio !== undefined ? req.body.bio : user.bio; 
+	user.gender = req.body.gender || user.gender;
+	user.interests = req.body.interests || user.interests;
+	if (typeof req.body.premiumMatchUnlocks === 'number') {
+		user.premiumMatchUnlocks = req.body.premiumMatchUnlocks;
+	}
 
 	if (req.body.password) {
 		user.password = req.body.password;
@@ -167,7 +180,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 		email: updatedUser.email,
 		anonymousAlias: updatedUser.anonymousAlias,
 		avatarEmoji: updatedUser.avatarEmoji,
-		bio: updatedUser.bio || "", // BIO support
+		bio: updatedUser.bio || "",
+		gender: updatedUser.gender,
+		interests: updatedUser.interests || [],
+		premiumMatchUnlocks: updatedUser.premiumMatchUnlocks || 0,
 		token: generateToken(updatedUser._id),
 	});
 });
@@ -373,6 +389,9 @@ const getUserById = asyncHandler(async (req, res) => {
 			friends: user.friends,
 			recognizedUsers: user.recognizedUsers,
 			referralCode: user.referralCode,
+			gender: user.gender,
+			interests: user.interests || [],
+			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
 		});
 	} else {
 		res.status(404);
