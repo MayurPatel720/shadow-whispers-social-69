@@ -21,15 +21,15 @@ api.interceptors.request.use(
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
-		
+
 		// Add admin auth for admin routes
-		if (config.url?.includes('/admin/')) {
-			const adminAuth = localStorage.getItem('adminAuth');
-			if (adminAuth === 'true') {
+		if (config.url?.includes("/admin/")) {
+			const adminAuth = localStorage.getItem("adminAuth");
+			if (adminAuth === "true") {
 				config.headers.Authorization = `Bearer admin-token`;
 			}
 		}
-		
+
 		return config;
 	},
 	(error) => Promise.reject(error)
@@ -309,18 +309,27 @@ export const getComments = async (postId: string): Promise<any[]> => {
 
 // WHISPER MATCH API
 export const joinWhisperMatch = async (): Promise<any> => {
-  const response = await api.post("/api/whisper-match/join");
-  return response.data;
+	const response = await api.post("/api/whisper-match/join");
+	return response.data;
 };
 
-export const sendWhisperMatchMessage = async ({ matchId, content }: { matchId: string, content: string }): Promise<any> => {
-  const response = await api.post("/api/whisper-match/message", { matchId, content });
-  return response.data;
+export const sendWhisperMatchMessage = async ({
+	matchId,
+	content,
+}: {
+	matchId: string;
+	content: string;
+}): Promise<any> => {
+	const response = await api.post("/api/whisper-match/message", {
+		matchId,
+		content,
+	});
+	return response.data;
 };
 
 export const leaveWhisperMatch = async (matchId: string): Promise<any> => {
-  const response = await api.post("/api/whisper-match/leave", { matchId });
-  return response.data;
+	const response = await api.post("/api/whisper-match/leave", { matchId });
+	return response.data;
 };
 
 // Whispers API calls
@@ -468,9 +477,13 @@ export const getAdminUser = async (userId: string): Promise<any> => {
 };
 
 // OneSignal API calls
-export const updateOneSignalPlayerId = async (playerId: string): Promise<any> => {
+export const updateOneSignalPlayerId = async (
+	playerId: string
+): Promise<any> => {
 	try {
-		const response = await api.post("/api/users/onesignal-player-id", { playerId });
+		const response = await api.post("/api/users/onesignal-player-id", {
+			playerId,
+		});
 		return response.data;
 	} catch (error: any) {
 		console.error("Error updating OneSignal player ID:", error);
@@ -479,12 +492,13 @@ export const updateOneSignalPlayerId = async (playerId: string): Promise<any> =>
 };
 
 export const getWeeklyPrompt = async (): Promise<{ promptText: string }> => {
-  const response = await api.get("/api/prompts/current");
-  return response.data;
+	const response = await api.get("/api/prompts/current");
+
+	return response.data;
 };
 
 export const setWeeklyPrompt = async (promptText: string) => {
-  // Use admin credentials already handled in api instance
-  const response = await api.post("/api/prompts/", { promptText });
-  return response.data;
+	// Use admin credentials already handled in api instance
+	const response = await api.post("/api/prompts/", { promptText });
+	return response.data;
 };
