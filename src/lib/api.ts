@@ -506,23 +506,13 @@ export const setWeeklyPrompt = async (promptText: string) => {
 // Edit a whisper message
 export async function editWhisper(messageId: string, content: string) {
 	console.log("Frontend: Editing whisper messageId:", messageId, "with content:", content);
-	const res = await fetch(`/api/whispers/message/${messageId}`, {
-		method: "PUT",
-		headers: {
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({ content }),
-	});
-	if (!res.ok) throw new Error("Failed to edit whisper.");
-	return await res.json();
+	const res = await api.put(`/api/whispers/message/${messageId}`, { content });
+	return res.data;
 }
 
 // Delete a whisper message
 export async function deleteWhisperMessage(messageId: string) {
 	console.log("Frontend: Deleting whisper messageId:", messageId);
-	const res = await fetch(`/api/whispers/message/${messageId}`, {
-		method: "DELETE",
-	});
-	if (!res.ok) throw new Error("Failed to delete whisper.");
-	return await res.json();
+	const res = await api.delete(`/api/whispers/message/${messageId}`);
+	return res.data;
 }
