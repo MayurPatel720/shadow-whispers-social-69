@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getMyWhispers, joinWhisperMatch, deleteConversation } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Loader, MessageSquare, Search, Plus, ArrowLeft, Trash } from "lucide-react";
+import { Loader, MessageSquare, Search, Plus, ArrowLeft, Trash, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WhisperConversation from "@/components/whisper/WhisperConversation";
 import WhisperModal from "@/components/whisper/WhisperModal";
@@ -25,6 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem } from "@/components/ui/context-menu";
 
 const WhispersPage = () => {
   const { user } = useAuth();
@@ -220,46 +220,67 @@ const WhispersPage = () => {
                         )}
                       </div>
                     </div>
-                  </div>
-                  {/* Delete button shown always (on hover for md+) */}
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                    <AlertDialog open={showDeleteDialog && deletingId === convo._id} onOpenChange={(open) => {
-                      if (!open) setDeletingId(null);
-                      setShowDeleteDialog(open);
-                    }}>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={e => { e.stopPropagation(); setDeletingId(convo._id); setShowDeleteDialog(true); }}
-                          className="opacity-70 group-hover:opacity-100 text-red-400 hover:text-red-300"
-                          aria-label="Delete Conversation"
-                        >
-                          <Trash className="w-5 h-5" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete all messages with <b>{convo.partner.anonymousAlias}</b>. This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            disabled={deleteConversationMutation.isPending}
-                            onClick={() => deleteConversationMutation.mutate(convo._id)}
+                    {/* Hamburger menu to open context menu */}
+                    <div
+                      className="relative"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {/* Hamburger icon as context menu trigger */}
+                      <ContextMenu>
+                        <ContextMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                            aria-label="Conversation Menu"
                           >
-                            {deleteConversationMutation.isPending && deletingId === convo._id ? (
-                              <Loader className="h-4 w-4 animate-spin mr-1" />
-                            ) : null}
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Menu className="w-5 h-5" />
+                          </Button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent align="end" sideOffset={5} className="z-30">
+                          <ContextMenuItem
+                            className="text-red-500 focus:bg-red-100"
+                            onClick={() => {
+                              setDeletingId(convo._id);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
+                            Delete Conversation
+                          </ContextMenuItem>
+                          {/* Add more options here if needed */}
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    </div>
                   </div>
+                  {/* Delete confirmation dialog (remains outside context menu for accessibility) */}
+                  <AlertDialog open={showDeleteDialog && deletingId === convo._id} onOpenChange={(open) => {
+                    if (!open) setDeletingId(null);
+                    setShowDeleteDialog(open);
+                  }}>
+                    <AlertDialogTrigger asChild>
+                      <div />
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all messages with <b>{convo.partner.anonymousAlias}</b>. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          disabled={deleteConversationMutation.isPending}
+                          onClick={() => deleteConversationMutation.mutate(convo._id)}
+                        >
+                          {deleteConversationMutation.isPending && deletingId === convo._id ? (
+                            <Loader className="h-4 w-4 animate-spin mr-1" />
+                          ) : null}
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
             </div>
@@ -327,4 +348,3 @@ const WhispersPage = () => {
 };
 
 export default WhispersPage;
-
