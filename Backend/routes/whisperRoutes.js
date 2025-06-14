@@ -7,6 +7,8 @@ const {
 	getWhisperConversation,
 	markWhisperAsRead,
 	deleteConversation,
+	editWhisperMessage,
+	deleteWhisperMessage,
 } = require("../controllers/whisperController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -21,5 +23,9 @@ router.get("/:userId", protect, getWhisperConversation); // Get conversation wit
 router.put("/:whisperId/read", protect, markWhisperAsRead); // Mark a whisper as read
 
 router.delete("/conversation/:userId", protect, deleteConversation); // Delete conversation with a user
+
+// New routes for editing and deleting a single whisper message:
+router.put("/message/:messageId", protect, editWhisperMessage); // Edit a single message
+router.delete("/message/:messageId", protect, deleteWhisperMessage); // Delete a single message
 
 module.exports = router;
