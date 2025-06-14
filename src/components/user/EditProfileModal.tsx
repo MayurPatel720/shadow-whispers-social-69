@@ -78,13 +78,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Modal with _actual_ sticky top bar & fully scrollable inner content, footer always visible via scrolling */}
       <DialogContent
-        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-0 flex flex-col max-h-[95vh] bg-background overflow-hidden"
-        style={{ padding: 0 }}
+        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl px-0 pb-0 flex flex-col bg-background shadow-2xl rounded-lg"
+        style={{
+          // keep modal from being too tall, so users never have double vertical scroll
+          maxHeight: "94vh",
+        }}
       >
         {/* Top sticky area */}
-        <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-3 border-b border-border">
+        <div className="sticky top-0 z-20 flex items-center justify-between bg-background px-5 py-3 border-b border-border rounded-t-lg">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl whitespace-nowrap">Edit Profile</DialogTitle>
           </DialogHeader>
@@ -97,11 +99,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             <X size={20} />
           </button>
         </div>
-        {/* Scrollable content area */}
+        {/* Scrollable content area below sticky header, above sticky footer */}
         <form
           onSubmit={handleSubmit}
-          className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 pt-2 space-y-4"
-          style={{ WebkitOverflowScrolling: "touch" }}
+          className="flex-1 min-h-0 overflow-y-auto px-5 py-3"
+          style={{
+            WebkitOverflowScrolling: "touch",
+            // allow this area to shrink/grow but not overlap the header/footer
+            maxHeight: "calc(94vh - 56px - 66px)", // header ~56px, footer ~66px
+          }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -126,7 +132,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </div>
           </div>
           {/* GENDER */}
-          <div className="space-y-2">
+          <div className="space-y-2 mt-2">
             <Label htmlFor="gender">
               Gender <span className="text-red-500">*</span>
             </Label>
@@ -186,28 +192,28 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <span>{bio.length}/200</span>
             </div>
           </div>
-          {/* Footer buttons */}
-          <DialogFooter className="mb-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader size={16} className="mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save changes"
-              )}
-            </Button>
-          </DialogFooter>
         </form>
+        {/* Sticky footer buttons */}
+        <div className="sticky bottom-0 left-0 right-0 z-10 bg-background px-5 py-4 border-t border-border rounded-b-lg flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="edit-profile-form" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader size={16} className="mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save changes"
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
