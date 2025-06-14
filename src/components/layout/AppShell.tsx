@@ -186,13 +186,19 @@ const AppShell = ({ children }: AppShellProps) => {
 				<>
 					{/* Overlay to prevent background scroll and interaction */}
 					<div
-						className="fixed inset-0 bg-black/80 z-40 md:hidden"
+						className="fixed inset-0 bg-black/80 z-40 md:hidden transition-opacity duration-300"
 						aria-hidden="true"
 						style={{ pointerEvents: "auto" }}
 						onClick={() => setMobileMenuOpen(false)}
 					></div>
-					<div className="fixed inset-0 z-50 flex md:hidden flex-col animate-fade-in">
-						<div className="p-4 flex justify-between items-center border-b border-border bg-background">
+					<div
+						className="fixed left-0 right-0 bottom-0 z-50 flex md:hidden flex-col animate-slide-up transition-all duration-300"
+						style={{
+							height: "90vh", // 90% of viewport height
+							maxHeight: "90vh",
+						}}
+					>
+						<div className="p-4 flex justify-between items-center border-b border-border bg-background rounded-t-xl">
 							<h1 className="text-xl font-bold text-purple-500 flex items-center">
 								<img
 									src="/lovable-uploads/UnderKover_logo2.png"
