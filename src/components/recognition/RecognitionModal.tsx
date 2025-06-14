@@ -53,6 +53,13 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
     }
   }, [open, refetch]);
 
+  // Fallbacks for stats
+  const totalRecognized = recognitionData?.stats?.totalRecognized ?? 0;
+  const totalRecognizers = recognitionData?.stats?.totalRecognizers ?? 0;
+  const recognitionRate = recognitionData?.stats?.recognitionRate ?? 0;
+  const successfulRecognitions = recognitionData?.stats?.successfulRecognitions ?? 0;
+  const recognitionAttempts = recognitionData?.stats?.recognitionAttempts ?? 0;
+
   const handleRevokeRecognition = async (userId: string) => {
     if (
       !window.confirm(
@@ -139,7 +146,7 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="border rounded-lg p-4">
                   <p className="text-lg font-semibold">
-                    {recognitionData?.stats.totalRecognized || 0}
+                    {totalRecognized}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Users you recognized
@@ -147,7 +154,7 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
                 </div>
                 <div className="border rounded-lg p-4">
                   <p className="text-lg font-semibold">
-                    {recognitionData?.stats.totalRecognizers || 0}
+                    {totalRecognizers}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Users who recognized you
@@ -158,13 +165,12 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
                 <div className="flex justify-between">
                   <p className="text-sm font-medium">Recognition Rate</p>
                   <p className="text-sm font-semibold">
-                    {recognitionData?.stats.recognitionRate || 0}%
+                    {recognitionRate}%
                   </p>
                 </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <p>
-                    {recognitionData?.stats.successfulRecognitions || 0}/
-                    {recognitionData?.stats.recognitionAttempts || 0} guesses
+                    {successfulRecognitions}/{recognitionAttempts} guesses
                     correct
                   </p>
                 </div>
@@ -196,10 +202,10 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
                 <TabsTrigger value="recognizers">Recognized Me</TabsTrigger>
               </TabsList>
               <TabsContent value="recognized">
-                {renderUserList(recognitionData?.recognized as User[])}
+                {renderUserList((recognitionData?.recognized ?? []) as User[])}
               </TabsContent>
               <TabsContent value="recognizers">
-                {renderUserList(recognitionData?.recognizers as User[])}
+                {renderUserList((recognitionData?.recognizers ?? []) as User[])}
               </TabsContent>
             </Tabs>
           </>
