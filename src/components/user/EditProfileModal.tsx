@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,11 +82,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
       <DialogContent
         className="relative w-full max-w-md sm:max-w-lg md:max-w-xl px-0 pb-0 flex flex-col bg-background shadow-2xl rounded-lg"
         style={{
-          // keep modal from being too tall, so users never have double vertical scroll
           maxHeight: "94vh",
         }}
       >
-        {/* Top sticky area */}
+        {/* Sticky top bar */}
         <div className="sticky top-0 z-20 flex items-center justify-between bg-background px-5 py-3 border-b border-border rounded-t-lg">
           <DialogHeader>
             <DialogTitle className="text-lg sm:text-xl whitespace-nowrap">Edit Profile</DialogTitle>
@@ -99,14 +99,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             <X size={20} />
           </button>
         </div>
-        {/* Scrollable content area below sticky header, above sticky footer */}
+        {/* Scrollable form content area */}
         <form
           onSubmit={handleSubmit}
+          id="edit-profile-form"
           className="flex-1 min-h-0 overflow-y-auto px-5 py-3"
           style={{
             WebkitOverflowScrolling: "touch",
-            // allow this area to shrink/grow but not overlap the header/footer
-            maxHeight: "calc(94vh - 56px - 66px)", // header ~56px, footer ~66px
+            maxHeight: "calc(94vh - 56px - 66px)", // header + footer heights estimation
           }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -203,7 +203,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           >
             Cancel
           </Button>
-          <Button type="submit" form="edit-profile-form" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            form="edit-profile-form"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? (
               <>
                 <Loader size={16} className="mr-2 animate-spin" />
