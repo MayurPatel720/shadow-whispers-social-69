@@ -55,6 +55,7 @@ const AppShell = ({ children }: AppShellProps) => {
 		else if (location.pathname === "/ghost-circles") setCurrentTab("Circles");
 		else if (location.pathname === "/profile") setCurrentTab("Profile");
 		else if (location.pathname === "/referrals") setCurrentTab("Referrals");
+		// Always close menu on route change for safety
 		setMobileMenuOpen(false);
 	}, [location.pathname]);
 
@@ -77,18 +78,25 @@ const AppShell = ({ children }: AppShellProps) => {
 		navigate("/login");
 	};
 
-	// Prevent background scroll and interaction when mobile menu is open
+	// Improved: Lock scroll ONLY while menu open, clean up on unmount, always clean up if menu closes
 	useEffect(() => {
 		if (mobileMenuOpen) {
 			document.body.classList.add("overflow-hidden");
 		} else {
 			document.body.classList.remove("overflow-hidden");
 		}
-		// On unmount, always remove the scroll lock
 		return () => {
 			document.body.classList.remove("overflow-hidden");
 		};
 	}, [mobileMenuOpen]);
+
+	// Extra guard: Remove scroll lock on route change (in case of edge-case navigation bugs)
+	useEffect(() => {
+		document.body.classList.remove('overflow-hidden');
+		return () => {
+			document.body.classList.remove('overflow-hidden');
+		};
+	}, [location.pathname]);
 
 	return (
 		<div className="min-h-screen bg-background flex">
@@ -181,6 +189,7 @@ const AppShell = ({ children }: AppShellProps) => {
 						className="fixed inset-0 bg-black/80 z-40 md:hidden"
 						aria-hidden="true"
 						style={{ pointerEvents: "auto" }}
+						onClick={() => setMobileMenuOpen(false)}
 					></div>
 					<div className="fixed inset-0 z-50 flex md:hidden flex-col animate-fade-in">
 						<div className="p-4 flex justify-between items-center border-b border-border bg-background">
