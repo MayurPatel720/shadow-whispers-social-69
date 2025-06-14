@@ -77,13 +77,14 @@ const AppShell = ({ children }: AppShellProps) => {
 		navigate("/login");
 	};
 
-	// Prevent background scroll when mobile menu is open
+	// Prevent background scroll and interaction when mobile menu is open
 	useEffect(() => {
 		if (mobileMenuOpen) {
 			document.body.classList.add("overflow-hidden");
 		} else {
 			document.body.classList.remove("overflow-hidden");
 		}
+		// On unmount, always remove the scroll lock
 		return () => {
 			document.body.classList.remove("overflow-hidden");
 		};
@@ -175,8 +176,12 @@ const AppShell = ({ children }: AppShellProps) => {
 			{/* Mobile Menu */}
 			{mobileMenuOpen && (
 				<>
-					{/* Modal overlay to block scroll & dim background */}
-					<div className="fixed inset-0 bg-black/70 z-40 md:hidden"></div>
+					{/* Overlay to prevent background scroll and interaction */}
+					<div
+						className="fixed inset-0 bg-black/80 z-40 md:hidden"
+						aria-hidden="true"
+						style={{ pointerEvents: "auto" }}
+					></div>
 					<div className="fixed inset-0 z-50 flex md:hidden flex-col animate-fade-in">
 						<div className="p-4 flex justify-between items-center border-b border-border bg-background">
 							<h1 className="text-xl font-bold text-purple-500 flex items-center">
