@@ -2,12 +2,19 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
-import { fetchMatches } from "@/lib/api-match";
+import { fetchMatches, unlockPremiumMatches } from "@/lib/api-match";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { MatchProfile } from "@/types/match";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 interface YourMatchesModalProps {
   open: boolean;
@@ -18,6 +25,7 @@ interface YourMatchesModalProps {
 const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange, requireProfileEdit }) => {
   const [page, setPage] = useState(1);
   const [premiumUnlocked, setPremiumUnlocked] = useState(false); // Local (simulate purchase)
+  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -27,7 +35,7 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
     error,
     refetch
   } = useQuery({
-    queryKey: ["matches", page],
+    queryKey: ["matches", page, premiumUnlocked],
     queryFn: () => fetchMatches(page),
     enabled: open,
     retry: false,
@@ -63,6 +71,49 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
 
   // Effective premium flag (simulate unlock)
   const isPremium = (data && data.isPremium) || premiumUnlocked;
+
+  // --- Razorpay Integration ---
+  const handleUnlockClick = async () => {
+    setIsRazorpayLoading(true);
+    try {
+      // Amount in paise (₹39 = 3900 paise)
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID,
+        amount: 3900, // INR 39.00 in paise
+        currency: "INR",
+        name: "UnderCover Premium Matches",
+        description: "Unlock all 10 premium matches immediately.",
+        image: "/lovable-uploads/UnderKover_logo2.png",
+        handler: async function (response: any) {
+          toast({ title: "Payment successful!", description: "Unlocking premium matches..." });
+          try {
+            // Call backend to unlock premium (makes user premium)
+            await unlockPremiumMatches();
+            setPremiumUnlocked(true);
+            setTimeout(() => {
+              refetch();
+              toast({ title: "Premium Unlocked!", description: "You can now view up to 10 matches." });
+            }, 300);
+          } catch (e) {
+            toast({ variant: "destructive", title: "Error", description: "Unlock failed. Contact support." });
+          }
+        },
+        prefill: {},
+        theme: { color: "#7c3aed" }
+      };
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.on("payment.failed", function () {
+          toast({ variant: "destructive", title: "Payment failed", description: "Try again or use a different method." });
+        });
+        rzp.open();
+      } else {
+        toast({ variant: "destructive", title: "Razorpay not loaded", description: "Please refresh and try again." });
+      }
+    } finally {
+      setIsRazorpayLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,9 +168,13 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                       <div>
                         <div className="font-medium">{profile.anonymousAlias}</div>
                         <div className="text-xs text-gray-500">{profile.bio}</div>
-                        <div className="text-xs text-gray-500">Interests: {profile.interests?.join(", ")}</div>
+                        <div className="text-xs text-gray-500">
+                          Interests: {Array.isArray(profile.interests) && profile.interests.length > 0
+                            ? profile.interests.join(", ")
+                            : "Not specified"}
+                        </div>
                         <div className="text-xs">
-                          Gender: <span className="capitalize">{profile.gender}</span>
+                          Gender: <span className="capitalize">{profile.gender || "N/A"}</span>
                         </div>
                         {!isPremium && idx >= 3 && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 rounded-md">
@@ -179,12 +234,11 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                 <Button
                   size="lg"
                   className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
-                  onClick={() => {
-                    setPremiumUnlocked(true);
-                    setTimeout(() => refetch(), 300);
-                  }}
+                  onClick={handleUnlockClick}
+                  disabled={isRazorpayLoading}
+                  loading={isRazorpayLoading}
                 >
-                  Unlock Now
+                  {isRazorpayLoading ? "Processing..." : "Unlock Now"}
                 </Button>
                 <p className="text-xs text-gray-600">See up to 10 matched users instantly!</p>
               </div>
@@ -197,3 +251,4 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
 };
 
 export default YourMatchesModal;
+
