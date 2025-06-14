@@ -30,11 +30,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 	// Always left-align for others, more balanced for self
 	return (
 		<CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
-			<div
-				className={`flex flex-col gap-2 ${
-					isOwnProfile ? "sm:flex-row sm:items-center sm:justify-between" : ""
-				}`}
-			>
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 				<div className={`flex flex-col xs:flex-row items-start gap-1 w-full`}>
 					{/* Top-left alignment for avatar/name/username */}
 					<div className="flex items-center gap-3">
@@ -64,7 +60,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 							)}
 						</div>
 					</div>
-					{/* Edit button only for own profile on mobile */}
 					{isOwnProfile && (
 						<div className="block sm:hidden mt-2">
 							<Button
