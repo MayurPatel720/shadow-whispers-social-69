@@ -1,6 +1,7 @@
+
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../../models/whisperModel");
-const User = require("../userModel");
+const User = require("../../models/userModel"); // <-- fixed import
 
 const getWhisperConversation = asyncHandler(async (req, res) => {
 	const partnerId = req.params.userId;

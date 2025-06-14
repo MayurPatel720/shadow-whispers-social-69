@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../../models/whisperModel");
-const User = require("../userModel");
+const User = require("../../models/userModel");
 
 const getMyWhispers = asyncHandler(async (req, res) => {
 	try {

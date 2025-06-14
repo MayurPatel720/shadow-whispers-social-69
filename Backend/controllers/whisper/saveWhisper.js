@@ -1,4 +1,3 @@
-
 const User = require("../../models/userModel");
 const Whisper = require("../../models/whisperModel");
 
@@ -74,4 +73,3 @@ const saveWhisper = async ({
 };
 
 module.exports = { saveWhisper };
-
