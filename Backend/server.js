@@ -20,6 +20,7 @@ const whisperRoutes = require("./routes/whisperRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const promptEventRoutes = require("./routes/promptEventRoutes");
 const whisperMatchRoutes = require("./routes/whisperMatchRoutes");
+const amaRoutes = require("./routes/amaRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -133,6 +134,7 @@ app.use("/api/whispers", whisperRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptEventRoutes);
 app.use("/api/whisper-match", whisperMatchRoutes);
+app.use("/api/ama", amaRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
