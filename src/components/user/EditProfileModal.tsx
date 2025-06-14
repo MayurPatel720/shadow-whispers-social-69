@@ -79,36 +79,24 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl px-0 pb-0 flex flex-col bg-background shadow-2xl rounded-lg"
-        style={{
-          maxHeight: "94vh",
-        }}
-      >
-        {/* Sticky top bar */}
-        <div className="sticky top-0 z-20 flex items-center justify-between bg-background px-5 py-3 border-b border-border rounded-t-lg">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] p-0 flex flex-col bg-background shadow-2xl">
+        {/* Header - fixed at top */}
+        <div className="flex items-center justify-between p-4 border-b bg-background shrink-0">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl whitespace-nowrap">Edit Profile</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">Edit Profile</DialogTitle>
           </DialogHeader>
           <button
             type="button"
-            className="p-1.5 rounded-full hover:bg-muted transition z-10 focus:outline-none"
+            className="p-1 rounded-full hover:bg-muted transition-colors"
             onClick={() => onOpenChange(false)}
             aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
-        {/* Scrollable form content area */}
-        <form
-          onSubmit={handleSubmit}
-          id="edit-profile-form"
-          className="flex-1 min-h-0 overflow-y-auto px-5 py-3"
-          style={{
-            WebkitOverflowScrolling: "touch",
-            maxHeight: "calc(94vh - 56px - 66px)", // header + footer heights estimation
-          }}
-        >
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="anonymousAlias">Anonymous Alias</Label>
@@ -116,7 +104,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 id="anonymousAlias"
                 value={user?.anonymousAlias || ""}
                 disabled
-                className="bg-muted w-full"
+                className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">Your anonymous alias cannot be changed</p>
             </div>
@@ -126,13 +114,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                 id="emojiAvatar"
                 value={user?.avatarEmoji || "🎭"}
                 disabled
-                className="bg-muted w-full"
+                className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">Your emoji avatar cannot be changed</p>
             </div>
           </div>
-          {/* GENDER */}
-          <div className="space-y-2 mt-2">
+
+          {/* Gender */}
+          <div className="space-y-2">
             <Label htmlFor="gender">
               Gender <span className="text-red-500">*</span>
             </Label>
@@ -150,23 +139,23 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </select>
             <p className="text-xs text-muted-foreground">Required for matchmaking.</p>
           </div>
-          {/* INTERESTS LIST */}
+
+          {/* Interests */}
           <div className="space-y-2">
             <Label>Interests <span className="text-red-500">*</span></Label>
-            <div className="flex flex-wrap gap-2 justify-start">
+            <div className="flex flex-wrap gap-2">
               {INTERESTS_LIST.map((item) => (
                 <button
                   key={item.label}
                   type="button"
                   onClick={() => toggleInterest(item.label)}
-                  className={`flex items-center px-4 py-1.5 rounded-full border transition-all text-sm font-medium min-w-[90px] justify-center
+                  className={`flex items-center px-3 py-1.5 rounded-full border transition-all text-sm font-medium
                     ${
                       interests.includes(item.label)
-                        ? "bg-purple-700 text-white border-purple-700 shadow-md"
+                        ? "bg-purple-700 text-white border-purple-700"
                         : "bg-gray-200 text-gray-800 border-gray-300 hover:border-purple-400"
                     }
                   `}
-                  style={{ marginBottom: 4, marginRight: 4 }}
                 >
                   {item.icon}
                   {item.label}
@@ -175,6 +164,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </div>
             <p className="text-xs text-muted-foreground">Select at least one interest for better matches!</p>
           </div>
+
           {/* Bio */}
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
@@ -183,8 +173,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us something about yourself..."
-              className="resize-none min-h-[80px] max-h-[180px] bg-background"
-              style={{ width: "100%" }}
+              className="resize-none min-h-[80px]"
               maxLength={200}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -192,9 +181,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <span>{bio.length}/200</span>
             </div>
           </div>
-        </form>
-        {/* Sticky footer buttons */}
-        <div className="sticky bottom-0 left-0 right-0 z-10 bg-background px-5 py-4 border-t border-border rounded-b-lg flex justify-end gap-2">
+        </div>
+
+        {/* Footer - fixed at bottom */}
+        <div className="flex justify-end gap-2 p-4 border-t bg-background shrink-0">
           <Button
             type="button"
             variant="outline"
@@ -204,8 +194,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             Cancel
           </Button>
           <Button
-            type="submit"
-            form="edit-profile-form"
+            type="button"
+            onClick={handleSubmit}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
