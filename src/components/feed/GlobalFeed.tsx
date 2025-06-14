@@ -1,8 +1,7 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader, Plus, TrendingUp, Question } from "lucide-react";
+import { Loader, Plus, TrendingUp, HelpCircle } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
@@ -91,7 +90,7 @@ const GlobalFeed = () => {
             className="flex items-center gap-2"
             onClick={() => setShowAMA((s) => !s)}
           >
-            <Question size={18} />
+            <HelpCircle size={18} />
             {showAMA ? "Hide Q&A" : "Q&A / AMA Sessions"}
           </Button>
         </div>

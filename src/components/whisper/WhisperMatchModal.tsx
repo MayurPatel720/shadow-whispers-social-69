@@ -15,7 +15,7 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
   const [messages, setMessages] = useState<any[]>([]);
   const [waiting, setWaiting] = useState(false);
 
-  const { mutate: join, isLoading } = useMutation({
+  const { mutate: join, isPending: isJoining } = useMutation({
     mutationFn: joinWhisperMatch,
     onSuccess: (data) => {
       if (data.status === "matched") setMatch(data.match);
@@ -23,7 +23,7 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
     },
   });
 
-  const { mutate: send, isLoading: sending } = useMutation({
+  const { mutate: send, isPending: isSending } = useMutation({
     mutationFn: sendWhisperMatchMessage,
     onSuccess: (_res) => {
       setMessages([...messages, { sender: "me", content: msg }]);
@@ -53,8 +53,8 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
           <DialogTitle>Whisper Match</DialogTitle>
         </DialogHeader>
         {!match && !waiting && (
-          <Button onClick={start} disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+          <Button onClick={start} disabled={isJoining}>
+            {isJoining ? <Loader2 className="animate-spin mr-2" /> : null}
             Find Match
           </Button>
         )}
@@ -80,7 +80,7 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
               className="flex gap-2"
             >
               <Textarea value={msg} onChange={e => setMsg(e.target.value)} rows={1} className="resize-none" />
-              <Button type="submit" disabled={!msg || sending}>Send</Button>
+              <Button type="submit" disabled={!msg || isSending}>Send</Button>
             </form>
             <Button variant="ghost" className="mt-2" onClick={leave}>Leave</Button>
           </div>
@@ -89,3 +89,4 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
     </Dialog>
   );
 }
+
