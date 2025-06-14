@@ -2,7 +2,7 @@
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, UserRound, MessageSquare, Eye } from "lucide-react";
+import { Edit, UserRound, MessageSquare } from "lucide-react";
 
 interface ProfileHeaderProps {
   isOwnProfile: boolean;
@@ -13,7 +13,7 @@ interface ProfileHeaderProps {
   onEdit: () => void;
   onShowMatches: () => void;
   onShowMessages: () => void;
-  onShowRecognitions: () => void;
+  // onShowRecognitions: () => void; // Removed
   onWhisper: () => void;
 }
 
@@ -26,7 +26,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEdit,
   onShowMatches,
   onShowMessages,
-  onShowRecognitions,
+  // onShowRecognitions,
   onWhisper,
 }) => {
   return (
@@ -82,10 +82,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <MessageSquare size={16} className="mr-2" />
                 Messages
               </Button>
-              <Button variant="outline" size="sm" onClick={onShowRecognitions}>
-                <Eye size={16} className="mr-2" />
-                Recognitions
-              </Button>
+              {/* Recognitions button removed */}
             </>
           ) : (
             <Button variant="outline" size="sm" onClick={onWhisper}>
@@ -108,10 +105,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <MessageSquare size={16} className="mr-2" />
               Messages
             </Button>
-            <Button variant="outline" size="sm" className="flex-1" onClick={onShowRecognitions}>
-              <Eye size={16} className="mr-2" />
-              Recognitions
-            </Button>
+            {/* Recognitions button removed */}
           </div>
         )}
         {!isOwnProfile && (

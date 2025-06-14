@@ -17,7 +17,7 @@ const INTERESTS = [
   "Travel", "Art", "Cooking", "Fitness", "Tech", "Fashion",
 ];
 
-type Gender = "male" | "female" | "other" | "";
+type Gender = "male" | "female" | "other";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -28,12 +28,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const { user, updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
-  const [gender, setGender] = useState<Gender>((user?.gender as Gender) || "");
+  const [gender, setGender] = useState<Gender>(
+    (["male", "female", "other"].includes(user?.gender) ? user?.gender : "") as Gender
+  );
   const [interests, setInterests] = useState<string[]>(user?.interests || []);
 
   useEffect(() => {
     setBio(user?.bio || "");
-    setGender((user?.gender as Gender) || "");
+    setGender(
+      (["male", "female", "other"].includes(user?.gender) ? user?.gender : "") as Gender
+    );
     setInterests(user?.interests || []);
   }, [user?.bio, user?.gender, user?.interests]);
 
@@ -69,35 +73,37 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] w-[95vw]">
+      <DialogContent className="sm:max-w-[425px] w-[98vw] max-w-full p-4 md:p-6">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="anonymousAlias">Anonymous Alias</Label>
-            <Input
-              id="anonymousAlias"
-              value={user?.anonymousAlias || ""}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your anonymous alias cannot be changed
-            </p>
-          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="anonymousAlias">Anonymous Alias</Label>
+              <Input
+                id="anonymousAlias"
+                value={user?.anonymousAlias || ""}
+                disabled
+                className="bg-muted w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your anonymous alias cannot be changed
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="emojiAvatar">Emoji Avatar</Label>
-            <Input
-              id="emojiAvatar"
-              value={user?.avatarEmoji || "🎭"}
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">
-              Your emoji avatar cannot be changed
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor="emojiAvatar">Emoji Avatar</Label>
+              <Input
+                id="emojiAvatar"
+                value={user?.avatarEmoji || "🎭"}
+                disabled
+                className="bg-muted w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Your emoji avatar cannot be changed
+              </p>
+            </div>
           </div>
 
           {/* GENDER (REQUIRED) */}
@@ -134,6 +140,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                       ? "bg-purple-700 text-white border-purple-700"
                       : "bg-muted border-gray-200 text-gray-800"
                   }`}
+                  style={{minWidth: 78}}
                 >
                   {interest}
                 </button>
@@ -153,6 +160,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us something about yourself..."
               className="resize-none min-h-[80px] max-h-[180px] bg-background"
+              style={{width: '100%'}}
               maxLength={200}
             />
             <div className="flex justify-between text-xs text-muted-foreground">

@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { MatchProfile } from "@/types/match";
+import { useNavigate } from "react-router-dom";
 
 // Added prop: requireProfileEdit
 interface YourMatchesModalProps {
@@ -17,6 +18,7 @@ interface YourMatchesModalProps {
 
 const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange, requireProfileEdit }) => {
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
 
   const {
     data,
@@ -40,7 +42,6 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
       (error as any).response.data &&
       ((error as any).response.data.message || "").includes("gender")
     ) {
-      // Close modal, open profile edit
       onOpenChange(false);
       if (requireProfileEdit) requireProfileEdit();
     }
@@ -89,17 +90,30 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {data.matches.map((profile: MatchProfile) => (
-                  <Card className="p-4 flex items-center gap-3" key={profile._id}>
-                    <div className="text-3xl">{profile.avatarEmoji}</div>
-                    <div>
-                      <div className="font-medium">{profile.anonymousAlias}</div>
-                      <div className="text-xs text-gray-500">{profile.bio}</div>
-                      <div className="text-xs text-gray-500">Interests: {profile.interests?.join(", ")}</div>
-                      <div className="text-xs">
-                        Gender: <span className="capitalize">{profile.gender}</span>
+                  <button
+                    key={profile._id}
+                    className="block w-full text-left"
+                    onClick={() => {
+                      onOpenChange(false);
+                      navigate(`/profile/${profile._id}`, {
+                        state: { anonymousAlias: profile.anonymousAlias }
+                      });
+                    }}
+                  >
+                    <Card
+                      className="p-4 flex items-center gap-3 hover:bg-undercover-purple/10 transition-colors cursor-pointer"
+                    >
+                      <div className="text-3xl">{profile.avatarEmoji}</div>
+                      <div>
+                        <div className="font-medium">{profile.anonymousAlias}</div>
+                        <div className="text-xs text-gray-500">{profile.bio}</div>
+                        <div className="text-xs text-gray-500">Interests: {profile.interests?.join(", ")}</div>
+                        <div className="text-xs">
+                          Gender: <span className="capitalize">{profile.gender}</span>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </button>
                 ))}
               </div>
             )}
