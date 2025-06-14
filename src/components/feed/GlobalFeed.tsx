@@ -6,6 +6,7 @@ import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getAllPosts } from "@/lib/api";
 import { Post } from "@/types/index";
+import WeeklyPromptBanner from "./WeeklyPrompt";
 
 const GlobalFeed = () => {
 	const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
@@ -64,7 +65,6 @@ const GlobalFeed = () => {
 						<TrendingUp className="h-5 w-5 text-purple-500" />
 						<h1 className="text-xl font-bold text-foreground">Feed</h1>
 					</div>
-
 					{/* Desktop Create Post Button */}
 					<Button
 						onClick={() => setIsCreatePostOpen(true)}
@@ -75,6 +75,8 @@ const GlobalFeed = () => {
 				</div>
 			</div>
 			<div className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">
+				{/* Add Prompt Banner here */}
+				<WeeklyPromptBanner />
 				{Array.isArray(posts) && posts.length === 0 ? (
 					<div className="text-center py-16 space-y-4">
 						<div className="text-6xl mb-4 animate-bounce">👻</div>

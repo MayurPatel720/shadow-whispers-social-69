@@ -461,3 +461,26 @@ export const updateOneSignalPlayerId = async (playerId: string): Promise<any> =>
 		throw error?.response?.data || error;
 	}
 };
+
+export const getWeeklyPrompt = async (): Promise<{ promptText: string }> => {
+  const response = await api.get("/api/prompts/current");
+  return response.data;
+};
+
+// AMA/Q&A
+export const getActiveAMAs = async () => {
+  const res = await api.get("/api/ama");
+  return res.data;
+};
+export const startAMA = async ({ title }: { title: string }) => {
+  const res = await api.post("/api/ama/start", { title });
+  return res.data;
+};
+export const askAMAQuestion = async ({ sessionId, text }: { sessionId: string; text: string }) => {
+  const res = await api.post("/api/ama/ask", { sessionId, text });
+  return res.data;
+};
+export const answerAMAQuestion = async ({ sessionId, qIdx, answer }: { sessionId: string, qIdx: number, answer: string }) => {
+  const res = await api.post("/api/ama/answer", { sessionId, qIdx, answer });
+  return res.data;
+};
