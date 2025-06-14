@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import type { MatchProfile } from "@/types/match";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import LockedMatchCard from "./LockedMatchCard";
+import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
 
 declare global {
   interface Window {
@@ -24,7 +25,6 @@ interface YourMatchesModalProps {
 
 const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange, requireProfileEdit }) => {
   const [page, setPage] = useState(1);
-  const [isRazorpayLoading, setIsRazorpayLoading] = useState(false);
   const navigate = useNavigate();
 
   // Remove local 'premiumUnlocked'. Only trust backend flag.
@@ -40,6 +40,9 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
     enabled: open,
     retry: false,
   });
+
+  // Razorpay hook, calling refetch on payment success
+  const { isPaying, startPayment } = useRazorpayPayment(() => refetch());
 
   useEffect(() => {
     if (
@@ -69,51 +72,9 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
     }
   }
 
-  // Premium flag comes only from backend
+  // Always use backend 'isPremium' flag
   const isPremium = data && data.isPremium;
   
-  // --- Razorpay Integration ---
-  const handleUnlockClick = async () => {
-    setIsRazorpayLoading(true);
-    try {
-      // Amount in paise (₹39 = 3900 paise)
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.REACT_APP_RAZORPAY_KEY_ID,
-        amount: 3900, // INR 39.00 in paise
-        currency: "INR",
-        name: "UnderCover Premium Matches",
-        description: "Unlock all 10 premium matches immediately.",
-        image: "/lovable-uploads/UnderKover_logo2.png",
-        handler: async function (response: any) {
-          toast({ title: "Payment successful!", description: "Unlocking premium matches..." });
-          try {
-            // Unlock on backend after payment
-            await unlockPremiumMatches();
-            setTimeout(() => {
-              refetch();
-              toast({ title: "Premium Unlocked!", description: "You can now view up to 10 matches." });
-            }, 300);
-          } catch (e) {
-            toast({ variant: "destructive", title: "Error", description: "Unlock failed. Contact support." });
-          }
-        },
-        prefill: {},
-        theme: { color: "#7c3aed" }
-      };
-      if (window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", function () {
-          toast({ variant: "destructive", title: "Payment failed", description: "Try again or use a different method." });
-        });
-        rzp.open();
-      } else {
-        toast({ variant: "destructive", title: "Razorpay not loaded", description: "Please refresh and try again." });
-      }
-    } finally {
-      setIsRazorpayLoading(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg w-full">
@@ -149,7 +110,7 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                 {(isPremium
                   ? data.matches.slice(0, 10)
                   : data.matches.slice(0, 3)
-                ).map((profile: MatchProfile, idx) => (
+                ).map((profile: MatchProfile) => (
                   <button
                     key={profile._id}
                     className="block w-full text-left focus:outline-none"
@@ -175,27 +136,14 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                         <div className="text-xs">
                           Gender: <span className="capitalize">{profile.gender || "N/A"}</span>
                         </div>
-                        {/* NO manual logic for premium overlays */}
                       </div>
                     </Card>
                   </button>
                 ))}
-                {/* Show blurred/locked cards for hidden users if not premium */}
+                {/* Display locked cards for non-premium users */}
                 {!isPremium && data.matches.length > 3 &&
                   Array.from({length: Math.min(10, data.matches.length) - 3}).map((_, i) => (
-                    <div
-                      key={`locked-${i}`}
-                      className="relative p-4 flex items-center gap-3 bg-muted/60 rounded-md border border-muted-foreground opacity-70"
-                    >
-                      <div className="w-10 h-10 rounded-full bg-gray-300 animate-pulse" />
-                      <div>
-                        <div className="h-4 w-20 rounded bg-gray-300 mb-2"/>
-                        <div className="h-3 w-36 rounded bg-gray-200"/>
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center z-10">
-                        <span className="text-yellow-500 font-bold">Locked</span>
-                      </div>
-                    </div>
+                    <LockedMatchCard idx={i} key={`locked-${i}`} />
                   ))
                 }
               </div>
@@ -229,10 +177,10 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                 <Button
                   size="lg"
                   className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
-                  onClick={handleUnlockClick}
-                  disabled={isRazorpayLoading}
+                  onClick={startPayment}
+                  disabled={isPaying}
                 >
-                  {isRazorpayLoading ? (
+                  {isPaying ? (
                     <>
                       <Loader2 className="animate-spin mr-2" /> Processing...
                     </>
@@ -251,4 +199,3 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
 };
 
 export default YourMatchesModal;
-
