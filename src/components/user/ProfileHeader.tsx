@@ -14,7 +14,7 @@ interface ProfileHeaderProps {
 	onShowMatches: () => void;
 	onShowMessages: () => void;
 	onWhisper: () => void;
-	onShowRecognitions?: () => void; // in case you want a recognitions button later
+	onShowRecognitions?: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -114,7 +114,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 								{profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
 							</div>
 							<div className="flex-1 flex items-center min-w-0">
-								<div className="flex  flex-col min-w-0 flex-1">
+								<div className="flex flex-col min-w-0 flex-1">
 									<div className="flex items-center gap-1 min-w-0">
 										<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1 min-w-0">
 											<span className="truncate">{displayedAlias}</span>
@@ -155,10 +155,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 					<div className="flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-3">
 						{isOwnProfile ? (
 							<>
-								{/* <Button variant="outline" size="sm" onClick={onEdit}>
+								<Button variant="outline" size="sm" onClick={onEdit}>
 									<Edit size={16} className="mr-2" />
 									Edit
-								</Button> */}
+								</Button>
 								<Button variant="outline" size="sm" onClick={onShowMatches}>
 									<UserRound size={16} className="mr-2" />
 									Your Matches
