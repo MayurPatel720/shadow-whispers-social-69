@@ -37,7 +37,14 @@ const protect = asyncHandler(async (req, res, next) => {
         try {
           const cachedUser = await redis.get(userCacheKey);
           if (cachedUser) {
-            user = JSON.parse(cachedUser);
+            try {
+              user = JSON.parse(cachedUser);
+            } catch (parseErr) {
+              // If parsing fails, treat as cache miss and delete bad value
+              console.error('User cache parsing error:', parseErr, 'value:', cachedUser);
+              await redis.del(userCacheKey);
+              user = null;
+            }
           }
         } catch (error) {
           console.error('User cache retrieval error:', error);
@@ -118,7 +125,14 @@ const socketAuth = async (socket, next) => {
       try {
         const cachedUser = await redis.get(userCacheKey);
         if (cachedUser) {
-          user = JSON.parse(cachedUser);
+          try {
+            user = JSON.parse(cachedUser);
+          } catch (parseErr) {
+            // Remove bad value and fallback
+            console.error('Socket user cache parsing error:', parseErr, 'value:', cachedUser);
+            await redis.del(userCacheKey);
+            user = null;
+          }
         }
       } catch (error) {
         console.error('Socket user cache retrieval error:', error);
@@ -179,3 +193,4 @@ const invalidateUserCache = async (userId) => {
 };
 
 module.exports = { protect, socketAuth, invalidateUserCache };
+
