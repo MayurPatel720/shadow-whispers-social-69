@@ -228,14 +228,15 @@ const WhispersPage = () => {
                       <ContextMenu>
                         <ContextMenuTrigger asChild>
                           <span
-                            className="flex items-center justify-center cursor-pointer opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground"
+                            className="flex items-center justify-center cursor-pointer opacity-70 group-hover:opacity-100 text-muted-foreground hover:text-foreground focus:outline-none"
                             tabIndex={0}
                             aria-label="Conversation menu"
+                            role="button"
                           >
                             <MoreVertical className="w-5 h-5" />
                           </span>
                         </ContextMenuTrigger>
-                        <ContextMenuContent sideOffset={5} className="z-30">
+                        <ContextMenuContent className="z-30">
                           <ContextMenuItem
                             className="text-red-500 focus:bg-red-100"
                             onClick={() => {
