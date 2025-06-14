@@ -1,10 +1,10 @@
-
 // controllers/userController.js
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 // FIXED: correct import for generateToken as a destructured object
 const { generateToken } = require("../utils/jwtHelper"); 
 const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
+const Post = require("../models/postModel");
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -406,6 +406,32 @@ const updateOneSignalPlayerId = asyncHandler(async (req, res) => {
 	}
 });
 
+// @desc    Get all posts by a user
+// @route   GET /api/users/userposts/:userId
+// @access  Private
+const getUserPosts = asyncHandler(async (req, res) => {
+	const { userId } = req.params;
+
+	// Validate userId presence
+	if (!userId) {
+		res.status(400);
+		throw new Error("UserId is required");
+	}
+
+	// Make sure user exists
+	const user = await User.findById(userId);
+
+	if (!user) {
+		res.status(404);
+		throw new Error("User not found");
+	}
+
+	// Find posts created by this user
+	const posts = await Post.find({ user: userId }).sort({ createdAt: -1 });
+
+	res.json(posts);
+});
+
 module.exports = {
 	registerUser,
 	loginUser,
@@ -418,4 +444,5 @@ module.exports = {
 	revokeRecognition,
 	getUserById,
 	updateOneSignalPlayerId,
+	getUserPosts, // EXPORT HERE!
 };

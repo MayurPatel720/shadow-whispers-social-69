@@ -1,4 +1,3 @@
-
 // routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
@@ -14,6 +13,7 @@ const {
 	revokeRecognition,
 	getUserById,
 	updateOneSignalPlayerId,
+	getUserPosts,
 } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -31,5 +31,6 @@ router.post("/recognize", protect, recognizeUser);
 router.get("/recognitions", protect, getRecognitions);
 router.post("/revoke-recognition", protect, revokeRecognition);
 router.post("/onesignal-player-id", protect, updateOneSignalPlayerId);
+router.get("/userposts/:userId", protect, getUserPosts);
 
 module.exports = router;
