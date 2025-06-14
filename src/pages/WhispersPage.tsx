@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMyWhispers, joinWhisperMatch } from "@/lib/api";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { getMyWhispers, joinWhisperMatch, deleteConversation } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Loader, MessageSquare, Search, Plus, ArrowLeft } from "lucide-react";
+import { Loader, MessageSquare, Search, Plus, ArrowLeft, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WhisperConversation from "@/components/whisper/WhisperConversation";
 import WhisperModal from "@/components/whisper/WhisperModal";
@@ -13,6 +14,17 @@ import AvatarGenerator from "@/components/user/AvatarGenerator";
 import WhisperMatchEntry from "@/components/feed/WhisperMatchEntry";
 import YourMatchesModal from "@/components/whisper/YourMatchesModal";
 import { useLocation, useNavigate } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const WhispersPage = () => {
   const { user } = useAuth();
@@ -21,25 +33,24 @@ const WhispersPage = () => {
   const [isWhisperModalOpen, setIsWhisperModalOpen] = useState(false);
   const [isYourMatchesOpen, setIsYourMatchesOpen] = useState(false);
   const [joinedMatch, setJoinedMatch] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null); // Conversation being deleted
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // --- Handle userId passed via query string (e.g., /whispers?userId=xxx) for auto-opening chat
+  // Handle userId passed via query string
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const userIdFromQS = params.get("userId");
     if (userIdFromQS && user) {
-      // Check if conversation exists, else let it open/load in chat anyway
       setSelectedConversation({ _id: userIdFromQS });
-      // Remove ?userId from the URL (replace state, keep shallow)
       params.delete("userId");
       navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
     }
     // eslint-disable-next-line
   }, [location.search, user]);
   
-  // Automatically join whisper match session when user enters page
   useEffect(() => {
     if (user && !joinedMatch) {
       joinWhisperMatch()
@@ -52,7 +63,6 @@ const WhispersPage = () => {
           });
         });
     }
-    // ignore exhaustive-deps for initial mount only
     // eslint-disable-next-line
   }, [user]);
 
@@ -101,6 +111,34 @@ const WhispersPage = () => {
     return format(date, 'MMM d');
   };
 
+  // Delete conversation mutation
+  const deleteConversationMutation = useMutation({
+    mutationFn: async (partnerId: string) => deleteConversation(partnerId),
+    onSuccess: (_, partnerId) => {
+      toast({
+        title: "Conversation Deleted",
+        description: "The conversation has been permanently deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["whispers"] });
+      // If currently open convo is the deleted one, close it
+      if (selectedConversation && selectedConversation._id === partnerId) {
+        setSelectedConversation(null);
+      }
+      setShowDeleteDialog(false);
+      setDeletingId(null);
+    },
+    onError: (error: any) => {
+      console.error("Delete conversation error:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to Delete",
+        description: "Could not delete the conversation. Please try again.",
+      });
+      setShowDeleteDialog(false);
+      setDeletingId(null);
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-10">
@@ -118,12 +156,10 @@ const WhispersPage = () => {
             <p className="text-sm text-muted-foreground">Anonymous messages</p>
           </div>
           
-          {/* No more WhisperMatchEntry at the top, show "Your Matches" button */}
           <div className="p-4 border-b border-border flex flex-col gap-2">
             <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
           </div>
 
-          {/* Search bar */}
           <div className="p-2 sticky top-0 bg-background z-10">
             <div className="relative">
               <Input
@@ -151,14 +187,13 @@ const WhispersPage = () => {
               {filteredConversations.map((convo) => (
                 <div 
                   key={convo._id}
-                  className={`p-3 hover:bg-undercover-purple/5 cursor-pointer ${
+                  className={`group p-3 hover:bg-undercover-purple/5 cursor-pointer relative ${
                     selectedConversation && selectedConversation._id === convo._id 
                       ? 'bg-undercover-purple/10' 
                       : ''
                   }`}
-                  onClick={() => handleSelectConversation(convo)}
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3" onClick={() => handleSelectConversation(convo)}>
                     <AvatarGenerator
                       emoji={convo.partner.avatarEmoji || "🎭"} 
                       nickname={convo.partner.anonymousAlias}
@@ -186,6 +221,45 @@ const WhispersPage = () => {
                       </div>
                     </div>
                   </div>
+                  {/* Delete button shown always (on hover for md+) */}
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <AlertDialog open={showDeleteDialog && deletingId === convo._id} onOpenChange={(open) => {
+                      if (!open) setDeletingId(null);
+                      setShowDeleteDialog(open);
+                    }}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={e => { e.stopPropagation(); setDeletingId(convo._id); setShowDeleteDialog(true); }}
+                          className="opacity-70 group-hover:opacity-100 text-red-400 hover:text-red-300"
+                          aria-label="Delete Conversation"
+                        >
+                          <Trash className="w-5 h-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete all messages with <b>{convo.partner.anonymousAlias}</b>. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            disabled={deleteConversationMutation.isPending}
+                            onClick={() => deleteConversationMutation.mutate(convo._id)}
+                          >
+                            {deleteConversationMutation.isPending && deletingId === convo._id ? (
+                              <Loader className="h-4 w-4 animate-spin mr-1" />
+                            ) : null}
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>
@@ -198,7 +272,6 @@ const WhispersPage = () => {
               <Button className="mt-4 bg-undercover-purple" onClick={() => setIsWhisperModalOpen(true)}>
                 Start a whisper
               </Button>
-              {/* Your Matches Button shown here */}
               <div className="mt-3 w-full">
                 <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
               </div>
@@ -232,7 +305,6 @@ const WhispersPage = () => {
                 Select a conversation to view your whispers. 
                 All messages are anonymous until someone correctly guesses your identity.
               </p>
-              {/* Matches button here */}
               <div className="mt-4">
                 <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
               </div>
@@ -255,3 +327,4 @@ const WhispersPage = () => {
 };
 
 export default WhispersPage;
+
