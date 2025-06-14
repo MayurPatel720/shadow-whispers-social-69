@@ -21,6 +21,8 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminPanel from "./pages/AdminPanel";
 import AppShell from "./components/layout/AppShell";
+import MatchesPage from "./pages/MatchesPage";
+import AdminMatchStats from "./pages/AdminMatchStats";
 import "./App.css";
 import oneSignalService from "./components/oneSignalService";
 
@@ -136,6 +138,24 @@ const AppContent: React.FC = () => {
 									<InvitePage />
 								</AppShell>
 							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/matches"
+						element={
+							<ProtectedRoute>
+								<AppShell>
+									<MatchesPage />
+								</AppShell>
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/admin/match-stats"
+						element={
+							<ProtectedAdminRoute>
+								<AdminMatchStats />
+							</ProtectedAdminRoute>
 						}
 					/>
 					<Route path="*" element={<NotFound />} />
