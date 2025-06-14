@@ -1,4 +1,3 @@
-
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,36 +74,30 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 						</div>
 					</div>
 				</div>
-				{/* Actions */}
-				<div
-					className={`flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-0 ${
-						isOwnProfile
-							? "sm:flex sm:w-auto"
-							: ""
-					}`}
-				>
-					{isOwnProfile ? (
-						<>
-							<Button variant="outline" size="sm" onClick={onEdit} className="hidden sm:flex">
-								<Edit size={16} className="mr-2" />
-								Edit
-							</Button>
-							<Button variant="outline" size="sm" onClick={onShowMatches}>
-								<UserRound size={16} className="mr-2" />
-								Your Matches
-							</Button>
-							<Button variant="outline" size="sm" onClick={onShowMessages}>
-								<MessageSquare size={16} className="mr-2" />
-								Messages
-							</Button>
-						</>
-					) : (
-						<Button variant="outline" size="sm" onClick={onWhisper} className="w-full sm:w-auto">
-							<UserRound size={16} className="mr-2" />
-							Whisper
+			</div>
+			{/* Actions buttons go UNDER the profile alias row, always visible and spaced*/}
+			<div className={`flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-3`}>
+				{isOwnProfile ? (
+					<>
+						<Button variant="outline" size="sm" onClick={onEdit}>
+							<Edit size={16} className="mr-2" />
+							Edit
 						</Button>
-					)}
-				</div>
+						<Button variant="outline" size="sm" onClick={onShowMatches}>
+							<UserRound size={16} className="mr-2" />
+							Your Matches
+						</Button>
+						<Button variant="outline" size="sm" onClick={onShowMessages}>
+							<MessageSquare size={16} className="mr-2" />
+							Messages
+						</Button>
+					</>
+				) : (
+					<Button variant="outline" size="sm" onClick={onWhisper} className="w-full sm:w-auto">
+						<UserRound size={16} className="mr-2" />
+						Whisper
+					</Button>
+				)}
 			</div>
 		</CardHeader>
 	);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -79,15 +78,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* set scrollable modal and make close button always visible */}
+      {/* Modal with _actual_ sticky top bar & fully scrollable inner content, footer always visible via scrolling */}
       <DialogContent
-        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-0 md:p-0 flex flex-col max-h-[95vh] overflow-hidden"
-        style={{padding: 0}}
+        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-0 flex flex-col max-h-[95vh] bg-background overflow-hidden"
+        style={{ padding: 0 }}
       >
-        {/* Top bar with sticky close button */}
+        {/* Top sticky area */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-3 border-b border-border">
           <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl whitespace-nowrap">Edit Profile</DialogTitle>
           </DialogHeader>
           <button
             type="button"
@@ -98,10 +97,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             <X size={20} />
           </button>
         </div>
-        {/* Actual scrollable content */}
+        {/* Scrollable content area */}
         <form
           onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto px-4 pb-2 pt-2 space-y-4"
+          className="flex-1 min-h-0 overflow-y-auto px-4 pb-2 pt-2 space-y-4"
+          style={{ WebkitOverflowScrolling: "touch" }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -125,7 +125,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <p className="text-xs text-muted-foreground">Your emoji avatar cannot be changed</p>
             </div>
           </div>
-
           {/* GENDER */}
           <div className="space-y-2">
             <Label htmlFor="gender">
@@ -145,7 +144,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </select>
             <p className="text-xs text-muted-foreground">Required for matchmaking.</p>
           </div>
-
           {/* INTERESTS LIST */}
           <div className="space-y-2">
             <Label>Interests <span className="text-red-500">*</span></Label>
@@ -171,7 +169,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
             </div>
             <p className="text-xs text-muted-foreground">Select at least one interest for better matches!</p>
           </div>
-          
+          {/* Bio */}
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
             <Textarea
@@ -188,8 +186,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
               <span>{bio.length}/200</span>
             </div>
           </div>
-
-          <DialogFooter>
+          {/* Footer buttons */}
+          <DialogFooter className="mb-2">
             <Button
               type="button"
               variant="outline"
