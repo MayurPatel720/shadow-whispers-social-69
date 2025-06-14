@@ -77,6 +77,18 @@ const AppShell = ({ children }: AppShellProps) => {
 		navigate("/login");
 	};
 
+	// Prevent background scroll when mobile menu is open
+	useEffect(() => {
+		if (mobileMenuOpen) {
+			document.body.classList.add("overflow-hidden");
+		} else {
+			document.body.classList.remove("overflow-hidden");
+		}
+		return () => {
+			document.body.classList.remove("overflow-hidden");
+		};
+	}, [mobileMenuOpen]);
+
 	return (
 		<div className="min-h-screen bg-background flex">
 			{/* Desktop Sidebar */}
@@ -162,89 +174,95 @@ const AppShell = ({ children }: AppShellProps) => {
 
 			{/* Mobile Menu */}
 			{mobileMenuOpen && (
-				<div className="fixed inset-0 bg-background/95 z-50 flex md:hidden flex-col animate-fade-in">
-					<div className="p-4 flex justify-between items-center border-b border-border">
-						<h1 className="text-xl font-bold text-purple-500 flex items-center">
-							<img
-								src="/lovable-uploads/UnderKover_logo2.png"
-								alt="UnderKover"
-								className="w-8 h-8 mr-2"
-							/>
-							UnderKover
-						</h1>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={() => setMobileMenuOpen(false)}
-						>
-							<X />
-						</Button>
-					</div>
-
-					<div className="p-4 flex-1">
-						<div
-							onClick={() => navigate("/profile")}
-							className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
-						>
-							<AvatarGenerator
-								emoji={userIdentity.emoji}
-								nickname={user?.anonymousAlias}
-								color={userIdentity.color}
-								size="md"
-							/>
-							<div>
-								<h2 className="text-lg font-bold">{user?.anonymousAlias}</h2>
-								<p className="text-xs text-muted-foreground">
-									Your anonymous identity
-								</p>
-							</div>
+				<>
+					{/* Modal overlay to block scroll & dim background */}
+					<div className="fixed inset-0 bg-black/70 z-50 md:hidden"></div>
+					<div className="fixed inset-0 z-50 flex md:hidden flex-col animate-fade-in">
+						{/* ... keep existing code for mobile menu content ... */}
+						<div className="p-4 flex justify-between items-center border-b border-border">
+							<h1 className="text-xl font-bold text-purple-500 flex items-center">
+								<img
+									src="/lovable-uploads/UnderKover_logo2.png"
+									alt="UnderKover"
+									className="w-8 h-8 mr-2"
+								/>
+								UnderKover
+							</h1>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => setMobileMenuOpen(false)}
+							>
+								<X />
+							</Button>
 						</div>
 
-						<div className="space-y-2">
-							<NavItem
-								icon={<Home size={18} />}
-								label="Home"
-								active={currentTab === "Home"}
-								onClick={() => navigate("/")}
-							/>
-							<NavItem
-								icon={<Users size={18} />}
-								label="Ghost Circles"
-								active={currentTab === "Circles"}
-								onClick={() => navigate("/ghost-circles")}
-							/>
-							<NavItem
-								icon={<MessageSquare size={18} />}
-								label="Whispers"
-								active={currentTab === "Whispers"}
-								onClick={() => navigate("/whispers")}
-							/>
-							<NavItem
-								icon={<UserRound size={18} />}
-								label="Profile"
-								active={currentTab === "Profile"}
+						{/* ... keep existing code for mobile menu ... */}
+						<div className="p-4 flex-1 overflow-y-auto">
+							<div
 								onClick={() => navigate("/profile")}
-							/>
+								className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
+							>
+								<AvatarGenerator
+									emoji={userIdentity.emoji}
+									nickname={user?.anonymousAlias}
+									color={userIdentity.color}
+									size="md"
+								/>
+								<div>
+									<h2 className="text-lg font-bold">{user?.anonymousAlias}</h2>
+									<p className="text-xs text-muted-foreground">
+										Your anonymous identity
+									</p>
+								</div>
+							</div>
+
+							<div className="space-y-2">
+								<NavItem
+									icon={<Home size={18} />}
+									label="Home"
+									active={currentTab === "Home"}
+									onClick={() => navigate("/")}
+								/>
+								<NavItem
+									icon={<Users size={18} />}
+									label="Ghost Circles"
+									active={currentTab === "Circles"}
+									onClick={() => navigate("/ghost-circles")}
+								/>
+								<NavItem
+									icon={<MessageSquare size={18} />}
+									label="Whispers"
+									active={currentTab === "Whispers"}
+									onClick={() => navigate("/whispers")}
+								/>
+								<NavItem
+									icon={<UserRound size={18} />}
+									label="Profile"
+									active={currentTab === "Profile"}
+									onClick={() => navigate("/profile")}
+								/>
+							</div>
+
+							<Button
+								onClick={openWhisperModal}
+								className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white"
+							>
+								<MessageSquare size={16} className="mr-2" /> New Whisper
+							</Button>
 						</div>
 
-						<Button
-							onClick={openWhisperModal}
-							className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white"
-						>
-							<MessageSquare size={16} className="mr-2" /> New Whisper
-						</Button>
+						<div className="p-4 border-t border-border">
+							<Button
+								onClick={handleLogout}
+								className="w-full bg-red-500 hover:bg-red-700 text-white"
+							>
+								<LogOut size={16} className="mr-2" />
+								Log Out
+							</Button>
+						</div>
 					</div>
-
-					<div className="p-4 border-t border-border">
-						<Button
-							onClick={handleLogout}
-							className="w-full bg-red-500 hover:bg-red-700 text-white"
-						>
-							<LogOut size={16} className="mr-2" />
-							Log Out
-						</Button>
-					</div>
-				</div>
+				</>
 			)}
 
 			{/* Main Content */}
