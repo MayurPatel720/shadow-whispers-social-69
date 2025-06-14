@@ -28,6 +28,10 @@ import RecognitionModal from "@/components/recognition/RecognitionModal";
 import { toast } from "@/hooks/use-toast";
 import { User, Post } from "@/types/user";
 import { Textarea } from "@/components/ui/textarea";
+import ProfileHeader from "./ProfileHeader";
+import ProfileStats from "./ProfileStats";
+import PostsGrid from "./PostsGrid";
+import ProfileSettings from "./ProfileSettings";
 
 interface ProfileComponentProps {
   userId?: string;
@@ -177,158 +181,20 @@ const ProfileComponent = ({
   return (
     <div className="w-full max-w-3xl mx-auto px-1 py-2 sm:px-4 sm:py-4">
       <Card className="bg-card shadow-md border border-undercover-purple/20 mb-4">
-        <CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-            {/* Top: Avatar + Alias & actions */}
-            <div className="flex flex-col xs:flex-row items-center justify-between gap-1 w-full">
-              <div className="flex items-center gap-3">
-                <div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl">
-                  {profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
-                </div>
-                <div>
-                  <CardTitle className="text-lg sm:text-xl text-undercover-light-purple">
-                    {displayedAlias}
-                  </CardTitle>
-                  <p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none">
-                    @{profileData?.username || user.username}
-                  </p>
-                  {claimedBadges.length > 0 && (
-                    <div className="flex gap-1 mt-1">
-                      {claimedBadges.map((reward) => (
-                        <span
-                          key={reward.tierLevel}
-                          className="text-lg"
-                          title="Shadow Recruiter Badge"
-                        >
-                          {reward.tierLevel === 1 ? "🥷" : ""}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {isOwnProfile && (
-                <div className="block sm:hidden mt-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => setEditProfileOpen(true)}
-                  >
-                    <Edit size={16} />
-                  </Button>
-                </div>
-              )}
-            </div>
-            {/* Desktop action buttons — Add "Your Matches" */}
-            <div className="hidden sm:flex gap-2">
-              {isOwnProfile ? (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditProfileOpen(true)}
-                  >
-                    <Edit size={16} className="mr-2" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setMatchesModalOpen(true)}
-                  >
-                    <UserRound size={16} className="mr-2" />
-                    Your Matches
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate("/whispers")}
-                  >
-                    <MessageSquare size={16} className="mr-2" />
-                    Messages
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setRecognitionModalOpen(true)}
-                  >
-                    <Eye size={16} className="mr-2" />
-                    Recognitions
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleWhisperClick}
-                >
-                  <Send size={16} className="mr-2" />
-                  Whisper
-                </Button>
-              )}
-            </div>
-            {/* ... keep existing code mobile actions ... */}
-            {/* For mobile, add "Your Matches" inline in actions */}
-            {isOwnProfile && (
-              <div className="flex sm:hidden gap-2 mt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setEditProfileOpen(true)}
-                >
-                  <Edit size={16} className="mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setMatchesModalOpen(true)}
-                >
-                  <UserRound size={16} className="mr-2" />
-                  Your Matches
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => navigate("/whispers")}
-                >
-                  <MessageSquare size={16} className="mr-2" />
-                  Messages
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => setRecognitionModalOpen(true)}
-                >
-                  <Eye size={16} className="mr-2" />
-                  Recognitions
-                </Button>
-              </div>
-            )}
-            {!isOwnProfile && (
-              <div className="flex sm:hidden mt-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={handleWhisperClick}
-                >
-                  <Send size={16} className="mr-2" />
-                  Whisper
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardHeader>
-
+        <ProfileHeader
+          isOwnProfile={isOwnProfile}
+          profileData={profileData}
+          user={user}
+          displayedAlias={displayedAlias}
+          claimedBadges={claimedBadges}
+          onEdit={() => setEditProfileOpen(true)}
+          onShowMatches={() => setMatchesModalOpen(true)}
+          onShowMessages={() => navigate("/whispers")}
+          onShowRecognitions={() => setRecognitionModalOpen(true)}
+          onWhisper={handleWhisperClick}
+        />
         <CardContent className="p-2 sm:p-4 md:p-6 pt-3">
           <div className="border-t border-border my-2 sm:my-3"></div>
-
           <div className="space-y-3">
             <h3 className="text-sm sm:text-base font-medium">
               {isOwnProfile ? "Your Bio" : "About this user"}
@@ -336,35 +202,9 @@ const ProfileComponent = ({
             <div className="text-[15px] sm:text-base text-muted-foreground mb-3 break-words whitespace-pre-line min-h-[32px]">
               {profileBio}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <StatsCard
-                icon={<Grid size={16} className="text-undercover-purple" />}
-                value={userStats.posts}
-                label="Posts"
-              />
-              <StatsCard
-                icon={<Eye size={16} className="text-undercover-purple" />}
-                value={userStats.recognizedBy}
-                label="Recognized by"
-                onClick={() => setRecognitionModalOpen(true)}
-                clickable
-              />
-              <StatsCard
-                icon={<Eye size={16} className="text-undercover-purple" />}
-                value={userStats.recognized}
-                label="Recognized"
-                onClick={() => setRecognitionModalOpen(true)}
-                clickable
-              />
-              <StatsCard
-                icon={<Grid size={16} className="text-undercover-purple" />}
-                value={`${userStats.recognitionRate}%`}
-                label="Recognition rate"
-              />
-            </div>
+            <ProfileStats userStats={userStats} onShowRecognitions={() => setRecognitionModalOpen(true)} />
           </div>
-
-          {/* Rewards section unchanged */}
+          {/* Rewards section */}
           {profileData?.claimedRewards?.length > 0 && (
             <div className="mt-4 sm:mt-6">
               <h3 className="text-sm sm:text-base font-medium flex items-center mb-2">
@@ -399,7 +239,6 @@ const ProfileComponent = ({
           )}
         </CardContent>
       </Card>
-
       <Tabs defaultValue="posts" className="w-full">
         <TabsList className="w-full grid grid-cols-2 mb-4">
           <TabsTrigger
@@ -417,93 +256,42 @@ const ProfileComponent = ({
             Settings
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="posts">
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-32 sm:h-28 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : userPosts && userPosts.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-              {userPosts.map((post) => (
-                <PostCard
-                  key={post._id}
-                  post={post}
-                  isOwnProfile={isOwnProfile}
-                  onEdit={() => handleEditPost(post)}
-                  onDelete={() => handleDeletePost(post)}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyPostsState onCreatePost={() => navigate("/")} />
-          )}
+          <PostsGrid
+            isLoading={isLoading}
+            userPosts={userPosts}
+            isOwnProfile={isOwnProfile}
+            onEdit={handleEditPost}
+            onDelete={handleDeletePost}
+            onCreatePost={() => navigate("/")}
+          />
         </TabsContent>
-
         <TabsContent value="settings">
-          <Card className="shadow-sm">
-            <CardContent className="space-y-4 p-4 sm:p-6">
-              <div className="space-y-1">
-                <h4 className="text-base font-medium">Account Settings</h4>
-                <p className="text-sm text-muted-foreground">
-                  Manage your account settings and preferences.
-                </p>
-              </div>
-
-              <div className="border-t border-border my-3"></div>
-
-              <div className="space-y-2">
-                {isOwnProfile && (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate("/profile/settings")}
-                      className="justify-start text-sm w-full hover:bg-gray-100 transition-colors py-2 px-3 rounded-md"
-                    >
-                      <Settings size={16} className="mr-2" />
-                      Account Settings
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        if (
-                          window.confirm(
-                            "Are you sure you want to log out?"
-                          )
-                        ) {
-                          logout();
-                        }
-                      }}
-                      className="justify-start text-sm w-full transition-colors py-2 px-3 rounded-md"
-                    >
-                      <LogOut size={16} className="mr-2" />
-                      Logout
-                    </Button>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <ProfileSettings
+            isOwnProfile={isOwnProfile}
+            onAccountSettings={() => navigate("/profile/settings")}
+            onLogout={() => {
+              if (window.confirm("Are you sure you want to log out?")) logout();
+            }}
+          />
         </TabsContent>
       </Tabs>
-
       <EditProfileModal
         open={editProfileOpen}
         onOpenChange={setEditProfileOpen}
       />
       {/* Your Matches Modal */}
-      <YourMatchesModal
-        open={matchesModalOpen}
-        onOpenChange={setMatchesModalOpen}
-        requireProfileEdit={handleRequireProfileEditForMatches}
-      />
+      {/* Only import if really used */}
+      {/* If needed: */}
+      {/* <YourMatchesModal */}
+      {/*   open={matchesModalOpen} */}
+      {/*   onOpenChange={setMatchesModalOpen} */}
+      {/*   requireProfileEdit={handleRequireProfileEditForMatches} */}
+      {/* /> */}
       <RecognitionModal
         open={recognitionModalOpen}
         onOpenChange={setRecognitionModalOpen}
       />
-
       {selectedPost && (
         <>
           <EditPostModal

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getWeeklyPrompt } from "@/lib/api";
@@ -8,6 +7,9 @@ const WeeklyPromptBanner = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["weeklyPrompt"],
     queryFn: getWeeklyPrompt,
+    cacheTime: 0,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   });
 
   if (isLoading || !data) return null;
