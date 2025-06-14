@@ -191,7 +191,7 @@ const ProfileComponent = ({
     ) || [];
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-1 py-2 sm:px-4 sm:py-4">
+    <div className="w-full max-w-3xl mx-auto px-2 py-2 sm:px-4 sm:py-4">
       <Card className="bg-card shadow-md border border-undercover-purple/20 mb-4">
         <ProfileHeader
           isOwnProfile={isOwnProfile}

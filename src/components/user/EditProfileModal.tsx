@@ -81,7 +81,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-xl p-4 md:p-6">
+      <DialogContent className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-4 md:p-6">
+        {/* Mobile close button */}
+        <button
+          type="button"
+          className="absolute right-3 top-3 p-2 rounded-full hover:bg-muted transition sm:hidden z-10"
+          onClick={() => onOpenChange(false)}
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
         </DialogHeader>
