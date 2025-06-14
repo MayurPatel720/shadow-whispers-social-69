@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatches } from "@/lib/api-match";
 import { Loader2 } from "lucide-react";
@@ -15,26 +15,48 @@ interface YourMatchesModalProps {
 
 const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange }) => {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isError } = useQuery({
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ["matches", page],
     queryFn: () => fetchMatches(page),
     enabled: open,
+    retry: false,
   });
+
+  // Analyze error for user-friendly messages
+  let errorMsg: string | null = null;
+  if (isError && error) {
+    if (
+      (error as any).response &&
+      (error as any).response.status === 400 &&
+      (error as any).response.data &&
+      ((error as any).response.data.message || "").includes("gender")
+    ) {
+      errorMsg = "Please complete your profile with gender and interests to see matches.";
+    } else {
+      errorMsg = "Could not load matches.";
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Your Matches</DialogTitle>
+          <DialogDescription>
+            View people you have been matched with. For best results, complete your interests and gender in profile.
+          </DialogDescription>
         </DialogHeader>
         {isLoading && (
           <div className="flex justify-center py-8">
             <Loader2 className="animate-spin text-purple-600" />
           </div>
         )}
-        {isError && (
-          <div className="text-red-500 text-center p-4">Could not load matches.</div>
+
+        {errorMsg && (
+          <div className="text-red-500 text-center p-4">{errorMsg}</div>
         )}
+
         {data && (
           <>
             {data.matches.length === 0 ? (
@@ -92,4 +114,3 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange 
 };
 
 export default YourMatchesModal;
-

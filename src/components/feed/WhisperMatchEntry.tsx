@@ -8,7 +8,7 @@ interface WhisperMatchEntryProps {
 }
 
 export default function WhisperMatchEntry({ onClick }: WhisperMatchEntryProps) {
-  // Replaces the old match button with "Your Matches"
+  // Now acts as the "Your Matches" button everywhere it's used
   return (
     <Button
       onClick={onClick}

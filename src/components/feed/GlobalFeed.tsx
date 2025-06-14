@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,7 @@ const GlobalFeed = () => {
 
         {/* Feature buttons */}
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <WhisperMatchEntry />
+          <WhisperMatchEntry onClick={() => {}} />
           {/* AMA button removed */}
           {/* <Button
             variant="outline"
