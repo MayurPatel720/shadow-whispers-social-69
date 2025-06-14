@@ -1,15 +1,13 @@
+
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader } from "lucide-react";
+import { Loader, Music, Dumbbell, Gamepad2, Globe2, Plane, BookOpen, Film, ChefHat, Paintbrush, Shirt, X } from "lucide-react"; // <-- Fixed import
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
-// Icons for interests demo
-import { Music, Dumbbell, Gamepad2, Globe2, Plane, BookOpen, Film, ChefHat, Paintbrush, Shirt } from "lucide-react";
-// Responsive interest box container
 
 const INTERESTS_LIST = [
   { label: "Music", icon: <Music className="mr-1 inline" size={16}/> },
@@ -85,11 +83,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
         {/* Mobile close button */}
         <button
           type="button"
-          className="absolute right-3 top-3 p-2 rounded-full hover:bg-muted transition sm:hidden z-10"
+          className="absolute right-3 top-3 p-1.5 rounded-full hover:bg-muted transition sm:hidden z-10"
           onClick={() => onOpenChange(false)}
           aria-label="Close"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>

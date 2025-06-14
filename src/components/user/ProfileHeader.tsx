@@ -1,7 +1,8 @@
+
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, UserRound, MessageSquare, X } from "lucide-react";
+import { Edit, UserRound, MessageSquare } from "lucide-react";
 
 interface ProfileHeaderProps {
 	isOwnProfile: boolean;
@@ -30,45 +31,43 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 		<CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
 			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 				{/* Avatar + alias/name row */}
-				<div className={`flex flex-col xs:flex-row items-start gap-1 w-full`}>
-					<div className="flex items-center gap-3 w-full min-w-0">
-						{/* Avatar */}
-						<div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl shrink-0">
-							{profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
-						</div>
-						{/* Alias/Name + Edit (all on one row for mobile) */}
-						<div className="flex-1 flex items-center min-w-0">
-							<div className="flex flex-col min-w-0">
-								<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate">
-									{displayedAlias}
-								</CardTitle>
-								<p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none text-left truncate">
-									@{profileData?.username || user.username}
-								</p>
-								{claimedBadges.length > 0 && (
-									<div className="flex gap-1 mt-1">
-										{claimedBadges.map((reward) => (
-											<span
-												key={reward.tierLevel}
-												className="text-lg"
-												title="Shadow Recruiter Badge"
-											>
-												{reward.tierLevel === 1 ? "🥷" : ""}
-											</span>
-										))}
-									</div>
+				<div className="flex items-center gap-3 w-full min-w-0">
+					{/* Avatar */}
+					<div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl shrink-0">
+						{profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
+					</div>
+					{/* Alias/Name + Edit */}
+					<div className="flex-1 flex items-center min-w-0">
+						<div className="flex flex-col min-w-0 flex-1">
+							<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1">
+								<span className="truncate">{displayedAlias}</span>
+								{isOwnProfile && (
+									<Button
+										variant="outline"
+										size="icon"
+										className="ml-2 h-8 w-8 p-0"
+										onClick={onEdit}
+										aria-label="Edit profile"
+									>
+										<Edit size={16} />
+									</Button>
 								)}
-							</div>
-							{isOwnProfile && (
-								<Button
-									variant="outline"
-									size="icon"
-									className="ml-2 h-8 w-8"
-									onClick={onEdit}
-									aria-label="Edit profile"
-								>
-									<Edit size={16} />
-								</Button>
+							</CardTitle>
+							<p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none text-left truncate">
+								@{profileData?.username || user.username}
+							</p>
+							{claimedBadges.length > 0 && (
+								<div className="flex gap-1 mt-1">
+									{claimedBadges.map((reward) => (
+										<span
+											key={reward.tierLevel}
+											className="text-lg"
+											title="Shadow Recruiter Badge"
+										>
+											{reward.tierLevel === 1 ? "🥷" : ""}
+										</span>
+									))}
+								</div>
 							)}
 						</div>
 					</div>
