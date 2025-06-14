@@ -248,7 +248,8 @@ const AppShell = ({ children }: AppShellProps) => {
 			)}
 
 			{/* Main Content */}
-			<div className="flex-1 flex flex-col">
+			{/* Make feed area scrollable, not full page. */}
+			<div className="flex-1 flex flex-col h-screen min-h-0">
 				{/* Mobile Top Bar */}
 				<div className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border p-4 flex justify-between items-center">
 					<h1
@@ -282,7 +283,7 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				{/* Children (Page Content) */}
-				<div className="flex-1 min-h-0">{children}</div>
+				<div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
 
 				{/* Bottom Navigation (Mobile) */}
 				<div className="md:hidden fixed bottom-0 w-full bg-card border-t border-border p-2 flex justify-around z-50">

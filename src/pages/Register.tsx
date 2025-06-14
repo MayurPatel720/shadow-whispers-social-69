@@ -71,19 +71,16 @@ const Register: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      // Register the user (referral processing is handled backend-side)
       await registerUser(data.username, data.fullName, data.email, data.password, data.referralCode);
-      // Toasts are handled in AuthContext
       navigate('/');
     } catch (error: any) {
       console.error("Registration error:", error);
-      // Toast is handled in AuthContext
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 items-center justify-center p-4">
-      <div className="w-full max-w-md text-center mb-8">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+      <div className="w-full max-w-md text-center mb-8 mt-8">
         <h1 className="text-5xl font-bold text-white mb-2">UnderCover</h1>
         <p className="text-gray-300 text-lg">Create your anonymous identity</p>
         {referralCode && (
@@ -314,7 +311,7 @@ const Register: React.FC = () => {
         </CardFooter>
       </Card>
 
-      <div className="text-center mt-8 text-gray-400 text-sm">
+      <div className="text-center mt-6 text-gray-400 text-sm mb-4">
         <p>Your true identity stays hidden. Your shadow self roams free.</p>
       </div>
     </div>
