@@ -106,78 +106,88 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 					</div>
 				</div>
 			) : (
-				/* MOBILE layout: keep current version for mobile, actions below */
+				/* MOBILE layout: avatar, name, and buttons as icons below */
 				<>
-					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div className="flex items-center gap-3 w-full min-w-0">
-							<div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl shrink-0">
+					<div className="flex flex-col items-center w-full gap-2">
+						<div className="flex items-center gap-3 w-full justify-center">
+							<div className="h-14 w-14 flex items-center justify-center rounded-full bg-undercover-dark text-2xl shrink-0">
 								{profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
 							</div>
-							<div className="flex-1 flex items-center min-w-0">
-								<div className="flex flex-col min-w-0 flex-1">
-									<div className="flex items-center gap-1 min-w-0">
-										<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1 min-w-0">
-											<span className="truncate">{displayedAlias}</span>
-										</CardTitle>
-										{isOwnProfile && (
-											<Button
-												variant="outline"
-												size="icon"
-												className="ml-2 h-8 w-8 p-0"
-												onClick={onEdit}
-												aria-label="Edit profile"
-											>
-												<Edit size={16} />
-											</Button>
-										)}
-									</div>
-									<p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none text-left truncate">
-										@{profileData?.username || user.username}
-									</p>
-									{claimedBadges.length > 0 && (
-										<div className="flex gap-1 mt-1">
-											{claimedBadges.map((reward) => (
-												<span
-													key={reward.tierLevel}
-													className="text-lg"
-													title="Shadow Recruiter Badge"
-												>
-													{reward.tierLevel === 1 ? "🥷" : ""}
-												</span>
-											))}
-										</div>
+							<div className="flex flex-col items-start justify-center min-w-0 flex-1">
+								<div className="flex items-center gap-1 min-w-0">
+									<CardTitle className="text-lg text-undercover-light-purple truncate flex items-center min-w-0">
+										<span className="truncate">{displayedAlias}</span>
+									</CardTitle>
+									{isOwnProfile && (
+										<Button
+											variant="ghost"
+											size="icon"
+											className="ml-2 h-8 w-8 p-0"
+											onClick={onEdit}
+											aria-label="Edit profile"
+										>
+											<Edit size={18} />
+										</Button>
 									)}
 								</div>
+								<p className="text-xs text-muted-foreground break-words max-w-[120px] text-left truncate">
+									@{profileData?.username || user.username}
+								</p>
 							</div>
 						</div>
-					</div>
-					{/* MOBILE: Actions stacked below and full width */}
-					<div className="flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-3">
+						{claimedBadges.length > 0 && (
+							<div className="flex gap-1 mt-1">
+								{claimedBadges.map((reward) => (
+									<span
+										key={reward.tierLevel}
+										className="text-lg"
+										title="Shadow Recruiter Badge"
+									>
+										{reward.tierLevel === 1 ? "🥷" : ""}
+									</span>
+								))}
+							</div>
+						)}
+						{/* Center horizontal row of icon-only action buttons */}
 						{isOwnProfile ? (
-							<>
-								<Button variant="outline" size="sm" onClick={onEdit}>
-									<Edit size={16} className="mr-2" />
-									Edit
+							<div className="flex flex-row w-full justify-center gap-2 mt-2">
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={onShowMessages}
+									title="Messages"
+									aria-label="Messages"
+									className="h-10 w-10 flex items-center justify-center"
+								>
+									<MessageSquare size={20} />
 								</Button>
-								<Button variant="outline" size="sm" onClick={onShowMatches}>
-									<UserRound size={16} className="mr-2" />
-									Your Matches
-								</Button>
-								<Button variant="outline" size="sm" onClick={onShowMessages}>
-									<MessageSquare size={16} className="mr-2" />
-									Messages
-								</Button>
-							</>
+								{onShowRecognitions && (
+									<Button
+										variant="outline"
+										size="icon"
+										onClick={onShowRecognitions}
+										title="Recognitions"
+										aria-label="Recognitions"
+										className="h-10 w-10 flex items-center justify-center"
+									>
+										<Eye size={20} />
+									</Button>
+								)}
+							</div>
 						) : (
-							<Button
-								variant="outline"
-								size="sm"
-								onClick={onWhisper}
-								className="w-full sm:w-auto"
-							>
-								<UserRound size={16} className="mr-2" />
-								Whisper
-							</Button>
+							// For not own profile, keep whisper button (still as icon only)
+							<div className="flex flex-row w-full justify-center gap-2 mt-2">
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={onWhisper}
+									title="Whisper"
+									aria-label="Whisper"
+									className="h-10 w-10 flex items-center justify-center"
+								>
+									<UserRound size={20} />
+								</Button>
+							</div>
 						)}
 					</div>
 				</>
