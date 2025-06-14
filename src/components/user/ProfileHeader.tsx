@@ -39,8 +39,11 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 					{/* Alias/Name + Edit */}
 					<div className="flex-1 flex items-center min-w-0">
 						<div className="flex flex-col min-w-0 flex-1">
-							<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1">
-								<span className="truncate">{displayedAlias}</span>
+							{/* Name row */}
+							<div className="flex items-center gap-1 min-w-0">
+								<CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left truncate flex items-center gap-1 min-w-0">
+									<span className="truncate">{displayedAlias}</span>
+								</CardTitle>
 								{isOwnProfile && (
 									<Button
 										variant="outline"
@@ -52,7 +55,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 										<Edit size={16} />
 									</Button>
 								)}
-							</CardTitle>
+							</div>
 							<p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none text-left truncate">
 								@{profileData?.username || user.username}
 							</p>

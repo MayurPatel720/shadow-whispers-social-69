@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader, Music, Dumbbell, Gamepad2, Globe2, Plane, BookOpen, Film, ChefHat, Paintbrush, Shirt, X } from "lucide-react"; // <-- Fixed import
+import { Loader, Music, Dumbbell, Gamepad2, Globe2, Plane, BookOpen, Film, ChefHat, Paintbrush, Shirt, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,20 +79,30 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-4 md:p-6">
-        {/* Mobile close button */}
-        <button
-          type="button"
-          className="absolute right-3 top-3 p-1.5 rounded-full hover:bg-muted transition sm:hidden z-10"
-          onClick={() => onOpenChange(false)}
-          aria-label="Close"
+      {/* set scrollable modal and make close button always visible */}
+      <DialogContent
+        className="relative w-full max-w-md sm:max-w-lg md:max-w-xl p-0 md:p-0 flex flex-col max-h-[95vh] overflow-hidden"
+        style={{padding: 0}}
+      >
+        {/* Top bar with sticky close button */}
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-3 border-b border-border">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
+          </DialogHeader>
+          <button
+            type="button"
+            className="p-1.5 rounded-full hover:bg-muted transition z-10 focus:outline-none"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        {/* Actual scrollable content */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto px-4 pb-2 pt-2 space-y-4"
         >
-          <X size={20} />
-        </button>
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Edit Profile</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="anonymousAlias">Anonymous Alias</Label>
