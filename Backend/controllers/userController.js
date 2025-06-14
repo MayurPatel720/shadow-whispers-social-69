@@ -129,6 +129,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 			recognizedUsers: user.recognizedUsers,
 			referralCode: user.referralCode,
 			oneSignalPlayerId: user.oneSignalPlayerId,
+			bio: user.bio || "", // ADD THIS
 		});
 	} else {
 		res.status(404);
@@ -151,6 +152,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 	user.fullName = req.body.fullName || user.fullName;
 	user.email = req.body.email || user.email;
 	user.avatarEmoji = req.body.avatarEmoji || user.avatarEmoji;
+	user.bio = req.body.bio !== undefined ? req.body.bio : user.bio;  // BIO support
 
 	if (req.body.password) {
 		user.password = req.body.password;
@@ -165,6 +167,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 		email: updatedUser.email,
 		anonymousAlias: updatedUser.anonymousAlias,
 		avatarEmoji: updatedUser.avatarEmoji,
+		bio: updatedUser.bio || "", // BIO support
 		token: generateToken(updatedUser._id),
 	});
 });

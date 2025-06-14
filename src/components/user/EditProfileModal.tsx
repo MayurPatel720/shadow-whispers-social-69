@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 interface EditProfileModalProps {
   open: boolean;
@@ -17,7 +17,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   const { user, updateProfile } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bio, setBio] = useState(user?.bio || "");
-  
+
+  // Ensure editing updates if user prop changes
+  React.useEffect(() => {
+    setBio(user?.bio || "");
+  }, [user?.bio]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -34,7 +39,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] w-[95vw]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
@@ -68,12 +73,18 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
           
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
-            <Input 
+            <Textarea 
               id="bio" 
               value={bio} 
               onChange={(e) => setBio(e.target.value)}
               placeholder="Tell us something about yourself..."
+              className="resize-none min-h-[80px] max-h-[180px] bg-background"
+              maxLength={200}
             />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Write something others will see in your profile.</span>
+              <span>{bio.length}/200</span>
+            </div>
           </div>
           
           <DialogFooter>
