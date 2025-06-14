@@ -273,52 +273,57 @@ const getRecognitions = asyncHandler(async (req, res) => {
 	const { type, filter } = req.query;
 	const userId = req.user._id;
 
-	let user = await User.findById(userId);
+	const user = await User.findById(userId)
+		.populate({
+			path: "recognizedUsers",
+			select: "_id username fullName email anonymousAlias avatarEmoji",
+		})
+		.populate({
+			path: "identityRecognizers",
+			select: "_id username fullName email anonymousAlias avatarEmoji",
+		});
+
 	if (!user) {
 		res.status(404);
 		throw new Error("User not found");
 	}
 
-	let recognizedUsers = user.recognizedUsers || [];
+	// Calculate stats
+	const totalRecognized = user.recognizedUsers ? user.recognizedUsers.length : 0;
+	const totalRecognizers = user.identityRecognizers ? user.identityRecognizers.length : 0;
+	const recognitionAttempts = user.recognitionAttempts || 0;
+	const successfulRecognitions = user.successfulRecognitions || 0;
+	const recognitionRate =
+		recognitionAttempts > 0
+			? Math.round((successfulRecognitions / recognitionAttempts) * 100)
+			: 0;
 
-	if (type === "received") {
-		user = await User.findOne({ _id: userId }).populate({
-			path: "referralCode",
-			select: "_id username fullName email anonymousAlias avatarEmoji",
-		});
-		if (!user) {
-			res.status(404);
-			throw new Error("Referred user not found");
-		}
-		recognizedUsers = user.referralCode ? [user.referralCode] : [];
-	} else if (type === "given") {
-		user = await User.findById(userId).populate({
-			path: "recognizedUsers",
-			select: "_id username fullName email anonymousAlias avatarEmoji",
-		});
-		if (!user) {
-			res.status(404);
-			throw new Error("User not found");
-		}
-		recognizedUsers = user.recognizedUsers || [];
-	} else {
-		user = await User.findById(userId).populate({
-			path: "recognizedUsers",
-			select: "_id username fullName email anonymousAlias avatarEmoji",
-		});
+	// Prepare lists for response
+	let recognizedArr = user.recognizedUsers || [];
+	let recognizersArr = user.identityRecognizers || [];
 
-		if (!user) {
-			res.status(404);
-			throw new Error("User not found");
-		}
-		recognizedUsers = user.recognizedUsers || [];
+	// Filter "mutual" if requested
+	if (filter === "mutual") {
+		const recognizedIds = new Set(recognizedArr.map((u) => u._id.toString()));
+		const mutualArr = recognizersArr.filter((u) => recognizedIds.has(u._id.toString()));
+		recognizersArr = mutualArr;
+		// Also, you can show mutuals in recognizedArr if desired:
+		recognizedArr = recognizedArr.filter((u) =>
+			mutualArr.some((recognizer) => recognizer._id.equals(u._id))
+		);
 	}
 
-	if (filter === "pending") {
-		// Logic to filter pending recognitions
-	}
-
-	res.json(recognizedUsers);
+	res.json({
+		stats: {
+			totalRecognized,
+			totalRecognizers,
+			recognitionRate,
+			successfulRecognitions,
+			recognitionAttempts,
+		},
+		recognized: recognizedArr,
+		recognizers: recognizersArr,
+	});
 });
 
 // @desc    Revoke recognition for a user

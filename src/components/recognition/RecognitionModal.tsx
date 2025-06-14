@@ -43,7 +43,7 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
     data: recognitionData,
     isLoading,
     refetch,
-  } = useQuery<Recognition>({
+  } = useQuery({
     queryKey: ["recognitions", activeTab, filter],
     queryFn: () => getRecognitions(activeTab, filter),
     enabled: open,
@@ -56,11 +56,16 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
   }, [open, refetch]);
 
   // Fallbacks for stats
-  const totalRecognized = recognitionData?.stats?.totalRecognized ?? 0;
-  const totalRecognizers = recognitionData?.stats?.totalRecognizers ?? 0;
-  const recognitionRate = recognitionData?.stats?.recognitionRate ?? 0;
-  const successfulRecognitions = recognitionData?.stats?.successfulRecognitions ?? 0;
-  const recognitionAttempts = recognitionData?.stats?.recognitionAttempts ?? 0;
+  const stats = recognitionData?.stats || {};
+  const totalRecognized = stats.totalRecognized ?? 0;
+  const totalRecognizers = stats.totalRecognizers ?? 0;
+  const recognitionRate = stats.recognitionRate ?? 0;
+  const successfulRecognitions = stats.successfulRecognitions ?? 0;
+  const recognitionAttempts = stats.recognitionAttempts ?? 0;
+
+  // Safeguard for user arrays
+  const recognizedUsers = Array.isArray(recognitionData?.recognized) ? recognitionData.recognized : [];
+  const recognizersUsers = Array.isArray(recognitionData?.recognizers) ? recognitionData.recognizers : [];
 
   const handleRevokeRecognition = async (userId: string) => {
     if (
@@ -131,14 +136,14 @@ const RecognitionModal = ({ open, onOpenChange }: RecognitionModalProps) => {
               </TabsList>
               <TabsContent value="recognized">
                 <RecognitionUserList
-                  users={(recognitionData?.recognized ?? []) as User[]}
+                  users={recognizedUsers}
                   activeTab="recognized"
                   onRevoke={handleRevokeRecognition}
                 />
               </TabsContent>
               <TabsContent value="recognizers">
                 <RecognitionUserList
-                  users={(recognitionData?.recognizers ?? []) as User[]}
+                  users={recognizersUsers}
                   activeTab="recognizers"
                 />
               </TabsContent>
