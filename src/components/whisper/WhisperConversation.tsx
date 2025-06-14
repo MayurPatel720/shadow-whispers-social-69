@@ -483,7 +483,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								return (
 									<div
 										key={msg._id}
-										className={`flex ${isMe ? "justify-end" : "justify-start"} relative group`}
+										className={`flex ${isMe ? "justify-end" : "justify-start"} relative`}
 									>
 										<div
 											className={`
@@ -493,42 +493,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 												${isMe ? "bg-undercover-purple text-white rounded-br-none" : "bg-gray-700 text-white rounded-bl-none"}
 												flex flex-col`}
 										>
-											{isMe && (
-												<div className="absolute top-2 -right-8 md:group-hover:block group-hover:block hidden">
-													{/* Message actions dropdown */}
-													<DropdownMenu>
-														<DropdownMenuTrigger asChild>
-															<button
-																className="flex items-center justify-center p-1 rounded-full hover:bg-undercover-purple/20 transition"
-																aria-label="Message actions"
-																tabIndex={0}
-																type="button"
-															>
-																<MoreVertical className="w-4 h-4 text-white/70" />
-															</button>
-														</DropdownMenuTrigger>
-														<DropdownMenuContent
-															align="end"
-															className="z-40 bg-gray-900 border border-gray-800 min-w-[120px]"
-														>
-															<DropdownMenuItem
-																onClick={() => handleStartEditMessage(msg)}
-																disabled={isEditingMessage}
-																className="cursor-pointer"
-															>
-																Edit
-															</DropdownMenuItem>
-															<DropdownMenuItem
-																onClick={() => handleDeleteMessage(msg)}
-																disabled={isDeletingMessage}
-																className="text-red-400 cursor-pointer"
-															>
-																Delete
-															</DropdownMenuItem>
-														</DropdownMenuContent>
-													</DropdownMenu>
-												</div>
-											)}
 											{isMe && isBeingEdited ? (
 												<form
 													className="flex flex-col"
@@ -570,12 +534,50 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 													<p className="break-words">{msg.content}</p>
 													<div
 														className={`
-															text-xs mt-1 flex items-center justify-end
-															${isMe ? "text-white/70" : "text-gray-400"}
+															w-full flex items-center gap-1 mt-1
+															${isMe ? "justify-end" : "justify-start"}
 														`}
 													>
-														{formatTime(msg.createdAt)}
-														{isMe && msg.read && <span className="ml-1">✓</span>}
+														<span className={`text-xs ${isMe ? "text-white/70" : "text-gray-400"}`}>
+															{formatTime(msg.createdAt)}
+															{isMe && msg.read && <span className="ml-1">✓</span>}
+														</span>
+														{/* Three dots message actions always visible for "me" */}
+														{isMe && (
+															<div className="ml-1 flex-shrink-0">
+																<DropdownMenu>
+																	<DropdownMenuTrigger asChild>
+																		<button
+																			className="flex items-center justify-center p-1 rounded-full hover:bg-undercover-purple/20 transition outline-none focus:ring-2 focus:ring-undercover-purple"
+																			aria-label="Message actions"
+																			tabIndex={0}
+																			type="button"
+																		>
+																			<MoreVertical className="w-4 h-4 text-white/70" />
+																		</button>
+																	</DropdownMenuTrigger>
+																	<DropdownMenuContent
+																		align="end"
+																		className="z-40 bg-gray-900 border border-gray-800 min-w-[120px]"
+																	>
+																		<DropdownMenuItem
+																			onClick={() => handleStartEditMessage(msg)}
+																			disabled={isEditingMessage}
+																			className="cursor-pointer"
+																		>
+																			Edit
+																		</DropdownMenuItem>
+																		<DropdownMenuItem
+																			onClick={() => handleDeleteMessage(msg)}
+																			disabled={isDeletingMessage}
+																			className="text-red-400 cursor-pointer"
+																		>
+																			Delete
+																		</DropdownMenuItem>
+																	</DropdownMenuContent>
+																</DropdownMenu>
+															</div>
+														)}
 													</div>
 												</>
 											)}
