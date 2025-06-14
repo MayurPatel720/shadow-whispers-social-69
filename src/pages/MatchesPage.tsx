@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetchMatches, unlockPremiumMatches } from "@/lib/api-match";
@@ -6,16 +5,19 @@ import { useToast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Lock } from "lucide-react";
+import type { MatchResult } from "@/types/match";
 
 const MatchesPage: React.FC = () => {
   const [page, setPage] = useState(1);
+  const [isUnlocking, setIsUnlocking] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError } = useQuery({
+  // Correct generic for useQuery so "data" is typed
+  const { data, isLoading, isError } = useQuery<MatchResult, Error>({
     queryKey: ["matches", page],
     queryFn: () => fetchMatches(page),
-    keepPreviousData: true,
+    // keepPreviousData not supported in v5; by default, data stays while fetching, so it's ok to remove.
   });
 
   const unlockMutation = useMutation({
@@ -26,9 +28,11 @@ const MatchesPage: React.FC = () => {
         description: data.message,
       });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
+      setIsUnlocking(false);
     },
     onError: (err: any) => {
       toast({ title: "Unlock Failed", description: err.message, variant: "destructive" });
+      setIsUnlocking(false);
     }
   });
 
@@ -52,7 +56,6 @@ const MatchesPage: React.FC = () => {
               Gender: <span className="capitalize">{profile.gender}</span>
             </div>
           </div>
-          {/* Optionally profile actions */}
         </Card>
       ))}
 
@@ -90,16 +93,23 @@ const MatchesPage: React.FC = () => {
             </p>
             <Button
               size="lg"
-              loading={unlockMutation.isPending}
+              disabled={isUnlocking || unlockMutation.isPending}
               onClick={() => {
+                setIsUnlocking(true);
                 // INTEGRATE with Razorpay here.
                 // For now, we'll simulate successful payment then unlock.
-                // Replace this block with your actual Razorpay payment integration.
                 unlockMutation.mutate();
               }}
               className="bg-yellow-500 text-yellow-900 hover:bg-yellow-600"
             >
-              Unlock with Razorpay
+              {isUnlocking || unlockMutation.isPending ? (
+                <span className="flex items-center gap-2 justify-center">
+                  <Loader2 className="animate-spin" />
+                  Unlocking...
+                </span>
+              ) : (
+                "Unlock with Razorpay"
+              )}
             </Button>
           </div>
         </div>
