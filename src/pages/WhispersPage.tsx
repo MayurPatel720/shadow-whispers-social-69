@@ -10,12 +10,14 @@ import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
+import WhisperMatchEntry from "@/components/feed/WhisperMatchEntry";
 
 const WhispersPage = () => {
   const { user } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isWhisperModalOpen, setIsWhisperModalOpen] = useState(false);
+  const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
   const queryClient = useQueryClient();
   
   const { data: conversations, isLoading, error } = useQuery({
@@ -84,6 +86,10 @@ const WhispersPage = () => {
             <p className="text-sm text-muted-foreground">Anonymous messages</p>
           </div>
           
+          <div className="p-4 border-b border-border flex flex-col gap-2">
+            <WhisperMatchEntry />
+          </div>
+
           <div className="p-2 sticky top-0 bg-background z-10">
             <div className="relative">
               <Input
@@ -158,6 +164,9 @@ const WhispersPage = () => {
               <Button className="mt-4 bg-undercover-purple" onClick={() => setIsWhisperModalOpen(true)}>
                 Start a whisper
               </Button>
+              <div className="mt-3 w-full">
+                <WhisperMatchEntry />
+              </div>
             </div>
           )}
           
@@ -188,6 +197,9 @@ const WhispersPage = () => {
                 Select a conversation to view your whispers. 
                 All messages are anonymous until someone correctly guesses your identity.
               </p>
+              <div className="mt-4">
+                <WhisperMatchEntry />
+              </div>
             </div>
           )}
         </div>

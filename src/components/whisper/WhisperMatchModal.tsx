@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { joinWhisperMatch, sendWhisperMatchMessage, leaveWhisperMatch } from "@/lib/api";
 import { Loader2, User2, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -51,6 +51,9 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Whisper Match</DialogTitle>
+          <DialogDescription>
+            Connect anonymously with someone for a limited-time chat. Neither of you will know who the other is!
+          </DialogDescription>
         </DialogHeader>
         {!match && !waiting && (
           <Button onClick={start} disabled={isJoining}>
@@ -89,4 +92,3 @@ export default function WhisperMatchModal({ open, onOpenChange }: Props) {
     </Dialog>
   );
 }
-
