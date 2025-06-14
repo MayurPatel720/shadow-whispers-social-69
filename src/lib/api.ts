@@ -502,3 +502,25 @@ export const setWeeklyPrompt = async (promptText: string) => {
 	const response = await api.post("/api/prompts/", { promptText });
 	return response.data;
 };
+
+// Edit a whisper message
+export async function editWhisper(messageId: string, content: string) {
+	const res = await fetch(`/api/whispers/message/${messageId}`, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ content }),
+	});
+	if (!res.ok) throw new Error("Failed to edit whisper.");
+	return await res.json();
+}
+
+// Delete a whisper message
+export async function deleteWhisperMessage(messageId: string) {
+	const res = await fetch(`/api/whispers/message/${messageId}`, {
+		method: "DELETE",
+	});
+	if (!res.ok) throw new Error("Failed to delete whisper.");
+	return await res.json();
+}

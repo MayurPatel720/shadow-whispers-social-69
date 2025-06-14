@@ -59,6 +59,9 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	const navigate = useNavigate();
 	const [message, setMessage] = useState("");
 	const [messages, setMessages] = useState<Whisper[]>([]);
+	const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+	const [editMessageContent, setEditMessageContent] = useState("");
+	const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const queryClient = useQueryClient();
 	const [socket, setSocket] = useState<Socket | null>(null);
@@ -89,6 +92,54 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				variant: "destructive",
 				title: "Failed to Delete",
 				description: "Could not delete the conversation. Please try again.",
+			});
+		},
+	});
+
+	const { mutate: editWhisperMutate, isPending: isEditingMessage } = useMutation({
+		mutationFn: async ({ messageId, content }: { messageId: string, content: string }) => {
+			const res = await import("@/lib/api").then(mod => mod.editWhisper(messageId, content));
+			return res;
+		},
+		onSuccess: (updatedWhisper) => {
+			setMessages((prev) =>
+				prev.map((msg) => (msg._id === updatedWhisper._id ? updatedWhisper : msg))
+			);
+			setEditingMessageId(null);
+			toast({
+				title: "Message Edited",
+				description: "Your message was updated.",
+			});
+		},
+		onError: (error: any) => {
+			console.error("Failed to edit message:", error);
+			toast({
+				variant: "destructive",
+				title: "Edit Failed",
+				description: error?.message || "Could not update message.",
+			});
+		},
+	});
+
+	const { mutate: deleteMessageMutate, isPending: isDeletingMessage } = useMutation({
+		mutationFn: async (messageId: string) => {
+			const res = await import("@/lib/api").then(mod => mod.deleteWhisperMessage(messageId));
+			return res;
+		},
+		onSuccess: (_resp, messageId) => {
+			setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+			setDeleteMessageId(null);
+			toast({
+				title: "Message Deleted",
+				description: "Your message was deleted.",
+			});
+		},
+		onError: (error: any) => {
+			console.error("Failed to delete message:", error);
+			toast({
+				variant: "destructive",
+				title: "Delete Failed",
+				description: error?.message || "Could not delete message.",
 			});
 		},
 	});
@@ -206,6 +257,30 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		if (message.trim()) {
 			sendWhisperMutation.mutate(message);
 		}
+	};
+
+	const handleStartEditMessage = (msg: Whisper) => {
+		setEditingMessageId(msg._id);
+		setEditMessageContent(msg.content);
+	};
+
+	const handleSaveEditMessage = (msg: Whisper) => {
+		if (editMessageContent.trim() && msg._id) {
+			editWhisperMutate({ messageId: msg._id, content: editMessageContent });
+		}
+	};
+
+	const handleCancelEditMessage = () => {
+		setEditingMessageId(null);
+		setEditMessageContent("");
+	};
+
+	const handleDeleteMessage = (msg: Whisper) => {
+		setDeleteMessageId(msg._id);
+	};
+
+	const confirmDeleteMessage = (msgId: string) => {
+		deleteMessageMutate(msgId);
 	};
 
 	const formatTime = (timestamp: string) => {
@@ -404,34 +479,142 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 							{group.messages.map((msg) => {
 								const isMe = msg.sender === user._id;
+								const isBeingEdited = editingMessageId === msg._id;
 								return (
 									<div
 										key={msg._id}
-										className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+										className={`flex ${isMe ? "justify-end" : "justify-start"} relative group`}
 									>
 										<div
 											className={`
-                        max-w-[80%] 
-                        rounded-lg 
-                        p-3 
-                        ${
-													isMe
-														? "bg-undercover-purple text-white rounded-br-none"
-														: "bg-gray-700 text-white rounded-bl-none"
-												}
-                      `}
+												max-w-[80%] 
+												rounded-lg 
+												p-3 
+												${isMe ? "bg-undercover-purple text-white rounded-br-none" : "bg-gray-700 text-white rounded-bl-none"}
+												flex flex-col`}
 										>
-											<p className="break-words">{msg.content}</p>
-											<div
-												className={`
-                          text-xs mt-1 flex items-center justify-end
-                          ${isMe ? "text-white/70" : "text-gray-400"}
-                        `}
-											>
-												{formatTime(msg.createdAt)}
-												{isMe && msg.read && <span className="ml-1">✓</span>}
-											</div>
+											{isMe && (
+												<div className="absolute top-2 -right-8 md:group-hover:block group-hover:block hidden">
+													{/* Message actions dropdown */}
+													<DropdownMenu>
+														<DropdownMenuTrigger asChild>
+															<button
+																className="flex items-center justify-center p-1 rounded-full hover:bg-undercover-purple/20 transition"
+																aria-label="Message actions"
+																tabIndex={0}
+																type="button"
+															>
+																<MoreVertical className="w-4 h-4 text-white/70" />
+															</button>
+														</DropdownMenuTrigger>
+														<DropdownMenuContent
+															align="end"
+															className="z-40 bg-gray-900 border border-gray-800 min-w-[120px]"
+														>
+															<DropdownMenuItem
+																onClick={() => handleStartEditMessage(msg)}
+																disabled={isEditingMessage}
+																className="cursor-pointer"
+															>
+																Edit
+															</DropdownMenuItem>
+															<DropdownMenuItem
+																onClick={() => handleDeleteMessage(msg)}
+																disabled={isDeletingMessage}
+																className="text-red-400 cursor-pointer"
+															>
+																Delete
+															</DropdownMenuItem>
+														</DropdownMenuContent>
+													</DropdownMenu>
+												</div>
+											)}
+											{isMe && isBeingEdited ? (
+												<form
+													className="flex flex-col"
+													onSubmit={e => {
+														e.preventDefault();
+														handleSaveEditMessage(msg);
+													}}
+												>
+													<input
+														type="text"
+														value={editMessageContent}
+														className="bg-gray-800 text-white rounded p-1 mb-1 focus:outline-none"
+														onChange={e => setEditMessageContent(e.target.value)}
+														disabled={isEditingMessage}
+														autoFocus
+													/>
+													<div className="flex gap-2">
+														<Button
+															size="sm"
+															type="submit"
+															disabled={isEditingMessage}
+															className="bg-undercover-purple text-white"
+														>
+															Save
+														</Button>
+														<Button
+															size="sm"
+															variant="secondary"
+															type="button"
+															disabled={isEditingMessage}
+															onClick={handleCancelEditMessage}
+														>
+															Cancel
+														</Button>
+													</div>
+												</form>
+											) : (
+												<>
+													<p className="break-words">{msg.content}</p>
+													<div
+														className={`
+															text-xs mt-1 flex items-center justify-end
+															${isMe ? "text-white/70" : "text-gray-400"}
+														`}
+													>
+														{formatTime(msg.createdAt)}
+														{isMe && msg.read && <span className="ml-1">✓</span>}
+													</div>
+												</>
+											)}
 										</div>
+										{/* Delete message alert dialog */}
+										{isMe && deleteMessageId === msg._id && (
+											<AlertDialog open={true} onOpenChange={open => !open && setDeleteMessageId(null)}>
+												<AlertDialogTrigger asChild>
+													<div />
+												</AlertDialogTrigger>
+												<AlertDialogContent className="bg-gray-800 text-white border-gray-700">
+													<AlertDialogHeader>
+														<AlertDialogTitle>Delete Message</AlertDialogTitle>
+														<AlertDialogDescription>
+															This message will be permanently deleted and cannot be undone.<br />
+															Are you sure?
+														</AlertDialogDescription>
+													</AlertDialogHeader>
+													<AlertDialogFooter>
+														<AlertDialogCancel
+															className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600"
+															onClick={() => setDeleteMessageId(null)}
+														>
+															Cancel
+														</AlertDialogCancel>
+														<AlertDialogAction
+															className="bg-red-600 hover:bg-red-700"
+															onClick={() => confirmDeleteMessage(msg._id)}
+															disabled={isDeletingMessage}
+														>
+															{isDeletingMessage ? (
+																<Loader className="h-4 w-4 animate-spin mr-2" />
+															) : null}
+															Delete
+														</AlertDialogAction>
+													</AlertDialogFooter>
+												</AlertDialogContent>
+											</AlertDialog>
+										)}
 									</div>
 								);
 							})}
