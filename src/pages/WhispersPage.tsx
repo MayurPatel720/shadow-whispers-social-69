@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import WhisperMatchEntry from "@/components/feed/WhisperMatchEntry";
 import YourMatchesModal from "@/components/whisper/YourMatchesModal";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const WhispersPage = () => {
   const { user } = useAuth();
@@ -21,6 +22,22 @@ const WhispersPage = () => {
   const [isYourMatchesOpen, setIsYourMatchesOpen] = useState(false);
   const [joinedMatch, setJoinedMatch] = useState(false);
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // --- Handle userId passed via query string (e.g., /whispers?userId=xxx) for auto-opening chat
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const userIdFromQS = params.get("userId");
+    if (userIdFromQS && user) {
+      // Check if conversation exists, else let it open/load in chat anyway
+      setSelectedConversation({ _id: userIdFromQS });
+      // Remove ?userId from the URL (replace state, keep shallow)
+      params.delete("userId");
+      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [location.search, user]);
   
   // Automatically join whisper match session when user enters page
   useEffect(() => {

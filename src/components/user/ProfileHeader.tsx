@@ -32,9 +32,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 		<CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
 			<div
 				className={`flex flex-col gap-2 ${
-					isOwnProfile
-						? "sm:flex-row sm:items-center sm:justify-between"
-						: "sm:flex-row sm:items-center sm:justify-between"
+					isOwnProfile ? "sm:flex-row sm:items-center sm:justify-between" : ""
 				}`}
 			>
 				<div className={`flex flex-col xs:flex-row items-start gap-1 w-full`}>
