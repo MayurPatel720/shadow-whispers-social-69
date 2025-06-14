@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,11 @@ const ProfileComponent = ({
   const [editPostModalOpen, setEditPostModalOpen] = useState(false);
   const [deletePostDialogOpen, setDeletePostDialogOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
+  // For "Your Matches"
+  const [matchesModalOpen, setMatchesModalOpen] = useState(false);
+  // To trigger edit profile if missing data for matches:
+  const [forceProfileEdit, setForceProfileEdit] = useState(false);
 
   const isOwnProfile = !targetUserId || targetUserId === user?._id;
   const currentUserId = isOwnProfile ? user?._id : targetUserId;
@@ -120,6 +125,20 @@ const ProfileComponent = ({
       });
     }
   };
+
+  const showMatchesModal = () => setMatchesModalOpen(true);
+
+  // Callback sent to YourMatchesModal—to be called if matches can't be loaded due to missing gender/interests
+  const handleRequireProfileEditForMatches = () => {
+    setMatchesModalOpen(false);
+    setEditProfileOpen(true);
+    setForceProfileEdit(true);
+  };
+
+  // When the edit profile modal closes, clear the force flag
+  useEffect(() => {
+    if (!editProfileOpen) setForceProfileEdit(false);
+  }, [editProfileOpen]);
 
   const isLoading = profileLoading || postsLoading;
 
@@ -201,7 +220,7 @@ const ProfileComponent = ({
                 </div>
               )}
             </div>
-            {/* Desktop action buttons */}
+            {/* Desktop action buttons — Add "Your Matches" */}
             <div className="hidden sm:flex gap-2">
               {isOwnProfile ? (
                 <>
@@ -212,6 +231,14 @@ const ProfileComponent = ({
                   >
                     <Edit size={16} className="mr-2" />
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setMatchesModalOpen(true)}
+                  >
+                    <UserRound size={16} className="mr-2" />
+                    Your Matches
                   </Button>
                   <Button
                     variant="outline"
@@ -241,8 +268,28 @@ const ProfileComponent = ({
                 </Button>
               )}
             </div>
+            {/* ... keep existing code mobile actions ... */}
+            {/* For mobile, add "Your Matches" inline in actions */}
             {isOwnProfile && (
               <div className="flex sm:hidden gap-2 mt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setEditProfileOpen(true)}
+                >
+                  <Edit size={16} className="mr-2" />
+                  Edit
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setMatchesModalOpen(true)}
+                >
+                  <UserRound size={16} className="mr-2" />
+                  Your Matches
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
@@ -445,6 +492,12 @@ const ProfileComponent = ({
       <EditProfileModal
         open={editProfileOpen}
         onOpenChange={setEditProfileOpen}
+      />
+      {/* Your Matches Modal */}
+      <YourMatchesModal
+        open={matchesModalOpen}
+        onOpenChange={setMatchesModalOpen}
+        requireProfileEdit={handleRequireProfileEditForMatches}
       />
       <RecognitionModal
         open={recognitionModalOpen}

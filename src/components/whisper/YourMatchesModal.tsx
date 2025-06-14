@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { fetchMatches } from "@/lib/api-match";
@@ -8,22 +8,45 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { MatchProfile } from "@/types/match";
 
+// Added prop: requireProfileEdit
 interface YourMatchesModalProps {
   open: boolean;
   onOpenChange: (val: boolean) => void;
+  requireProfileEdit?: () => void;
 }
 
-const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange }) => {
+const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange, requireProfileEdit }) => {
   const [page, setPage] = useState(1);
 
-  const { data, isLoading, isError, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["matches", page],
     queryFn: () => fetchMatches(page),
     enabled: open,
     retry: false,
   });
 
-  // Analyze error for user-friendly messages
+  // Handle missing fields error: redirect to EditProfile if needed
+  useEffect(() => {
+    if (
+      isError &&
+      error &&
+      (error as any).response &&
+      (error as any).response.status === 400 &&
+      (error as any).response.data &&
+      ((error as any).response.data.message || "").includes("gender")
+    ) {
+      // Close modal, open profile edit
+      onOpenChange(false);
+      if (requireProfileEdit) requireProfileEdit();
+    }
+    // eslint-disable-next-line
+  }, [isError, error, requireProfileEdit, onOpenChange]);
+
   let errorMsg: string | null = null;
   if (isError && error) {
     if (

@@ -83,18 +83,10 @@ const GlobalFeed = () => {
         <WeeklyPromptBanner />
 
         {/* Feature buttons */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        {/* REMOVE WhisperMatchEntry from feed */}
+        {/* <div className="flex flex-col sm:flex-row gap-2 mb-4">
           <WhisperMatchEntry onClick={() => {}} />
-          {/* AMA button removed */}
-          {/* <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => setShowAMA((s) => !s)}
-          >
-            <HelpCircle size={18} />
-            {showAMA ? "Hide Q&A" : "Q&A / AMA Sessions"}
-          </Button> */}
-        </div>
+        </div> */}
 
         {/* AMA session display removed! */}
         {/* {showAMA && (
