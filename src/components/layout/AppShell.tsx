@@ -176,10 +176,9 @@ const AppShell = ({ children }: AppShellProps) => {
 			{mobileMenuOpen && (
 				<>
 					{/* Modal overlay to block scroll & dim background */}
-					<div className="fixed inset-0 bg-black/70 z-50 md:hidden"></div>
+					<div className="fixed inset-0 bg-black/70 z-40 md:hidden"></div>
 					<div className="fixed inset-0 z-50 flex md:hidden flex-col animate-fade-in">
-						{/* ... keep existing code for mobile menu content ... */}
-						<div className="p-4 flex justify-between items-center border-b border-border">
+						<div className="p-4 flex justify-between items-center border-b border-border bg-background">
 							<h1 className="text-xl font-bold text-purple-500 flex items-center">
 								<img
 									src="/lovable-uploads/UnderKover_logo2.png"
@@ -196,9 +195,7 @@ const AppShell = ({ children }: AppShellProps) => {
 								<X />
 							</Button>
 						</div>
-
-						{/* ... keep existing code for mobile menu ... */}
-						<div className="p-4 flex-1 overflow-y-auto">
+						<div className="p-4 flex-1 overflow-y-auto bg-background">
 							<div
 								onClick={() => navigate("/profile")}
 								className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
@@ -216,7 +213,6 @@ const AppShell = ({ children }: AppShellProps) => {
 									</p>
 								</div>
 							</div>
-
 							<div className="space-y-2">
 								<NavItem
 									icon={<Home size={18} />}
@@ -243,7 +239,6 @@ const AppShell = ({ children }: AppShellProps) => {
 									onClick={() => navigate("/profile")}
 								/>
 							</div>
-
 							<Button
 								onClick={openWhisperModal}
 								className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white"
@@ -251,8 +246,7 @@ const AppShell = ({ children }: AppShellProps) => {
 								<MessageSquare size={16} className="mr-2" /> New Whisper
 							</Button>
 						</div>
-
-						<div className="p-4 border-t border-border">
+						<div className="p-4 border-t border-border bg-background">
 							<Button
 								onClick={handleLogout}
 								className="w-full bg-red-500 hover:bg-red-700 text-white"
