@@ -10,6 +10,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import LockedMatchCard from "./LockedMatchCard";
 import { useRazorpayPayment } from "@/hooks/useRazorpayPayment";
+import MatchList from "./MatchList";
+import MatchesPagination from "./MatchesPagination";
+import PremiumUnlockBox from "./PremiumUnlockBox";
 
 declare global {
   interface Window {
@@ -102,94 +105,25 @@ const YourMatchesModal: React.FC<YourMatchesModalProps> = ({ open, onOpenChange,
                 No matches found. Please update your interests.
               </div>
             ) : (
-              <div
-                className={`grid gap-3 py-2 ${
-                  data.matches.length <= 2 ? "grid-cols-1" : "sm:grid-cols-2"
-                }`}
-              >
-                {(isPremium
-                  ? data.matches.slice(0, 10)
-                  : data.matches.slice(0, 3)
-                ).map((profile: MatchProfile) => (
-                  <button
-                    key={profile._id}
-                    className="block w-full text-left focus:outline-none"
-                    onClick={() => {
-                      onOpenChange(false);
-                      navigate(`/profile/${profile._id}`, {
-                        state: { anonymousAlias: profile.anonymousAlias }
-                      });
-                    }}
-                  >
-                    <Card
-                      className={`relative p-4 flex items-center gap-3 hover:bg-undercover-purple/10 transition-colors cursor-pointer`}
-                    >
-                      <div className="text-2xl sm:text-3xl">{profile.avatarEmoji}</div>
-                      <div>
-                        <div className="font-medium">{profile.anonymousAlias}</div>
-                        <div className="text-xs text-gray-500">{profile.bio}</div>
-                        <div className="text-xs text-gray-500">
-                          Interests: {Array.isArray(profile.interests) && profile.interests.length > 0
-                            ? profile.interests.join(", ")
-                            : "Not specified"}
-                        </div>
-                        <div className="text-xs">
-                          Gender: <span className="capitalize">{profile.gender || "N/A"}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  </button>
-                ))}
-                {/* Display locked cards for non-premium users */}
-                {!isPremium && data.matches.length > 3 &&
-                  Array.from({length: Math.min(10, data.matches.length) - 3}).map((_, i) => (
-                    <LockedMatchCard idx={i} key={`locked-${i}`} />
-                  ))
-                }
-              </div>
+              <MatchList
+                matches={data.matches}
+                isPremium={isPremium}
+                onSelect={(profile) => {
+                  onOpenChange(false);
+                  navigate(`/profile/${profile._id}`, {
+                    state: { anonymousAlias: profile.anonymousAlias }
+                  });
+                }}
+              />
             )}
-            {/* Pagination */}
-            <div className="flex gap-2 justify-between items-center mt-4">
-              <Button
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                variant="outline"
-              >
-                Prev
-              </Button>
-              <span>Page {page}</span>
-              <Button
-                size="sm"
-                disabled={data && (page * data.maxResults) >= data.total}
-                onClick={() => setPage((p) => p + 1)}
-                variant="outline"
-              >
-                Next
-              </Button>
-            </div>
-            {/* Premium Unlock Notice */}
+            <MatchesPagination
+              page={page}
+              total={data.total}
+              maxResults={data.maxResults}
+              onPageChange={setPage}
+            />
             {!isPremium && data.total > 3 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center mt-6 space-y-2">
-                <div className="text-yellow-500 font-semibold">
-                  Unlock all matches for <span className="font-bold">₹39</span>
-                </div>
-                <Button
-                  size="lg"
-                  className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
-                  onClick={startPayment}
-                  disabled={isPaying}
-                >
-                  {isPaying ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" /> Processing...
-                    </>
-                  ) : (
-                    "Unlock Now"
-                  )}
-                </Button>
-                <p className="text-xs text-gray-600">See up to 10 matched users instantly!</p>
-              </div>
+              <PremiumUnlockBox onClick={startPayment} isPaying={isPaying} />
             )}
           </>
         )}
