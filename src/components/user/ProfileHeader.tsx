@@ -13,7 +13,6 @@ interface ProfileHeaderProps {
   onEdit: () => void;
   onShowMatches: () => void;
   onShowMessages: () => void;
-  // onShowRecognitions: () => void; // Removed
   onWhisper: () => void;
 }
 
@@ -26,22 +25,24 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onEdit,
   onShowMatches,
   onShowMessages,
-  // onShowRecognitions,
   onWhisper,
 }) => {
+  // Always left-align for others, more balanced for self
   return (
     <CardHeader className="p-2 sm:p-4 md:p-5 pb-0">
-      <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
-        <div className="flex flex-col xs:flex-row items-center justify-between gap-1 w-full">
+      <div className={`flex flex-col gap-2 ${isOwnProfile ? 'sm:flex-row sm:items-center sm:justify-between' : ''}`}>
+        <div className={`flex flex-col xs:flex-row items-start gap-1 w-full`}>
+          {/* Top-left alignment for avatar/name/username */}
           <div className="flex items-center gap-3">
             <div className="h-14 w-14 sm:h-16 sm:w-16 flex items-center justify-center rounded-full bg-undercover-dark text-2xl sm:text-3xl">
               {profileData?.avatarEmoji || user.avatarEmoji || "🎭"}
             </div>
             <div>
-              <CardTitle className="text-lg sm:text-xl text-undercover-light-purple">
+              {/* Left-align name and username */}
+              <CardTitle className="text-lg sm:text-xl text-undercover-light-purple text-left">
                 {displayedAlias}
               </CardTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none">
+              <p className="text-xs sm:text-sm text-muted-foreground break-words max-w-[120px] sm:max-w-none text-left">
                 @{profileData?.username || user.username}
               </p>
               {claimedBadges.length > 0 && (
@@ -59,6 +60,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               )}
             </div>
           </div>
+          {/* Edit button only for own profile on mobile */}
           {isOwnProfile && (
             <div className="block sm:hidden mt-2">
               <Button variant="outline" size="icon" className="h-8 w-8" onClick={onEdit}>
@@ -67,7 +69,8 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </div>
           )}
         </div>
-        <div className="hidden sm:flex gap-2">
+        {/* Right controls for own profile, top for others */}
+        <div className={`flex gap-2 w-full ${isOwnProfile ? 'hidden sm:flex sm:w-auto sm:justify-end' : 'justify-end mt-2 sm:mt-0'}`}>
           {isOwnProfile ? (
             <>
               <Button variant="outline" size="sm" onClick={onEdit}>
@@ -82,7 +85,6 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
                 <MessageSquare size={16} className="mr-2" />
                 Messages
               </Button>
-              {/* Recognitions button removed */}
             </>
           ) : (
             <Button variant="outline" size="sm" onClick={onWhisper}>
@@ -91,8 +93,9 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             </Button>
           )}
         </div>
+        {/* Mobile-only bottom row for controls */}
         {isOwnProfile && (
-          <div className="flex sm:hidden gap-2 mt-1">
+          <div className="flex sm:hidden gap-2 mt-1 w-full">
             <Button variant="outline" size="sm" className="flex-1" onClick={onEdit}>
               <Edit size={16} className="mr-2" />
               Edit
@@ -105,11 +108,10 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
               <MessageSquare size={16} className="mr-2" />
               Messages
             </Button>
-            {/* Recognitions button removed */}
           </div>
         )}
         {!isOwnProfile && (
-          <div className="flex sm:hidden mt-1">
+          <div className="flex sm:hidden mt-1 w-full">
             <Button
               variant="outline"
               size="sm"
@@ -127,3 +129,4 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 };
 
 export default ProfileHeader;
+

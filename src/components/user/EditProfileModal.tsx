@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -142,8 +141,8 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ open, onOpenChange 
                   className={`flex items-center px-4 py-1.5 rounded-full border transition-all text-sm font-medium min-w-[90px] justify-center
                     ${
                       interests.includes(item.label)
-                        ? "bg-purple-700 text-white border-purple-700"
-                        : "bg-muted border-gray-300 text-gray-800 hover:border-purple-400"
+                        ? "bg-purple-700 text-white border-purple-700 shadow-md"
+                        : "bg-gray-200 text-gray-800 border-gray-300 hover:border-purple-400"
                     }
                   `}
                   style={{ marginBottom: 4, marginRight: 4 }}
