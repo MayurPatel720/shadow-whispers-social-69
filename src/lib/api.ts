@@ -489,3 +489,14 @@ export const setWeeklyPrompt = async (promptText: string) => {
 	const response = await api.post("/api/prompts/", { promptText });
 	return response.data;
 };
+
+// Add API for resend and verify OTP
+export const resendVerificationOtp = async (): Promise<any> => {
+  const response = await api.post("/api/users/send-verification-otp", {});
+  return response.data;
+};
+
+export const verifyEmailOtp = async (otp: string): Promise<any> => {
+  const response = await api.post("/api/users/verify-otp", { otp });
+  return response.data;
+};

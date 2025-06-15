@@ -87,6 +87,16 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0, // - tracks how many premium match packs a user has bought
   },
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: {
+    type: String, // the current OTP sent
+  },
+  emailVerificationExpires: {
+    type: Date,
+  },
 });
 
 // Generate unique anonymous alias

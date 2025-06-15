@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -9,12 +8,14 @@ import { getPaginatedPosts } from "@/lib/api-posts";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import EmailVerificationModal from "@/components/user/EmailVerificationModal";
 
 // Infinite posts feed using scroll observer
 const PAGE_SIZE = 20;
 
 const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
@@ -77,21 +78,7 @@ const GlobalFeed = () => {
 
   const handleCreatePostClick = () => {
     if (!isEmailVerified) {
-      toast({
-        title: "Email Verification Needed",
-        description:
-          "You must verify your email to create posts. Please check your inbox for a verification link.",
-        variant: "destructive",
-        action: {
-          label: "Resend Email",
-          onClick: () => {
-            toast({
-              title: "Verification email sent!",
-              description: "Check your inbox for a new verification link.",
-            });
-          },
-        },
-      });
+      setShowVerifyModal(true);
       return;
     }
     setIsCreatePostOpen(true);
@@ -220,6 +207,21 @@ const GlobalFeed = () => {
         onOpenChange={setIsCreatePostOpen}
         onSuccess={handlePostCreated}
       />
+
+      {/* Dialog for email verification */}
+      {user && !isEmailVerified && (
+        <EmailVerificationModal
+          open={showVerifyModal}
+          onClose={() => setShowVerifyModal(false)}
+          onVerified={async () => {
+            setShowVerifyModal(false);
+            await queryClient.invalidateQueries({ queryKey: ["posts", "infinite"] });
+            // Optionally: trigger a refresh of user context/profile!
+            window.location.reload(); // simplest way to get fresh user with emailVerified: true
+          }}
+          email={user.email}
+        />
+      )}
     </div>
   );
 };

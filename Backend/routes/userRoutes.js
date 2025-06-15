@@ -2,18 +2,20 @@
 const express = require("express");
 const router = express.Router();
 const {
-	registerUser,
-	loginUser,
-	getUserProfile,
-	updateUserProfile,
-	addFriend,
-	getMyFriends,
-	recognizeUser,
-	getRecognitions,
-	revokeRecognition,
-	getUserById,
-	updateOneSignalPlayerId,
-	getUserPosts,
+  registerUser,
+  loginUser,
+  getUserProfile,
+  updateUserProfile,
+  addFriend,
+  getMyFriends,
+  recognizeUser,
+  getRecognitions,
+  revokeRecognition,
+  getUserById,
+  updateOneSignalPlayerId,
+  getUserPosts,
+  resendVerificationOtp,
+  verifyOtp,
 } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -32,5 +34,7 @@ router.get("/recognitions", protect, getRecognitions);
 router.post("/revoke-recognition", protect, revokeRecognition);
 router.post("/onesignal-player-id", protect, updateOneSignalPlayerId);
 router.get("/userposts/:userId", protect, getUserPosts);
+router.post("/send-verification-otp", protect, resendVerificationOtp);
+router.post("/verify-otp", protect, verifyOtp);
 
 module.exports = router;
