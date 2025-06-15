@@ -149,26 +149,42 @@ const WhispersPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen">
-      <div className="flex-1 flex flex-col md:flex-row">
-        <WhisperSidebar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          filteredConversations={filteredConversations}
-          selectedConversation={selectedConversation}
-          onSelectConversation={handleSelectConversation}
-          isWhisperModalOpen={isWhisperModalOpen}
-          setIsWhisperModalOpen={setIsWhisperModalOpen}
-          setIsYourMatchesOpen={setIsYourMatchesOpen}
-          deletingId={deletingId}
-          showDeleteDialog={showDeleteDialog}
-          setShowDeleteDialog={setShowDeleteDialog}
-          setDeletingId={setDeletingId}
-          onDeleteConversation={(partnerId) => deleteConversationMutation.mutate(partnerId)}
-          deletePendingId={deleteConversationMutation.isPending ? deletingId : null}
-          getLastMessageTime={getLastMessageTime}
-        />
-        <div className={`flex-1 flex flex-col ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen bg-background">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        {/* Sidebar for mobile: show only if NO conversation selected.
+            On md+, always show sidebar */}
+        <div
+          className={`w-full md:w-1/3 max-w-md border-r border-border flex flex-col h-full
+            ${selectedConversation ? "hidden md:flex" : "flex"}
+            md:static fixed top-0 left-0 bg-background z-20 md:z-0 h-full md:h-auto`}
+        >
+          <WhisperSidebar
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filteredConversations={filteredConversations}
+            selectedConversation={selectedConversation}
+            onSelectConversation={handleSelectConversation}
+            isWhisperModalOpen={isWhisperModalOpen}
+            setIsWhisperModalOpen={setIsWhisperModalOpen}
+            setIsYourMatchesOpen={setIsYourMatchesOpen}
+            deletingId={deletingId}
+            showDeleteDialog={showDeleteDialog}
+            setShowDeleteDialog={setShowDeleteDialog}
+            setDeletingId={setDeletingId}
+            onDeleteConversation={(partnerId) => deleteConversationMutation.mutate(partnerId)}
+            deletePendingId={deleteConversationMutation.isPending ? deletingId : null}
+            getLastMessageTime={getLastMessageTime}
+          />
+        </div>
+        {/* Conversation: On mobile, show only if a conversation is selected,
+            hide sidebar. On desktop, always show panel */}
+        <div
+          className={
+            `flex-1 flex flex-col bg-background h-full
+            ${!selectedConversation ? 'hidden md:flex' : 'flex'}
+            overflow-auto`
+          }
+        >
           {selectedConversation ? (
             <WhisperConversation 
               partnerId={selectedConversation._id} 
@@ -191,12 +207,11 @@ const WhispersPage = () => {
           )}
         </div>
       </div>
-
+      {/* Modals */}
       <YourMatchesModal
         open={isYourMatchesOpen}
         onOpenChange={setIsYourMatchesOpen}
       />
-
       <WhisperModal
         open={isWhisperModalOpen}
         onOpenChange={setIsWhisperModalOpen}
