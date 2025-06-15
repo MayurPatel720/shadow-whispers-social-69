@@ -1,192 +1,100 @@
-import React, { useEffect } from "react";
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
+import { Toaster } from "./components/ui/toaster";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import SmoothScrollProvider from "./components/providers/SmoothScrollProvider";
-import LoginSuccessAnimation from "./components/animations/LoginSuccessAnimation";
+
+// Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index";
 import ProfilePage from "./pages/ProfilePage";
-import ReferralPage from "./pages/ReferralPage";
-import RecognitionsPage from "./pages/RecognitionsPage";
 import GhostCircles from "./pages/GhostCircles";
-import WhispersPage from "./pages/WhispersPage";
 import InvitePage from "./pages/InvitePage";
-import NotFound from "./pages/NotFound";
+import WhispersPage from "./pages/WhispersPage";
+import RecognitionsPage from "./pages/RecognitionsPage";
+import ReferralPage from "./pages/ReferralPage";
+import MatchesPage from "./pages/MatchesPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminPanel from "./pages/AdminPanel";
-import AppShell from "./components/layout/AppShell";
-import MatchesPage from "./pages/MatchesPage";
 import AdminMatchStats from "./pages/AdminMatchStats";
-import "./App.css";
-import oneSignalService from "./components/oneSignalService";
-import WhisperChatPage from "./components/whisper/WhisperChatPage";
+import NotFound from "./pages/NotFound";
 
-// Create a client
-const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			retry: 2,
-			refetchOnWindowFocus: false,
-		},
-	},
-});
+// Layout
+import AppShell from "./components/layout/AppShell";
 
-const AppContent: React.FC = () => {
-	const { showLoginAnimation, setShowLoginAnimation } = useAuth();
-	useEffect(() => {
-		const initOneSignal = async () => {
-			try {
-				await oneSignalService.initialize();
-			} catch (error) {
-				console.error("OneSignal initialization error:", error);
-			}
-		};
-		initOneSignal();
-	}, []);
-
-	return (
-		<>
-			{showLoginAnimation && (
-				<LoginSuccessAnimation
-					onComplete={() => setShowLoginAnimation(false)}
-				/>
-			)}
-
-			<SmoothScrollProvider>
-				<Routes>
-					<Route path="/login" element={<Login />} />
-					<Route path="/register" element={<Register />} />
-					<Route path="/admin/login" element={<AdminLogin />} />
-					<Route
-						path="/admin"
-						element={
-							<ProtectedAdminRoute>
-								<AdminPanel />
-							</ProtectedAdminRoute>
-						}
-					/>
-					<Route
-						path="/"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<Index />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/profile/:userId?"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<ProfilePage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/referral"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<ReferralPage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/recognitions"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<RecognitionsPage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/ghost-circles"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<GhostCircles />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/whispers"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<WhispersPage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/invite/:circleId"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<InvitePage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/matches"
-						element={
-							<ProtectedRoute>
-								<AppShell>
-									<MatchesPage />
-								</AppShell>
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/chat/:partnerId"
-						element={
-							<ProtectedRoute>
-								<WhisperChatPage />
-							</ProtectedRoute>
-						}
-					/>
-					<Route
-						path="/admin/match-stats"
-						element={
-							<ProtectedAdminRoute>
-								<AdminMatchStats />
-							</ProtectedAdminRoute>
-						}
-					/>
-					<Route path="*" element={<NotFound />} />
-				</Routes>
-			</SmoothScrollProvider>
-		</>
-	);
-};
+const queryClient = new QueryClient();
 
 function App() {
-	return (
-		<QueryClientProvider client={queryClient}>
-			<Router>
-				<AuthProvider>
-					<AdminProvider>
-						<AppContent />
-						<Toaster />
-					</AdminProvider>
-				</AuthProvider>
-			</Router>
-		</QueryClientProvider>
-	);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SmoothScrollProvider>
+        <AdminProvider>
+          <AuthProvider>
+            <Router>
+              <div className="App">
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  
+                  {/* Admin routes */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminPanel />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/match-stats"
+                    element={
+                      <ProtectedAdminRoute>
+                        <AdminMatchStats />
+                      </ProtectedAdminRoute>
+                    }
+                  />
+
+                  {/* Protected routes with AppShell */}
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <AppShell />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Index />} />
+                    <Route path="profile" element={<ProfilePage />} />
+                    <Route path="profile/:userId" element={<ProfilePage />} />
+                    <Route path="ghost-circles" element={<GhostCircles />} />
+                    <Route path="invite/:circleId" element={<InvitePage />} />
+                    <Route path="chat" element={<WhispersPage />} />
+                    <Route path="chat/:userId" element={<WhispersPage />} />
+                    <Route path="recognitions" element={<RecognitionsPage />} />
+                    <Route path="referrals" element={<ReferralPage />} />
+                    <Route path="matches" element={<MatchesPage />} />
+                  </Route>
+
+                  {/* 404 route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+                <Toaster />
+              </div>
+            </Router>
+          </AuthProvider>
+        </AdminProvider>
+      </SmoothScrollProvider>
+    </QueryClientProvider>
+  );
 }
 
 export default App;
