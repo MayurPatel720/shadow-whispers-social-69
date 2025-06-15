@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -17,6 +18,7 @@ interface AuthContextType {
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   setShowLoginAnimation: (show: boolean) => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -48,6 +50,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error("Failed to setup OneSignal:", error);
       // Don't show error to user as this is not critical
+    }
+  };
+
+  const refreshUser = async () => {
+    try {
+      const userData = await getUserProfile();
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to refresh user data', error);
     }
   };
 
@@ -123,7 +134,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       toast({
         title: 'Registration successful',
-        description: `Welcome, ${data.anonymousAlias || data.username}! Your anonymous identity has been created.`,
+        description: `Welcome, ${data.anonymousAlias || data.username}! Please check your email to verify your account.`,
       });
       if (referralCode) {
         toast({
@@ -206,6 +217,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         updateProfile,
         setShowLoginAnimation,
+        refreshUser,
       }}
     >
       {children}

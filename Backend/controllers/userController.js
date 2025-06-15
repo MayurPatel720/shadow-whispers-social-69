@@ -52,13 +52,24 @@ const registerUser = asyncHandler(async (req, res) => {
 	});
 
 	// Send verification email
-	await sendVerificationEmail(email, otp);
+	try {
+		await sendVerificationEmail(email, otp);
+		console.log(`Verification email sent to ${email} with OTP: ${otp}`);
+	} catch (emailError) {
+		console.error("Failed to send verification email:", emailError);
+		// Don't fail registration if email fails, but log it
+	}
 
 	if (user) {
 		res.status(201).json({
 			_id: user._id,
+			username: user.username,
+			fullName: user.fullName,
 			email: user.email,
+			anonymousAlias: user.anonymousAlias,
+			avatarEmoji: user.avatarEmoji,
 			isEmailVerified: user.isEmailVerified,
+			token: generateToken(user._id),
 		});
 	} else {
 		res.status(400);
@@ -109,6 +120,7 @@ const loginUser = asyncHandler(async (req, res) => {
 			email: user.email,
 			anonymousAlias: user.anonymousAlias,
 			avatarEmoji: user.avatarEmoji,
+			isEmailVerified: user.isEmailVerified,
 			token: generateToken(user._id)
 		});
 	} catch (err) {
@@ -143,6 +155,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 			gender: user.gender,
 			interests: user.interests || [],
 			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
+			isEmailVerified: user.isEmailVerified,
 		});
 	} else {
 		res.status(404);
@@ -189,6 +202,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 		gender: updatedUser.gender,
 		interests: updatedUser.interests || [],
 		premiumMatchUnlocks: updatedUser.premiumMatchUnlocks || 0,
+		isEmailVerified: updatedUser.isEmailVerified,
 		token: generateToken(updatedUser._id),
 	});
 });
@@ -565,33 +579,71 @@ const verifyEmail = asyncHandler(async (req, res) => {
 		res.status(400);
 		throw new Error("Email and OTP are required");
 	}
+
+	// Validate email format
+	const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+	if (!emailRegex.test(email)) {
+		res.status(400);
+		throw new Error("Invalid email format");
+	}
+
+	// Validate OTP format (should be 6 digits)
+	if (!/^\d{6}$/.test(otp)) {
+		res.status(400);
+		throw new Error("OTP must be exactly 6 digits");
+	}
+
 	const user = await User.findOne({ email });
 
 	if (!user) {
 		res.status(404);
 		throw new Error("User not found");
 	}
+
 	if (user.isEmailVerified) {
-		return res.status(400).json({ message: "Email already verified" });
-	}
-	if (!user.emailVerificationOTP || !user.emailVerificationOTPExpire) {
-		res.status(400);
-		throw new Error("No OTP generated. Request a new one.");
-	}
-	if (
-		user.emailVerificationOTP !== otp ||
-		user.emailVerificationOTPExpire < Date.now()
-	) {
-		res.status(400);
-		throw new Error("Invalid or expired OTP");
+		return res.status(400).json({ 
+			success: false,
+			message: "Email already verified" 
+		});
 	}
 
+	if (!user.emailVerificationOTP || !user.emailVerificationOTPExpire) {
+		res.status(400);
+		throw new Error("No OTP generated. Please request a new verification email.");
+	}
+
+	if (user.emailVerificationOTPExpire < Date.now()) {
+		// Clear expired OTP
+		user.emailVerificationOTP = undefined;
+		user.emailVerificationOTPExpire = undefined;
+		await user.save();
+		
+		res.status(400);
+		throw new Error("OTP has expired. Please request a new verification email.");
+	}
+
+	if (user.emailVerificationOTP !== otp) {
+		res.status(400);
+		throw new Error("Invalid OTP. Please check your code and try again.");
+	}
+
+	// Success - verify the email
 	user.isEmailVerified = true;
 	user.emailVerificationOTP = undefined;
 	user.emailVerificationOTPExpire = undefined;
 	await user.save();
 
-	res.status(200).json({ success: true, message: "Email verified successfully" });
+	console.log(`Email verified successfully for user: ${user.email}`);
+
+	res.status(200).json({ 
+		success: true, 
+		message: "Email verified successfully",
+		user: {
+			_id: user._id,
+			email: user.email,
+			isEmailVerified: user.isEmailVerified
+		}
+	});
 });
 
 // @desc    Resend email verification OTP
@@ -599,26 +651,62 @@ const verifyEmail = asyncHandler(async (req, res) => {
 // @access  Public
 const resendVerificationEmail = asyncHandler(async (req, res) => {
 	const { email } = req.body;
+
 	if (!email) {
 		res.status(400);
 		throw new Error("Email is required");
 	}
+
+	// Validate email format
+	const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+	if (!emailRegex.test(email)) {
+		res.status(400);
+		throw new Error("Invalid email format");
+	}
+
 	const user = await User.findOne({ email });
+
 	if (!user) {
 		res.status(404);
 		throw new Error("User not found");
 	}
+
 	if (user.isEmailVerified) {
-		return res.status(400).json({ message: "Email already verified" });
+		return res.status(400).json({ 
+			success: false,
+			message: "Email already verified" 
+		});
 	}
+
+	// Check if we should rate limit (optional - prevent spam)
+	const lastOTPTime = user.emailVerificationOTPExpire ? 
+		new Date(user.emailVerificationOTPExpire.getTime() - 10 * 60 * 1000) : null;
+	
+	if (lastOTPTime && (Date.now() - lastOTPTime.getTime()) < 60000) { // 1 minute rate limit
+		res.status(429);
+		throw new Error("Please wait at least 1 minute before requesting a new OTP");
+	}
+
 	const otp = generateOTP();
-	const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+	const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
 	user.emailVerificationOTP = otp;
 	user.emailVerificationOTPExpire = otpExpire;
 	await user.save();
-	await sendVerificationEmail(email, otp);
 
-	res.status(200).json({ success: true, message: "Verification email resent" });
+	try {
+		await sendVerificationEmail(email, otp);
+		console.log(`Verification email resent to ${email} with OTP: ${otp}`);
+
+		res.status(200).json({ 
+			success: true, 
+			message: "Verification email resent successfully" 
+		});
+	} catch (error) {
+		console.error("Failed to resend verification email:", error);
+		res.status(500);
+		throw new Error("Failed to send verification email. Please try again later.");
+	}
 });
 
 module.exports = {

@@ -10,12 +10,14 @@ import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { useAuth } from "@/context/AuthContext";
 
 const otpSchema = z.object({
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
+  const { refreshUser } = useAuth();
   const [otpResent, setOtpResent] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +42,8 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
         description: "You may now post and explore all features.",
       });
       setVerified(true);
-      window.location.reload(); // Reload to get fresh auth state/permissions
+      // Refresh user data to update isEmailVerified status
+      await refreshUser();
     } catch (error: any) {
       toast({
         variant: "destructive",

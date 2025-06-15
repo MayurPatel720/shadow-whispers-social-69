@@ -1,55 +1,67 @@
-// types/user.ts
+
 export interface User {
-    _id: string;
-    username: string;
-    fullName: string;
-    email: string;
-    anonymousAlias: string;
-    avatarEmoji: string;
-    bio?: string;
-    referralCount?: number;
-    referralCode?: string;
-    referredBy?: string;
-    identityRecognizers?: string[] | User[];
-    recognizedUsers?: string[] | User[];
-    recognitionAttempts?: number;
-    successfulRecognitions?: number;
-    recognitionRate?: number;
-    claimedRewards?: Array<{
-      tierLevel: number;
-      rewardType: 'badge' | 'cash' | 'premium';
-      claimedAt: string;
-      paymentMethod?: 'paypal' | 'venmo' | 'giftcard';
-      paymentDetails?: string;
-      status: 'pending' | 'completed' | 'failed';
-    }>;
-    friends?: string[];
-    gender?: "male" | "female" | "other";
-    interests?: string[];
-    premiumMatchUnlocks?: number;
-    [x: string]: any;
-  }
+  _id: string;
+  username: string;
+  fullName: string;
+  email: string;
+  anonymousAlias: string;
+  avatarEmoji: string;
+  friends: string[];
+  recognizedUsers: string[];
+  identityRecognizers?: User[];
+  referralCode: string;
+  oneSignalPlayerId?: string;
+  bio: string;
+  gender?: 'male' | 'female' | 'other';
+  interests: string[];
+  premiumMatchUnlocks: number;
+  isEmailVerified: boolean;
+  claimedRewards?: {
+    tierLevel: number;
+    rewardType: 'badge' | 'cash' | 'premium';
+    rewardDescription: string;
+    status: 'pending' | 'completed';
+    claimedAt: Date;
+    paymentDetails?: string;
+  }[];
+}
 
-  export interface Post {
-    _id: string;
-    content: string;
-    imageUrl?: string;
-    images?: string[];
-    ghostCircleId?: string;
-    userId: string;
-    likes: string[];
-    createdAt: string;
-    updatedAt: string;
-  }
+export interface Post {
+  _id: string;
+  user: string;
+  content: string;
+  imageUrl?: string;
+  images?: string[];
+  videos?: Array<{
+    url: string;
+    thumbnail?: string;
+    duration?: number;
+  }>;
+  likes: string[];
+  likesCount: number;
+  comments: Comment[];
+  commentsCount: number;
+  ghostCircle?: string;
+  shareCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
-  export interface Recognition {
-    stats: {
-      recognitionRate: number;
-      totalRecognized: number;
-      totalRecognizers: number;
-      successfulRecognitions: number;
-      recognitionAttempts: number;
-    };
-    recognized?: User[];
-    recognizers?: User[];
-  }
+export interface Comment {
+  _id: string;
+  user: string;
+  content: string;
+  anonymousAlias: string;
+  createdAt: string;
+  updatedAt: string;
+  replies: Reply[];
+}
+
+export interface Reply {
+  _id: string;
+  user: string;
+  content: string;
+  anonymousAlias: string;
+  createdAt: string;
+  updatedAt: string;
+}
