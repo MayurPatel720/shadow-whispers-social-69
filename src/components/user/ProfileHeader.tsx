@@ -3,6 +3,7 @@ import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Edit, UserRound, MessageSquare, Eye } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileHeaderProps {
 	isOwnProfile: boolean;
@@ -30,7 +31,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 	onShowRecognitions,
 }) => {
 	const isMobile = useIsMobile();
-
+	const navigate = useNavigate();
 	return (
 		<CardHeader className="p-2 sm:p-4 md:p-5 pb-0 w-full">
 			{/* DESKTOP Row (avatar/name left, actions right) */}
@@ -152,22 +153,28 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 						</div>
 					</div>
 					{/* MOBILE: Actions stacked below and full width */}
-					<div className="flex gap-2 w-full flex-wrap justify-end mt-2 sm:mt-3">
+					<div className="w-full">
 						{isOwnProfile ? (
-							<>
-								<Button variant="outline" size="sm" onClick={onEdit}>
-									<Edit size={16} className="mr-2" />
-									Edit
-								</Button>
-								<Button variant="outline" size="sm" onClick={onShowMatches}>
+							<div className="flex w-full sm:hidden gap-2 mt-1">
+								<Button
+									className="flex-1"
+									variant="outline"
+									size="sm"
+									onClick={onShowMatches}
+								>
 									<UserRound size={16} className="mr-2" />
 									Your Matches
 								</Button>
-								<Button variant="outline" size="sm" onClick={onShowMessages}>
+								<Button
+									className="flex-1"
+									variant="outline"
+									size="sm"
+									onClick={() => navigate("/whispers")}
+								>
 									<MessageSquare size={16} className="mr-2" />
 									Messages
 								</Button>
-							</>
+							</div>
 						) : (
 							<Button
 								variant="outline"
