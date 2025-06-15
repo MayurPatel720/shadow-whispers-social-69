@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Ghost, Plus, ArrowLeft } from "lucide-react";
+import { Ghost, Plus, Users, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,7 +14,7 @@ import CircleDetailsTabs from "@/components/ghost-circle/CircleDetailsTabs";
 const GhostCircles = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCircleId, setSelectedCircleId] = useState<string | null>(null);
-  const [circleTab, setCircleTab] = useState<string | undefined>(undefined);
+  const [circleTab, setCircleTab] = useState<string | undefined>(undefined); // For initial tab
 
   const { data: ghostCircles = [], isLoading, refetch } = useQuery({
     queryKey: ["ghostCircles"],
@@ -40,7 +39,7 @@ const GhostCircles = () => {
   // Custom ghost SVG for illustrations
   const GhostIllustration = () => (
     <svg
-      className="h-8 w-8 md:h-12 md:w-12 text-purple-300 opacity-70"
+      className="h-12 w-12 text-purple-300 opacity-70"
       viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -81,26 +80,26 @@ const GhostCircles = () => {
 
   if (isLoading) {
     return (
-      <div className="relative container mx-auto px-1 sm:px-4 py-3 sm:py-6 bg-gradient-to-b from-gray-900 to-black min-h-screen">
+      <div className="relative container mx-auto px-2 sm:px-4 py-6  bg-gradient-to-b from-gray-900 to-black min-h-screen">
         {/* Animated fog background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="fog animate-fog"></div>
           <div className="fog animate-fog-delayed"></div>
         </div>
-        <div className="relative flex items-center justify-between mb-3 sm:mb-6">
-          <Skeleton className="h-6 w-28 sm:h-8 sm:w-40 bg-gray-700" />
-          <Skeleton className="h-8 w-20 sm:h-10 sm:w-32 bg-gray-700" />
+        <div className="relative flex items-center justify-between mb-6">
+          <Skeleton className="h-8 w-40 bg-gray-700" />
+          <Skeleton className="h-10 w-32 bg-gray-700" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="bg-gray-800 border-gray-700">
-              <CardContent className="p-3 sm:p-6">
-                <Skeleton className="h-5 w-3/4 mb-2 sm:h-6 sm:w-3/4 sm:mb-4 bg-gray-700" />
-                <Skeleton className="h-3 w-full mb-2 sm:h-4 sm:w-full sm:mb-2 bg-gray-700" />
-                <Skeleton className="h-3 w-2/3 mb-2 sm:h-4 sm:w-2/3 sm:mb-4 bg-gray-700" />
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-4 bg-gray-700" />
+                <Skeleton className="h-4 w-full mb-2 bg-gray-700" />
+                <Skeleton className="h-4 w-2/3 mb-4 bg-gray-700" />
                 <div className="flex justify-between">
-                  <Skeleton className="h-7 w-20 sm:h-9 sm:w-24 bg-gray-700" />
-                  <Skeleton className="h-7 w-20 sm:h-9 sm:w-24 bg-gray-700" />
+                  <Skeleton className="h-9 w-24 bg-gray-700" />
+                  <Skeleton className="h-9 w-24 bg-gray-700" />
                 </div>
               </CardContent>
             </Card>
@@ -111,11 +110,12 @@ const GhostCircles = () => {
   }
 
   if (selectedCircleId) {
+    // Find the selected circle to get its full object
     const selectedCircle = ghostCircles.find(circle => circle._id === selectedCircleId);
 
     return (
       <motion.div
-        className="relative container mx-auto px-1 sm:px-4 py-3 sm:py-6 bg-gradient-to-b from-gray-900 to-black min-h-screen"
+        className="relative container mx-auto px-2 sm:px-4 py-6 bg-gradient-to-b from-gray-900 to-black min-h-screen"
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -100 }}
@@ -126,7 +126,7 @@ const GhostCircles = () => {
           <div className="fog animate-fog"></div>
           <div className="fog animate-fog-delayed"></div>
         </div>
-        <div className="relative mb-3 sm:mb-4 flex items-center">
+        <div className="relative mb-4 flex items-center">
           <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
             <Button
               variant="ghost"
@@ -134,7 +134,7 @@ const GhostCircles = () => {
               onClick={handleBackToCircles}
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Back to Circles</span>
+              Back to Circles
             </Button>
           </motion.div>
         </div>
@@ -151,7 +151,7 @@ const GhostCircles = () => {
 
   return (
     <motion.div
-      className="relative container mx-auto px-1 sm:px-4 py-3 sm:py-6 bg-gradient-to-b from-gray-900 to-black min-h-screen"
+      className="relative container mx-auto px-2 sm:px-4 py-6 bg-gradient-to-b from-gray-900 to-black min-h-screen"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -185,23 +185,23 @@ const GhostCircles = () => {
           50% { box-shadow: 0 0 20px rgba(147, 51, 234, 0.8); }
         }
       `}</style>
-      <div className="relative flex flex-col gap-5 sm:gap-8">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-1 sm:gap-2">
+      <div className="relative flex flex-col gap-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
             <motion.div
               animate={{ rotate: [0, 10, -10, 0], y: [0, -5, 0] }}
               transition={{ repeat: Infinity, duration: 3 }}
             >
               <GhostIllustration />
             </motion.div>
-            <h1 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 drop-shadow">
+            <h1 className="text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 drop-shadow">
               Ghost Circles
             </h1>
           </div>
           <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 via-fuchsia-700 to-pink-500 hover:from-purple-700 hover:to-fuchsia-800 text-white glow-pulse rounded-full px-5 py-2 sm:px-6 sm:py-3 font-bold text-base sm:text-lg"
+              className="bg-gradient-to-r from-purple-600 via-fuchsia-700 to-pink-500 hover:from-purple-700 hover:to-fuchsia-800 text-white glow-pulse rounded-full px-6 py-3 font-bold text-lg"
             >
               <Plus className="h-5 w-5 mr-2" />
               Create Circle
@@ -212,17 +212,17 @@ const GhostCircles = () => {
         {ghostCircles.length === 0 ? (
           <motion.div variants={cardVariants}>
             <Card className="bg-gray-800/50 backdrop-blur-sm border border-purple-500/30 shadow-lg">
-              <CardContent className="flex flex-col items-center justify-center py-6 sm:py-12 text-center">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                 <motion.div
                   animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 2 }}
                 >
                   <GhostIllustration />
                 </motion.div>
-                <h3 className="text-lg sm:text-xl font-medium text-purple-300 mb-2">
+                <h3 className="text-xl font-medium text-purple-300 mb-2">
                   No Ghost Circles Yet
                 </h3>
-                <p className="text-gray-400 mb-3 sm:mb-4 max-w-md">
+                <p className="text-gray-400 mb-4 max-w-md">
                   Create your first anonymous circle to connect with friends in a private, secret space.
                 </p>
                 <motion.div whileHover="hover" whileTap="tap" variants={buttonVariants}>
@@ -239,7 +239,7 @@ const GhostCircles = () => {
           </motion.div>
         ) : (
           <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mt-1 sm:mt-2"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-2"
             variants={containerVariants}
           >
             <AnimatePresence>
