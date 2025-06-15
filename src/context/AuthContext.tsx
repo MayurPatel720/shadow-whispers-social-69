@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -73,6 +72,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (email: string, password: string) => {
+    if (!email || !password) {
+      toast({ variant: 'destructive', title: 'Login failed', description: 'Email and password are required.' });
+      return;
+    }
+    if (password.length < 8) {
+      toast({ variant: 'destructive', title: 'Login failed', description: 'Password must be at least 8 characters.' });
+      return;
+    }
     try {
       setIsLoading(true);
       const data = await loginUser(email, password);
@@ -107,6 +114,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const register = async (username: string, fullName: string, email: string, password: string, referralCode?: string) => {
+    if (!username || !fullName || !email || !password) {
+      toast({ variant: 'destructive', title: 'Registration failed', description: 'All fields are required.' });
+      return;
+    }
+    if (password.length < 8) {
+      toast({ variant: 'destructive', title: 'Registration failed', description: 'Password must be at least 8 characters.' });
+      return;
+    }
     try {
       setIsLoading(true);
       console.log('Registering user with data:', { username, fullName, email, referralCode });
