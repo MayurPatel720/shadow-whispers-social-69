@@ -46,7 +46,6 @@ const VerifyEmail: React.FC = () => {
       toast({
         title: "Email Verified!",
         description: "You may now login and enjoy the shadows.",
-        icon: <Check className="text-green-500" />,
       });
       setTimeout(() => {
         navigate("/login");
@@ -73,7 +72,6 @@ const VerifyEmail: React.FC = () => {
       toast({
         title: "OTP Resent",
         description: "We've sent you a new code. Check your inbox.",
-        icon: <Mail className="text-purple-500" />,
       });
       setOtpResent(true);
     } catch (error: any) {
@@ -104,23 +102,10 @@ const VerifyEmail: React.FC = () => {
         <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <InputOTP
-                        type="hidden"
-                        {...field}
-                        value={field.value}
-                        readOnly
-                        className="hidden"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              {/* Show the email address directly */}
+              <div className="text-purple-200 text-center text-sm pb-4">
+                Code sent to: <span className="font-bold">{emailFromQS}</span>
+              </div>
               <FormField
                 control={form.control}
                 name="otp"

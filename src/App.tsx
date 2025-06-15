@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import SmoothScrollProvider from "./components/providers/SmoothScrollProvider";
 import LoginSuccessAnimation from "./components/animations/LoginSuccessAnimation";
+import React, { useState } from "react";
 
 // Pages
 import Login from "./pages/Login";
