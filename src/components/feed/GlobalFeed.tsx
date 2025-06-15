@@ -1,33 +1,70 @@
-import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
-import { getAllPosts } from "@/lib/api";
-import { Post } from "@/types/index";
+import { getPaginatedPosts } from "@/lib/api";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 import WhisperMatchEntry from "./WhisperMatchEntry";
-// import AMASessionList from "../ama/AMASessionList"; // REMOVED
+
+// Infinite posts feed using scroll observer
+const PAGE_SIZE = 20;
 
 const GlobalFeed = () => {
 	const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-	// const [showAMA, setShowAMA] = useState(false); // REMOVED
 	const queryClient = useQueryClient();
+	const loadMoreRef = useRef<HTMLDivElement>(null);
 
 	const {
-		data: posts = [],
+		data,
+		isFetchingNextPage,
+		fetchNextPage,
+		hasNextPage,
 		isLoading,
 		error,
 		refetch,
-	} = useQuery({
-		queryKey: ["posts"],
-		queryFn: getAllPosts,
+	} = useInfiniteQuery({
+		queryKey: ["posts", "infinite"],
+		queryFn: ({ pageParam }) =>
+			getPaginatedPosts({
+				limit: PAGE_SIZE,
+				after: pageParam || undefined,
+			}),
+		getNextPageParam: (lastPage, allPages) => {
+			if (!lastPage.hasMore) return undefined;
+			const posts = lastPage.posts;
+			if (posts.length === 0) return undefined;
+			// Use last post id as "after"
+			return posts[posts.length - 1]._id;
+		},
 		refetchInterval: 30000,
 	});
 
+	const allPosts: any[] = data ? data.pages.flatMap(pg => pg.posts) : [];
+
+	// Intersection Observer for infinite scroll
+	useEffect(() => {
+		const observer = new window.IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+					fetchNextPage();
+				}
+			},
+			{ threshold: 1 }
+		);
+		if (loadMoreRef.current) {
+			observer.observe(loadMoreRef.current);
+		}
+		return () => {
+			if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
+		};
+	}, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
 	const handlePostCreated = () => {
-		queryClient.invalidateQueries({ queryKey: ["posts"] });
+		queryClient.invalidateQueries({ queryKey: ["posts", "infinite"] });
 		setIsCreatePostOpen(false);
 	};
 
@@ -68,7 +105,6 @@ const GlobalFeed = () => {
 						<TrendingUp className="h-5 w-5 text-purple-500" />
 						<h1 className="text-xl font-bold text-foreground">Feed</h1>
 					</div>
-					{/* Desktop Create Post Button */}
 					<Button
 						onClick={() => setIsCreatePostOpen(true)}
 						className="sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect"
@@ -79,23 +115,11 @@ const GlobalFeed = () => {
 			</div>
 
 			<div className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">
-				{/* Weekly Prompt */}
 				<WeeklyPromptBanner />
 
-				{/* Feature buttons */}
-				{/* REMOVE WhisperMatchEntry from feed */}
-				{/* <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <WhisperMatchEntry onClick={() => {}} />
-        </div> */}
+				{/* Hide WhisperMatchEntry for now per prior instruction */}
 
-				{/* AMA session display removed! */}
-				{/* {showAMA && (
-          <div className="mb-6">
-            <AMASessionList />
-          </div>
-        )} */}
-
-				{Array.isArray(posts) && posts.length === 0 ? (
+				{allPosts.length === 0 ? (
 					<div className="text-center py-16 space-y-4">
 						<div className="text-6xl mb-4 animate-bounce">👻</div>
 						<h2 className="text-2xl font-bold text-foreground">
@@ -114,16 +138,26 @@ const GlobalFeed = () => {
 					</div>
 				) : (
 					<div className="space-y-6">
-						{Array.isArray(posts) &&
-							posts.map((post: any, index: number) => (
-								<div
-									key={post._id}
-									className="animate-fade-in opacity-100"
-									style={{ animationDelay: `${index * 0.1}s` }}
-								>
-									<PostCard post={post} />
-								</div>
-							))}
+						{allPosts.map((post: any, index: number) => (
+							<div
+								key={post._id}
+								className="animate-fade-in opacity-100"
+								style={{ animationDelay: `${index * 0.1}s` }}
+							>
+								<PostCard post={post} />
+							</div>
+						))}
+						<div ref={loadMoreRef} />
+						{isFetchingNextPage && (
+							<div className="flex justify-center p-4">
+								<Loader className="h-6 w-6 animate-spin text-purple-500" />
+							</div>
+						)}
+						{!hasNextPage && (
+							<div className="text-center text-muted-foreground py-2 text-xs">
+								No more posts to show
+							</div>
+						)}
 					</div>
 				)}
 			</div>

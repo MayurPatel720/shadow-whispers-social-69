@@ -521,3 +521,34 @@ export async function deleteWhisperMessage(messageId: string) {
 	const res = await api.delete(`/api/whispers/message/${messageId}`);
 	return res.data;
 }
+
+// Update to handle paginated global feed.
+export const getPaginatedPosts = async ({
+  limit = 20,
+  after = null,
+}: { limit?: number; after?: string | null } = {}): Promise<{ posts: Post[]; hasMore: boolean }> => {
+  const params = [];
+  if (limit) params.push(`limit=${limit}`);
+  if (after) params.push(`after=${after}`);
+  const query = params.length ? `?${params.join('&')}` : '';
+  const response = await api.get(`/api/posts/global${query}`);
+  return response.data;
+};
+
+// Paginated whisper conversation API
+export const getWhisperConversationPaginated = async ({
+  userId,
+  limit = 20,
+  before = null,
+}: {
+  userId: string,
+  limit?: number,
+  before?: string | null
+}): Promise<{ messages: any[]; partner: any; hasRecognized: boolean; hasMore: boolean }> => {
+  const params = [];
+  if (limit) params.push(`limit=${limit}`);
+  if (before) params.push(`before=${before}`);
+  const query = params.length ? `?${params.join('&')}` : '';
+  const response = await api.get(`/api/whispers/${userId}${query}`);
+  return response.data;
+};
