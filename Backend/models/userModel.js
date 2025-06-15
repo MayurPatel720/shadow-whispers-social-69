@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, "Please add a password"],
-    minlength: 8, // updated to 8 characters
+    minlength: 6,
   },
   posts: [
     {
@@ -87,8 +87,6 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0, // - tracks how many premium match packs a user has bought
   },
-  resetPasswordToken: { type: String }, // for "forgot password"
-  resetPasswordExpires: { type: Date },
 });
 
 // Generate unique anonymous alias

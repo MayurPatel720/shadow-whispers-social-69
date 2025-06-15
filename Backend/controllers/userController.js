@@ -5,18 +5,6 @@ const User = require("../models/userModel");
 const { generateToken } = require("../utils/jwtHelper"); 
 const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
 const Post = require("../models/postModel");
-const nodemailer = require("nodemailer");
-
-// Nodemailer setup
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  secure: process.env.SMTP_SECURE === "true", // Use `true` for port 465, `false` for all other ports
-  auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -474,90 +462,6 @@ const getUserPosts = asyncHandler(async (req, res) => {
 	res.json(posts);
 });
 
-// Function to send reset password email/OTP
-const sendResetPasswordEmail = async (user, otp) => {
-  // Developer note: Make sure to set SMTP_EMAIL and SMTP_PASSWORD in your ./Backend/.env file!
-  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
-    console.error("[RESET EMAIL ERROR] SMTP credentials not set. Please configure SMTP_EMAIL and SMTP_PASSWORD in your .env file!");
-    throw new Error("Server email configuration is missing. Please contact the administrator.");
-  }
-  const mailOptions = {
-    from: process.env.SMTP_EMAIL,
-    to: user.email,
-    subject: "Reset Your UnderKover Password",
-    text: `Your password reset code: ${otp}\n\nEnter this in the app to reset your password.`,
-  };
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`[EMAIL RESET] Email sent: ${info.response}`);
-  } catch (err) {
-    console.error("[EMAIL RESET] Failed to send mail:", err.message);
-    throw new Error("Failed to send reset email. Please try again later.");
-  }
-};
-
-// @desc  Initiate forgot password
-// @route POST /api/users/forgot-password
-// @access Public
-const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
-  if (!email) {
-    res.status(400);
-    throw new Error("Email is required");
-  }
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    // Don't reveal user existence
-    return res.json({ message: "If this email exists, a reset code has been sent." });
-  }
-
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  user.resetPasswordToken = otp;
-  user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 min
-  await user.save();
-
-  await sendResetPasswordEmail(user, otp);
-
-  res.json({
-    message: "If this email exists, a reset code has been sent.",
-    otpForTest: process.env.NODE_ENV !== "production" ? otp : undefined,
-  });
-});
-
-// @desc  Reset password with code
-// @route POST /api/users/reset-password
-// @access Public
-const resetPassword = asyncHandler(async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword) {
-    res.status(400);
-    throw new Error("Email, code, and new password are required");
-  }
-  const user = await User.findOne({ email });
-  if (
-    !user ||
-    !user.resetPasswordToken ||
-    !user.resetPasswordExpires ||
-    Date.now() > user.resetPasswordExpires ||
-    user.resetPasswordToken !== otp
-  ) {
-    res.status(400);
-    throw new Error("Invalid or expired reset code");
-  }
-  if (newPassword.length < 8) {
-    res.status(400);
-    throw new Error("Password must be at least 8 characters");
-  }
-
-  user.password = newPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-  await user.save();
-
-  res.json({ message: "Password reset successful. Please login." });
-});
-
 module.exports = {
 	registerUser,
 	loginUser,
@@ -570,7 +474,5 @@ module.exports = {
 	revokeRecognition,
 	getUserById,
 	updateOneSignalPlayerId,
-	getUserPosts,
-  forgotPassword,
-  resetPassword,
+	getUserPosts, // EXPORT HERE!
 };

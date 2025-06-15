@@ -489,17 +489,3 @@ export const setWeeklyPrompt = async (promptText: string) => {
 	const response = await api.post("/api/prompts/", { promptText });
 	return response.data;
 };
-
-export const forgotPassword = async (email: string): Promise<{ message: string }> => {
-  const response = await api.post("/api/users/forgot-password", { email });
-  return response.data;
-};
-
-export const resetPassword = async (
-  email: string,
-  otp: string,
-  newPassword: string
-): Promise<{ message: string }> => {
-  const response = await api.post("/api/users/reset-password", { email, otp, newPassword });
-  return response.data;
-};
