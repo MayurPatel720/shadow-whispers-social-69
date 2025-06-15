@@ -1,4 +1,3 @@
-
 import React, { RefObject } from "react";
 import AvatarGenerator from "@/components/user/AvatarGenerator";
 import { format } from "date-fns";
@@ -120,16 +119,14 @@ const WhisperMessageList: React.FC<WhisperMessageListProps> = ({
                             variant="ghost"
                             size="icon"
                             className={cn(
-                              "h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity",
-                              isOwnMessage
-                                ? "hover:bg-purple-700 text-white/70"
-                                : "hover:bg-muted-foreground/10"
+                              "h-6 w-6 text-gray-400 hover:text-white focus:text-purple-500 transition-colors duration-150",
+                              "group"
                             )}
                           >
                             <MoreVertical className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-card z-50">
                           <DropdownMenuItem
                             onClick={() => onStartEditing(message)}
                           >
