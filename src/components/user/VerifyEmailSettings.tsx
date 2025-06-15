@@ -104,7 +104,7 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
                   <FormControl>
                     <InputOTP
                       maxLength={6}
-                      value={field.value}
+                      value={field.value || ""}
                       onChange={field.onChange}
                       containerClassName="mb-2 flex justify-center"
                       className="text-xl tracking-widest text-center bg-gray-50 border-purple-300 rounded"
@@ -112,13 +112,15 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
                       autoFocus
                       render={({ slots }) => (
                         <InputOTPGroup className="justify-center">
-                          {slots.map((_, idx) => (
-                            <InputOTPSlot
-                              key={idx}
-                              index={idx}
-                              className="bg-white border-purple-200 text-lg md:text-2xl h-10 w-10 md:w-12 md:h-12"
-                            />
-                          ))}
+                          {Array.isArray(slots) && slots.length === 6
+                            ? slots.map((_, idx) => (
+                                <InputOTPSlot
+                                  key={idx}
+                                  index={idx}
+                                  className="bg-white border-purple-200 text-lg md:text-2xl h-10 w-10 md:w-12 md:h-12"
+                                />
+                              ))
+                            : null}
                         </InputOTPGroup>
                       )}
                     />

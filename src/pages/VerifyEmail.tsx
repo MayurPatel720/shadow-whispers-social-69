@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
@@ -114,7 +113,7 @@ const VerifyEmail: React.FC = () => {
                     <FormControl>
                       <InputOTP
                         maxLength={6}
-                        value={field.value}
+                        value={field.value || ""}
                         onChange={field.onChange}
                         containerClassName="mb-1 flex justify-center"
                         className="text-xl tracking-widest text-center bg-gray-900/40 border-purple-700/50 rounded"
@@ -122,13 +121,15 @@ const VerifyEmail: React.FC = () => {
                         autoFocus
                         render={({ slots }) => (
                           <InputOTPGroup className="justify-center">
-                            {slots.map((_, idx) => (
-                              <InputOTPSlot
-                                key={idx}
-                                index={idx}
-                                className="bg-gray-900/70 border-purple-800/40 text-lg md:text-2xl h-12 w-12 md:w-14 md:h-14"
-                              />
-                            ))}
+                            {Array.isArray(slots) && slots.length === 6
+                              ? slots.map((_, idx) => (
+                                  <InputOTPSlot
+                                    key={idx}
+                                    index={idx}
+                                    className="bg-gray-900/70 border-purple-800/40 text-lg md:text-2xl h-12 w-12 md:w-14 md:h-14"
+                                  />
+                                ))
+                              : null}
                           </InputOTPGroup>
                         )}
                       />
