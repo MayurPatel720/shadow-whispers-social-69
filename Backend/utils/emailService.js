@@ -1,4 +1,3 @@
-
 const nodemailer = require('nodemailer');
 
 // Create transporter
@@ -14,14 +13,17 @@ const createTransporter = () => {
   });
 };
 
+// FRONTEND URL FOR PASSWORD RESET
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"; // fallback for local dev
+
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken) => {
   try {
     const transporter = createTransporter();
-    
+
     // Point to frontend reset password page instead of backend
-    const resetUrl = `https://undercover-service.onrender.com/reset-password?token=${resetToken}`;
-    
+    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
+
     const mailOptions = {
       from: process.env.SMTP_EMAIL,
       to: email,
