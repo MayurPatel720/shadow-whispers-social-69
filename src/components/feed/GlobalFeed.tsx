@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
-import { getPaginatedPosts } from "@/lib/api";
+import { getPaginatedPosts } from "@/lib/api-posts";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 // import WhisperMatchEntry from "./WhisperMatchEntry";
 

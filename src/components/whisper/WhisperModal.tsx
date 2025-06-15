@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { MessageSquare, Search, Loader } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { searchUsers, sendWhisper } from "@/lib/api";
+import { searchUsers } from "@/lib/api";
+import { sendWhisper } from "@/lib/api-whispers";
 import { toast } from "@/hooks/use-toast";
 import debounce from "lodash/debounce";
 import { useNavigate } from "react-router-dom";
@@ -85,7 +86,7 @@ const WhisperModal: React.FC<WhisperModalProps> = ({ open, onOpenChange }) => {
   const sendWhisperMutation = useMutation({
     mutationFn: ({ receiverId, content }: { receiverId: string, content: string }) => 
       sendWhisper(receiverId, content),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Whisper sent",
         description: "Your anonymous whisper has been delivered."
@@ -97,11 +98,12 @@ const WhisperModal: React.FC<WhisperModalProps> = ({ open, onOpenChange }) => {
       setSearchResults([]); // Clear search results on success
       onOpenChange(false);
       
-      if (data && data.receiver) {
+      if (data && (data.receiver || data.partner)) {
+        // Support both data.receiver and data.partner for robustness depending on backend structure
         navigate("/whispers");
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         variant: "destructive",
         title: "Failed to send whisper",
