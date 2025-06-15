@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resendVerificationOtp, verifyEmailOtp } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
+import { Loader } from "lucide-react";
 
 interface EmailVerificationModalProps {
   open: boolean;
@@ -65,13 +66,28 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
           onChange={(e) => setOtp(e.target.value)}
           placeholder="Enter OTP"
           maxLength={6}
+          disabled={loading}
         />
         <DialogFooter>
           <Button variant="outline" onClick={handleResend} disabled={loading}>
-            Resend Code
+            {loading ? (
+              <span className="flex items-center">
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Sending...
+              </span>
+            ) : (
+              "Resend Code"
+            )}
           </Button>
-          <Button onClick={handleVerify} loading={loading}>
-            Verify
+          <Button onClick={handleVerify} disabled={loading}>
+            {loading ? (
+              <span className="flex items-center">
+                <Loader className="w-4 h-4 mr-2 animate-spin" />
+                Verifying...
+              </span>
+            ) : (
+              "Verify"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -80,3 +96,4 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 };
 
 export default EmailVerificationModal;
+
