@@ -190,8 +190,19 @@ const ProfileComponent = ({
 			(reward) => reward.rewardType === "badge" && reward.status === "completed"
 		) || [];
 
+	// If user is not verified and this is their own profile, block posting
+	const blockPost = isOwnProfile && user && !user.isEmailVerified;
+
 	return (
 		<div className="w-full max-w-4xl mx-auto px-2 py-2 sm:px-4 sm:py-4">
+			{blockPost && (
+				<div className="mb-4 flex items-center gap-2 px-4 py-2 bg-yellow-100 border border-yellow-300 rounded shadow-sm">
+					<AlertTriangle className="text-yellow-500" size={20} />
+					<span className="text-sm font-medium text-yellow-800">
+						To post, chat, or use all features, please verify your email in the Settings tab below.
+					</span>
+				</div>
+			)}
 			<Card className="bg-card shadow-md border border-undercover-purple/20 mb-4">
 				<ProfileHeader
 					isOwnProfile={isOwnProfile}
@@ -271,13 +282,28 @@ const ProfileComponent = ({
 					</TabsTrigger>
 				</TabsList>
 				<TabsContent value="posts">
+					{blockPost && (
+						<div className="mb-5 rounded-md border border-yellow-300 bg-yellow-100/50 px-4 py-3 text-center text-yellow-800 font-semibold text-sm">
+							Posting is disabled until you verify your email.
+						</div>
+					)}
 					<PostsGrid
 						isLoading={isLoading}
 						userPosts={userPosts}
 						isOwnProfile={isOwnProfile}
 						onEdit={handleEditPost}
 						onDelete={handleDeletePost}
-						onCreatePost={() => navigate("/")}
+						onCreatePost={() => {
+							if (blockPost) {
+								toast({
+									variant: "destructive",
+									title: "Email Not Verified",
+									description: "You must verify your email before creating posts.",
+								});
+								return;
+							}
+							navigate("/");
+						}}
 					/>
 				</TabsContent>
 				<TabsContent value="settings">

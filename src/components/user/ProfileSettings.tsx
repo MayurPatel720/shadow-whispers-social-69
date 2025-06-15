@@ -2,7 +2,9 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, MailCheck } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import VerifyEmailSettings from "./VerifyEmailSettings";
 
 const ProfileSettings = ({
   isOwnProfile,
@@ -13,10 +15,17 @@ const ProfileSettings = ({
   onAccountSettings: () => void;
   onLogout: () => void;
 }) => {
+  const { user } = useAuth();
+
   if (!isOwnProfile) return null;
   return (
     <Card className="shadow-sm">
       <CardContent className="space-y-4 p-4 sm:p-6">
+        {/* Email Verification Section */}
+        {user && !user.isEmailVerified && (
+          <VerifyEmailSettings email={user.email} />
+        )}
+
         <div className="space-y-1">
           <h4 className="text-base font-medium">Account Settings</h4>
           <p className="text-sm text-muted-foreground">

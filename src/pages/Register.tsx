@@ -71,6 +71,7 @@ const Register: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
+      // Expect proper return type
       const result = await registerUser(
         data.username,
         data.fullName,
@@ -79,12 +80,8 @@ const Register: React.FC = () => {
         data.referralCode
       );
 
-      // If not email verified, go to verify page. Try to check property from returned result
-      if (result?.isEmailVerified === false || result?.isEmailVerified === undefined) {
-        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
-      } else {
-        navigate("/");
-      }
+      // No redirect to verify-email, just animation then home
+      // Email verified status & UI are now handled in profile/settings
     } catch (error: any) {
       console.error("Registration error:", error);
     }

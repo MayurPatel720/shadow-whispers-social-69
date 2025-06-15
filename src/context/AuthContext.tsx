@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -14,7 +13,7 @@ interface AuthContextType {
   isLoading: boolean;
   showLoginAnimation: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (username: string, fullName: string, email: string, password: string, referralCode?: string) => Promise<void>;
+  register: (username: string, fullName: string, email: string, password: string, referralCode?: string) => Promise<User & { token: string }>;
   logout: () => void;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   setShowLoginAnimation: (show: boolean) => void;
@@ -106,7 +105,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const register = async (username: string, fullName: string, email: string, password: string, referralCode?: string) => {
+  const register = async (username: string, fullName: string, email: string, password: string, referralCode?: string): Promise<User & { token: string }> => {
     try {
       setIsLoading(true);
       console.log('Registering user with data:', { username, fullName, email, referralCode });
@@ -124,7 +123,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       toast({
         title: 'Registration successful',
-        description: `Welcome, ${data.anonymousAlias}! Your anonymous identity has been created.`,
+        description: `Welcome, ${data.anonymousAlias || data.username}! Your anonymous identity has been created.`,
       });
       if (referralCode) {
         toast({
@@ -135,8 +134,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       // Navigate after animation completes
       setTimeout(() => {
-        navigate('/');
+        // Instead of navigating, let App.tsx handle navigation
       }, 4000);
+
+      return data;
     } catch (error: any) {
       console.error('Registration failed', error);
 

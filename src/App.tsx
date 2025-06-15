@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -33,14 +32,22 @@ import AppShell from "./components/layout/AppShell";
 const queryClient = new QueryClient();
 
 function GlobalApp() {
-  const { showLoginAnimation } = useAuth();
+  const { showLoginAnimation, setShowLoginAnimation } = useAuth();
+  const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
 
   return (
     <>
       {/* Render animation overlay if login/registration success */}
       {showLoginAnimation && (
         <div className="fixed inset-0 z-[99] bg-black/70 flex items-center justify-center">
-          <LoginSuccessAnimation />
+          <LoginSuccessAnimation 
+            onComplete={() => {
+              setShowLoginAnimation(false);
+              setLoginAnimNavPending(true);
+              // Let the redirect happen, only after animation.
+              window.location.pathname = "/";
+            }}
+          />
         </div>
       )}
       <Routes>
@@ -48,7 +55,8 @@ function GlobalApp() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
+        {/* Remove verify-email as its UI is moved to settings tab */}
+        {/* <Route path="/verify-email" element={<VerifyEmail />} /> */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* Admin routes */}
@@ -87,7 +95,7 @@ function GlobalApp() {
           <Route path="invite/:circleId" element={<InvitePage />} />
           <Route path="chat" element={<WhispersPage />} />
           <Route path="chat/:userId" element={<WhispersPage />} />
-          <Route path="whispers" element={<WhispersPage />} /> {/* ADDED */}
+          <Route path="whispers" element={<WhispersPage />} />
           <Route path="recognitions" element={<RecognitionsPage />} />
           <Route path="referrals" element={<ReferralPage />} />
           <Route path="matches" element={<MatchesPage />} />
