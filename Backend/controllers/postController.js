@@ -253,14 +253,27 @@ const deletepost = asyncHandler(async (req, res) => {
   res.json({ message: 'Post deleted successfully' });
 });
 
-// @desc    Get global feed posts (not in ghost circles)
+// @desc    Get global feed posts (not in ghost circles) with pagination
 // @route   GET /api/posts/global
 // @access  Private
 const getGlobalFeed = asyncHandler(async (req, res) => {
   const redis = getRedisClient();
-  
-  // Try to get from cache first
-  if (redis.isAvailable()) {
+  // Parse pagination params
+  const limit = Math.min(Number(req.query.limit) || 20, 50); // cap limit to 50
+  const after = req.query.after; // after is a post _id (ObjectId)
+
+  // Build query
+  const query = {
+    ghostCircle: { $exists: false },
+    expiresAt: { $gt: new Date() },
+  };
+  if (after) {
+    // Only get posts with _id < after, meaning older than the last loaded
+    query._id = { $lt: after };
+  }
+
+  // Try to get from cache when no pagination, no after/limit (default case)
+  if (!after && limit === 20 && redis.isAvailable()) {
     try {
       const cachedPosts = await redis.get(CACHE_KEYS.GLOBAL_FEED);
       if (cachedPosts) {
@@ -271,17 +284,14 @@ const getGlobalFeed = asyncHandler(async (req, res) => {
     }
   }
 
-  // If not in cache, query database with optimizations
-  const posts = await Post.find({
-    ghostCircle: { $exists: false },
-    expiresAt: { $gt: new Date() },
-  })
-    .sort({ createdAt: -1 })
-    .limit(30)
-    .lean(); // Use lean() for better performance
+  // Paginated DB query
+  const posts = await Post.find(query)
+    .sort({ _id: -1 }) // newest first
+    .limit(limit)
+    .lean();
 
-  // Cache the result
-  if (redis.isAvailable()) {
+  // Only cache first/default (unpaginated) page
+  if (!after && limit === 20 && redis.isAvailable()) {
     try {
       await redis.setex(
         CACHE_KEYS.GLOBAL_FEED,
@@ -292,8 +302,10 @@ const getGlobalFeed = asyncHandler(async (req, res) => {
       console.error('Cache storage error:', error);
     }
   }
-  
-  res.json(posts);
+
+  // Return results + hasMore flag for infinite scroll
+  const hasMore = posts.length === limit;
+  res.json({ posts, hasMore });
 });
 
 // @desc    Add comment to post
