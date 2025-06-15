@@ -35,8 +35,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SmoothScrollProvider>
         <AdminProvider>
-          <AuthProvider>
-            <Router>
+          <Router>
+            <AuthProvider>
               <div className="App">
                 <Routes>
                   {/* Public routes */}
@@ -91,8 +91,8 @@ function App() {
                 </Routes>
                 <Toaster />
               </div>
-            </Router>
-          </AuthProvider>
+            </AuthProvider>
+          </Router>
         </AdminProvider>
       </SmoothScrollProvider>
     </QueryClientProvider>
