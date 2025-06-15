@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { getMyWhispers, joinWhisperMatch, deleteConversation } from "@/lib/api";
@@ -150,12 +149,8 @@ const WhispersPage = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] md:h-screen w-full overflow-hidden">
-      {/* Sidebar */}
-      <div className={
-        `w-full md:w-1/3 max-w-md flex-none border-r border-border bg-background
-        ${selectedConversation ? 'hidden md:flex' : 'flex'}`
-      }>
+    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen">
+      <div className="flex-1 flex flex-col md:flex-row">
         <WhisperSidebar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -173,31 +168,28 @@ const WhispersPage = () => {
           deletePendingId={deleteConversationMutation.isPending ? deletingId : null}
           getLastMessageTime={getLastMessageTime}
         />
-      </div>
-      {/* Conversation area */}
-      <div className={`flex-1 flex flex-col min-h-0 w-full ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
-        {selectedConversation ? (
-          <div className="flex flex-col flex-1 h-full min-h-0">
+        <div className={`flex-1 flex flex-col ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
+          {selectedConversation ? (
             <WhisperConversation 
               partnerId={selectedConversation._id} 
               onBack={() => setSelectedConversation(null)}
             />
-          </div>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center p-4">
-            <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium text-undercover-light-purple mb-2">
-              Your Whispers
-            </h3>
-            <p className="text-center text-muted-foreground max-w-md">
-              Select a conversation to view your whispers. 
-              All messages are anonymous until someone correctly guesses your identity.
-            </p>
-            <div className="mt-4">
-              <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center p-4">
+              <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium text-undercover-light-purple mb-2">
+                Your Whispers
+              </h3>
+              <p className="text-center text-muted-foreground max-w-md">
+                Select a conversation to view your whispers. 
+                All messages are anonymous until someone correctly guesses your identity.
+              </p>
+              <div className="mt-4">
+                <WhisperMatchEntry onClick={() => setIsYourMatchesOpen(true)} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <YourMatchesModal
@@ -214,4 +206,3 @@ const WhispersPage = () => {
 };
 
 export default WhispersPage;
-
