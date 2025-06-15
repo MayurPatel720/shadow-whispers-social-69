@@ -22,6 +22,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 }) => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [debugResendResult, setDebugResendResult] = useState<any>(null);
 
   const handleVerify = async () => {
     setLoading(true);
@@ -42,13 +43,32 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
 
   const handleResend = async () => {
     setLoading(true);
+    setDebugResendResult(null);
     try {
-      console.log("[FRONTEND DEBUG] handleResend triggered");
-      await resendVerificationOtp();
+      console.log("[FRONTEND RESEND DEBUG] Button clicked, calling resendVerificationOtp...");
+      const result = await resendVerificationOtp();
+      setDebugResendResult(result);
+      console.log("[FRONTEND RESEND DEBUG] resendVerificationOtp result:", result);
       toast({ title: "Verification code sent", description: "Check your inbox." });
-    } catch (e) {
-      console.error("[FRONTEND DEBUG] Error sending code:", e);
-      toast({ title: "Error sending code", variant: "destructive" });
+    } catch (error: any) {
+      setDebugResendResult(error);
+      console.error("[FRONTEND RESEND DEBUG] Error sending code:", error);
+
+      let message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Error sending code - check network/auth!";
+
+      // Specific for 401 (auth failure)
+      if (error?.response?.status === 401) {
+        message = "Authentication error - please login again.";
+      }
+
+      toast({
+        title: "Error sending code",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,6 +89,7 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
           placeholder="Enter OTP"
           maxLength={6}
           disabled={loading}
+          data-testid="otp-input"
         />
         <DialogFooter>
           <Button variant="outline" onClick={handleResend} disabled={loading}>
@@ -92,10 +113,15 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
             )}
           </Button>
         </DialogFooter>
+        {/* Debug area for visibility */}
+        {debugResendResult && (
+          <pre className="text-xs mt-2 bg-gray-100 text-left p-2 rounded overflow-x-scroll max-h-[100px] text-red-500">
+            {JSON.stringify(debugResendResult, null, 2)}
+          </pre>
+        )}
       </DialogContent>
     </Dialog>
   );
 };
 
 export default EmailVerificationModal;
-
