@@ -476,6 +476,11 @@ const getUserPosts = asyncHandler(async (req, res) => {
 
 // Function to send reset password email/OTP
 const sendResetPasswordEmail = async (user, otp) => {
+  // Developer note: Make sure to set SMTP_EMAIL and SMTP_PASSWORD in your ./Backend/.env file!
+  if (!process.env.SMTP_EMAIL || !process.env.SMTP_PASSWORD) {
+    console.error("[RESET EMAIL ERROR] SMTP credentials not set. Please configure SMTP_EMAIL and SMTP_PASSWORD in your .env file!");
+    throw new Error("Server email configuration is missing. Please contact the administrator.");
+  }
   const mailOptions = {
     from: process.env.SMTP_EMAIL,
     to: user.email,
@@ -487,6 +492,7 @@ const sendResetPasswordEmail = async (user, otp) => {
     console.log(`[EMAIL RESET] Email sent: ${info.response}`);
   } catch (err) {
     console.error("[EMAIL RESET] Failed to send mail:", err.message);
+    throw new Error("Failed to send reset email. Please try again later.");
   }
 };
 

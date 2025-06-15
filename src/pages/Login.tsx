@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
@@ -9,13 +10,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Icons } from "@/components/icons";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 
 const loginSchema = z.object({
 	email: z.string().email({ message: "Please enter a valid email address" }),
 	password: z.string().min(8, { message: "Password must be at least 8 characters" }),
 });
+
+// Simple spinner fallback since @/components/icons is missing
+const Spinner = () => (
+	<svg className="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+		<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+		<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+	</svg>
+);
 
 const Login = () => {
 	const { login, isLoading } = useAuth();
@@ -101,7 +109,7 @@ const Login = () => {
 				<Button disabled={isLoading} className="w-full">
 					{isLoading ? (
 						<>
-							<Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+							<Spinner />
 							Logging in...
 						</>
 					) : (
@@ -123,3 +131,4 @@ const Login = () => {
 };
 
 export default Login;
+
