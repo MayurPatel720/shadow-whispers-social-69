@@ -19,6 +19,12 @@ const {
 } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
+// DEBUG LOG: All user API requests (add at the top, after router defined)
+router.use((req, res, next) => {
+  console.log(`[ROUTER DEBUG] ${req.method} ${req.originalUrl} authenticated: ${!!req.user}`);
+  next();
+});
+
 // Public routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);

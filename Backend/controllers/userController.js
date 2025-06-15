@@ -106,11 +106,10 @@ const registerUser = asyncHandler(async (req, res) => {
 const resendVerificationOtp = asyncHandler(async (req, res) => {
   console.log("[DEBUG] /api/users/send-verification-otp called by user:", req.user?._id);
 
-  // Extra debug: Confirming req.user presence
   if (!req.user) {
     console.error("[DEBUG] resendVerificationOtp: No req.user present");
-    res.status(401);
-    throw new Error("Not authenticated");
+    res.status(401).json({ message: "Unauthorized - No user present in request" });
+    return; // Added immediate return to prevent duplicate header error
   }
 
   const user = await User.findById(req.user._id);
