@@ -71,8 +71,20 @@ const Register: React.FC = () => {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      await registerUser(data.username, data.fullName, data.email, data.password, data.referralCode);
-      navigate('/');
+      const result = await registerUser(
+        data.username,
+        data.fullName,
+        data.email,
+        data.password,
+        data.referralCode
+      );
+
+      // If not email verified, go to verify page. Try to check property from returned result
+      if (result?.isEmailVerified === false || result?.isEmailVerified === undefined) {
+        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      } else {
+        navigate("/");
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
     }
