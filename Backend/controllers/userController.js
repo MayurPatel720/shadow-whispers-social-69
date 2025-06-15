@@ -33,6 +33,7 @@ const sendVerificationEmail = async (user, otp) => {
 // @route   POST /api/users/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
+  console.log("[DEBUG] /api/users/register called", req.body.email);
   const { username, fullName, email, password, referralCode, gender, interests } = req.body;
 
   if (!username || !fullName || !email || !password) {
@@ -98,6 +99,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 // Endpoint to resend OTP
 const resendVerificationOtp = asyncHandler(async (req, res) => {
+  console.log("[DEBUG] /api/users/send-verification-otp called by user:", req.user?._id);
   const user = await User.findById(req.user._id);
 
   if (!user) {
