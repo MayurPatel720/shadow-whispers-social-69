@@ -16,6 +16,8 @@ export interface User {
   interests: string[];
   premiumMatchUnlocks: number;
   isEmailVerified: boolean;
+  recognitionAttempts?: number;
+  successfulRecognitions?: number;
   claimedRewards?: {
     tierLevel: number;
     rewardType: 'badge' | 'cash' | 'premium';
@@ -24,6 +26,18 @@ export interface User {
     claimedAt: Date;
     paymentDetails?: string;
   }[];
+}
+
+export interface Recognition {
+  stats: {
+    totalRecognized: number;
+    totalRecognizers: number;
+    recognitionRate: number;
+    successfulRecognitions: number;
+    recognitionAttempts: number;
+  };
+  recognized: User[];
+  recognizers: User[];
 }
 
 export interface Post {
