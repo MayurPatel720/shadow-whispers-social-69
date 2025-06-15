@@ -1,8 +1,9 @@
+
 const nodemailer = require('nodemailer');
 
 // Create transporter
 const createTransporter = () => {
-  return nodemailer.createTransport({
+  return nodemailer.createTransporter({
     host: process.env.SMTP_HOST,
     port: process.env.SMTP_PORT,
     secure: false, // true for 465, false for other ports
@@ -28,26 +29,117 @@ const sendVerificationEmail = async (email, otp) => {
     const mailOptions = {
       from: process.env.SMTP_EMAIL,
       to: email,
-      subject: "Verify your email - UnderCover",
+      subject: "🎭 Verify Your UnderCover Email - Your Shadow Awaits",
       html: `
-        <div style="background: #1a1a2e; color: #fff; padding:40px; border-radius:12px; 
-                    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;">
-          <h1 style="color:#8b5cf6;font-size:2rem;font-weight:bold;margin:0 0 20px">🎭 UnderCover</h1>
-          <h2 style="font-size:1.5rem; color:#e0e7ff; margin-bottom:24px;">Verify Your Email</h2>
-          <p style="font-size:1.1rem; margin-bottom:18px;">
-            Hi! Welcome to UnderCover.<br>
-            Please enter the following code in the app to verify your email and join the shadow realm.
-          </p>
-          <div style="width:fit-content;margin:32px auto;padding:12px 36px;font-size:2rem;
-                      font-weight:bold;letter-spacing:.16em;background:#a855f7;color:white;
-                      border-radius:8px;box-shadow:0 4px 32px #a855f742">
-            ${otp}
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Email Verification - UnderCover</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); color: #ffffff;">
+          <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            
+            <!-- Header with Gradient -->
+            <div style="background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%); padding: 50px 40px; text-align: center; position: relative;">
+              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"grain\" width=\"100\" height=\"100\" patternUnits=\"userSpaceOnUse\"><circle cx=\"50\" cy=\"50\" r=\"1\" fill=\"white\" opacity=\"0.1\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23grain)\"/></svg>'); opacity: 0.3;"></div>
+              <div style="position: relative; z-index: 1;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🎭</div>
+                <h1 style="margin: 0; font-size: 36px; font-weight: bold; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">UnderCover</h1>
+                <div style="font-size: 18px; color: rgba(255,255,255,0.9); font-weight: 500; margin-top: 10px;">Email Verification</div>
+              </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="padding: 50px 40px;">
+              <div style="text-align: center; margin-bottom: 40px;">
+                <div style="display: inline-block; padding: 25px; background: rgba(139, 92, 246, 0.15); border-radius: 50%; margin-bottom: 25px; border: 2px solid rgba(139, 92, 246, 0.3);">
+                  <div style="font-size: 56px;">🔐</div>
+                </div>
+                <h2 style="margin: 0; font-size: 28px; color: #ffffff; font-weight: 700; line-height: 1.3;">Welcome to the Shadows!</h2>
+                <p style="margin: 15px 0 0 0; color: #cbd5e1; font-size: 16px; line-height: 1.6;">Your anonymous identity awaits verification</p>
+              </div>
+              
+              <!-- Welcome Message -->
+              <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border-left: 4px solid #8b5cf6; padding: 25px; border-radius: 12px; margin-bottom: 40px;">
+                <p style="margin: 0; color: #e2e8f0; line-height: 1.7; font-size: 16px;">
+                  🌟 <strong>Welcome to UnderCover!</strong><br><br>
+                  You're about to join a community where anonymity meets authenticity. Your shadow identity keeps you safe while you connect, share, and discover others in the realm of mysteries.
+                </p>
+              </div>
+              
+              <!-- OTP Section -->
+              <div style="text-align: center; margin: 50px 0;">
+                <p style="margin: 0 0 20px 0; color: #94a3b8; font-size: 16px;">
+                  Enter this verification code in the app:
+                </p>
+                <div style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); padding: 20px 40px; border-radius: 16px; box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4); margin: 20px 0;">
+                  <div style="font-size: 42px; font-weight: bold; letter-spacing: 8px; color: white; font-family: 'Courier New', monospace; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                    ${otp}
+                  </div>
+                </div>
+                <p style="margin: 20px 0 0 0; color: #64748b; font-size: 14px;">
+                  This code expires in <strong style="color: #8b5cf6;">10 minutes</strong>
+                </p>
+              </div>
+              
+              <!-- Features Preview -->
+              <div style="background: rgba(255,255,255,0.03); border-radius: 16px; padding: 30px; margin: 40px 0;">
+                <h3 style="margin: 0 0 20px 0; color: #8b5cf6; font-size: 20px; font-weight: 600; text-align: center;">🚀 What awaits you:</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 25px;">
+                  <div style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">💬</div>
+                    <div style="color: #e2e8f0; font-size: 14px; font-weight: 500;">Anonymous Whispers</div>
+                  </div>
+                  <div style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🕵️</div>
+                    <div style="color: #e2e8f0; font-size: 14px; font-weight: 500;">Identity Recognition</div>
+                  </div>
+                  <div style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🎭</div>
+                    <div style="color: #e2e8f0; font-size: 14px; font-weight: 500;">Ghost Circles</div>
+                  </div>
+                  <div style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🌙</div>
+                    <div style="color: #e2e8f0; font-size: 14px; font-weight: 500;">Shadow Posts</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Security Notice -->
+              <div style="border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 25px; background: rgba(139, 92, 246, 0.05); margin-top: 40px;">
+                <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                  <span style="font-size: 24px; margin-right: 12px;">🛡️</span>
+                  <strong style="color: #8b5cf6; font-size: 18px;">Security Notice</strong>
+                </div>
+                <ul style="margin: 0; padding-left: 25px; color: #cbd5e1; line-height: 1.7; font-size: 15px;">
+                  <li>This code expires in <strong>10 minutes</strong></li>
+                  <li>Never share this code with anyone</li>
+                  <li>If you didn't create an account, ignore this email</li>
+                  <li>Your identity remains anonymous until you choose to reveal it</li>
+                </ul>
+              </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: rgba(0,0,0,0.3); padding: 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
+              <div style="margin-bottom: 15px;">
+                <span style="font-size: 24px;">🌙</span>
+                <span style="font-size: 24px; margin: 0 8px;">✨</span>
+                <span style="font-size: 24px;">🎭</span>
+              </div>
+              <p style="margin: 0 0 15px 0; color: #94a3b8; font-size: 16px; font-weight: 500;">
+                Welcome to the realm of mysteries
+              </p>
+              <p style="margin: 0; color: #64748b; font-size: 13px; line-height: 1.5;">
+                © 2024 UnderCover. All rights reserved.<br>
+                This is an automated message, please do not reply.
+              </p>
+            </div>
           </div>
-          <p style="color: #9ca3af;font-size:.93rem; margin-top:24px;">
-            This code will expire in <b>10 minutes</b>.<br>
-            If you did not create an account, just ignore this email.
-          </p>
-        </div>
+        </body>
+        </html>
       `,
     };
 

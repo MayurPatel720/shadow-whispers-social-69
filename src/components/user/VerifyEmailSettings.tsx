@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
-import { MailCheck, MailX } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -38,7 +38,7 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
         otp,
       });
       toast({
-        title: "Email Verified!",
+        title: "Email Verified! 🎉",
         description: "You may now post and explore all features.",
       });
       setVerified(true);
@@ -83,19 +83,19 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
   if (verified) return null;
 
   return (
-    <Card className="bg-yellow-50/60 border-yellow-600/20 mb-4">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-bold text-yellow-800 flex items-center gap-2">
-          <MailCheck className="text-yellow-700" size={20} />
+    <Card className="bg-gray-800/50 border-purple-500/30 mb-4 shadow-lg">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-bold text-purple-300 flex items-center gap-2">
+          <MailCheck className="text-purple-400" size={22} />
           Verify Your Email Address
         </CardTitle>
-        <CardDescription className="text-yellow-700 text-xs pt-1">
+        <CardDescription className="text-gray-300 text-sm">
           You must verify your email to access all features (posting, chat, etc).
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-2">
-        <div className="mb-1 text-sm font-medium text-black">
-          Code sent to: <span className="text-purple-600">{email}</span>
+        <div className="mb-3 text-sm text-gray-200">
+          Code sent to: <span className="text-purple-400 font-medium">{email}</span>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -105,54 +105,50 @@ const VerifyEmailSettings: React.FC<{ email: string }> = ({ email }) => {
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <InputOTP
-                      maxLength={6}
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      containerClassName="mb-2 flex justify-center"
-                      className="text-xl tracking-widest text-center bg-gray-50 border-purple-300 rounded"
-                      inputMode="numeric"
-                      autoFocus
-                      render={({ slots }) => (
-                        <InputOTPGroup className="justify-center">
-                          {Array.isArray(slots) && slots.length === 6
-                            ? slots.map((_, idx) => (
-                                <InputOTPSlot
-                                  key={idx}
-                                  index={idx}
-                                  className="bg-white border-purple-200 text-lg md:text-2xl h-10 w-10 md:w-12 md:h-12"
-                                />
-                              ))
-                            : null}
+                    <div className="flex justify-center">
+                      <InputOTP
+                        maxLength={6}
+                        value={field.value}
+                        onChange={field.onChange}
+                        className="gap-2"
+                      >
+                        <InputOTPGroup>
+                          {[0, 1, 2, 3, 4, 5].map((index) => (
+                            <InputOTPSlot
+                              key={index}
+                              index={index}
+                              className="w-12 h-12 text-lg font-bold bg-gray-700 border-purple-500/50 text-white focus:border-purple-400 focus:ring-purple-400/20"
+                            />
+                          ))}
                         </InputOTPGroup>
-                      )}
-                    />
+                      </InputOTP>
+                    </div>
                   </FormControl>
-                  <FormMessage className="text-red-600 text-center font-semibold" />
+                  <FormMessage className="text-red-400 text-center font-medium" />
                 </FormItem>
               )}
             />
             <Button
               type="submit"
-              className="w-full bg-purple-700 hover:bg-purple-800 py-2 text-base font-medium"
-              disabled={submitting}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 text-base font-medium rounded-lg"
+              disabled={submitting || form.watch("otp").length !== 6}
             >
               {submitting ? "Verifying..." : "Verify Email"}
             </Button>
           </form>
         </Form>
-        <div className="flex flex-col items-center gap-1 mt-2">
+        <div className="flex flex-col items-center gap-2 mt-3">
           <Button
             variant="ghost"
             type="button"
             onClick={handleResend}
             disabled={resendLoading}
-            className="text-purple-600 hover:text-purple-500 px-2 py-1"
+            className="text-purple-400 hover:text-purple-300 px-3 py-2 text-sm"
           >
             {resendLoading ? "Resending..." : "Resend code"}
           </Button>
           {otpResent && (
-            <span className="text-xs text-green-500">A new code has been sent!</span>
+            <span className="text-xs text-green-400 font-medium">A new code has been sent!</span>
           )}
         </div>
       </CardContent>
