@@ -2,12 +2,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader, Plus, TrendingUp } from "lucide-react";
+import { Loader, Plus, TrendingUp, MailCheck } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import { getPaginatedPosts } from "@/lib/api-posts";
 import WeeklyPromptBanner from "./WeeklyPrompt";
-// import WhisperMatchEntry from "./WhisperMatchEntry";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 
 // Infinite posts feed using scroll observer
 const PAGE_SIZE = 20;
@@ -16,6 +17,9 @@ const GlobalFeed = () => {
   const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
   const queryClient = useQueryClient();
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  const { user, isAuthenticated } = useAuth();
+  const isEmailVerified = user?.emailVerified;
 
   const {
     data,
@@ -71,6 +75,28 @@ const GlobalFeed = () => {
     setIsCreatePostOpen(false);
   };
 
+  const handleCreatePostClick = () => {
+    if (!isEmailVerified) {
+      toast({
+        title: "Email Verification Needed",
+        description:
+          "You must verify your email to create posts. Please check your inbox for a verification link.",
+        variant: "destructive",
+        action: {
+          label: "Resend Email",
+          onClick: () => {
+            toast({
+              title: "Verification email sent!",
+              description: "Check your inbox for a new verification link.",
+            });
+          },
+        },
+      });
+      return;
+    }
+    setIsCreatePostOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -109,12 +135,35 @@ const GlobalFeed = () => {
             <h1 className="text-xl font-bold text-foreground">Feed</h1>
           </div>
           <Button
-            onClick={() => setIsCreatePostOpen(true)}
-            className="sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect"
+            onClick={handleCreatePostClick}
+            className={`sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect ${
+              !isEmailVerified ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={!isEmailVerified}
+            title={!isEmailVerified ? "Verify your email to post" : ""}
+            aria-disabled={!isEmailVerified}
           >
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+        {!isEmailVerified && (
+          <div className="bg-yellow-50 border-b border-yellow-200 text-yellow-900 py-2 flex items-center justify-center gap-2 text-xs font-medium">
+            <MailCheck size={16} className="mr-1" />
+            Your email is not verified. Check your inbox or
+            <button
+              className="ml-1 text-purple-700 font-bold underline hover:text-purple-900"
+              onClick={() => {
+                toast({
+                  title: "Verification email sent!",
+                  description: "Check your inbox for a new verification link.",
+                });
+              }}
+            >
+              resend verification email
+            </button>
+            to unlock posting.
+          </div>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">
@@ -132,8 +181,9 @@ const GlobalFeed = () => {
               Be the first to share something mysterious
             </p>
             <Button
-              onClick={() => setIsCreatePostOpen(true)}
+              onClick={handleCreatePostClick}
               className="bg-purple-600 hover:bg-purple-700 text-white hover-scale"
+              disabled={!isEmailVerified}
             >
               <Plus className="h-4 w-4 mr-2" />
               Create First Post
