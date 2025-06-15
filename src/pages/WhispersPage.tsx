@@ -11,8 +11,18 @@ import { toast } from "@/hooks/use-toast";
 import { useLocation, useNavigate } from "react-router-dom";
 import WhisperSidebar from "@/components/whisper/WhisperSidebar";
 import YourMatchesModal from "@/components/whisper/YourMatchesModal";
-// Import the improved mobile hook
-import { useIsMobile } from "@/hooks/use-mobile";
+
+// Custom hook to detect mobile screen
+function useIsMobile() {
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
 
 const WhispersPage = () => {
   const { user } = useAuth();
@@ -143,12 +153,14 @@ const WhispersPage = () => {
     <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen bg-background">
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* SIDEBAR: 
-            - On DESKTOP: always show
-            - On mobile: show ONLY if no conversation selected */}
+          - On DESKTOP: always show
+          - On mobile: show only if no conversation selected */}
         <div
           className={`
             w-full md:w-1/3 max-w-md border-r border-border flex flex-col h-full
-            ${isMobile ? (selectedConversation ? "hidden" : "flex fixed inset-0 z-30 bg-background") : "flex"}
+            ${showSidebarOnMobile ? "fixed inset-0 z-30 bg-background" : ""}
+            ${isMobile && selectedConversation ? "hidden" : "flex"}
+            md:static md:flex
           `}
           style={{
             minWidth: isMobile ? '100vw' : undefined,
@@ -174,8 +186,9 @@ const WhispersPage = () => {
           />
         </div>
         {/* CONVERSATION: 
-            - On DESKTOP: always show panel
-            - On mobile: show ONLY if a conversation is selected */}
+          - On DESKTOP: always show panel
+          - On mobile: show only if a conversation is selected
+            & insert a "Back" button at the very top */}
         <div
           className={`
             flex-1 flex flex-col bg-background h-full overflow-auto
@@ -184,7 +197,6 @@ const WhispersPage = () => {
         >
           {selectedConversation ? (
             <div className="h-full flex flex-col">
-              {/* Mobile back button */}
               {isMobile && (
                 <div className="sticky top-0 z-50 bg-card border-b flex items-center p-2">
                   <Button size="icon" variant="ghost" onClick={() => setSelectedConversation(null)}>
@@ -242,4 +254,3 @@ const WhispersPage = () => {
 };
 
 export default WhispersPage;
-
