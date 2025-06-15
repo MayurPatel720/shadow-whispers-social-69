@@ -474,5 +474,5 @@ module.exports = {
 	revokeRecognition,
 	getUserById,
 	updateOneSignalPlayerId,
-	getUserPosts, // EXPORT HERE!
+	getUserPosts,
 };
