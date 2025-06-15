@@ -19,14 +19,19 @@ const transporter = nodemailer.createTransport({
 
 // Function to send OTP email
 const sendVerificationEmail = async (user, otp) => {
-  console.log(`[EMAIL DEBUG] Sending OTP "${otp}" to email: ${user.email}`);
+  console.log(`[EMAIL DEBUG] [sendVerificationEmail CALLED], about to send OTP "${otp}" to email: ${user.email}`);
   const mailOptions = {
     from: process.env.SMTP_EMAIL,
     to: user.email,
     subject: 'Your UnderKover Email Verification Code',
     text: `Your verification code: ${otp}\n\nEnter this in the app to verify your email.`
   };
-  await transporter.sendMail(mailOptions);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL DEBUG] Email sent: ${info.response}`);
+  } catch (err) {
+    console.error("[EMAIL DEBUG] Failed to send mail:", err.message);
+  }
 };
 
 // @desc    Register a new user
@@ -100,18 +105,31 @@ const registerUser = asyncHandler(async (req, res) => {
 // Endpoint to resend OTP
 const resendVerificationOtp = asyncHandler(async (req, res) => {
   console.log("[DEBUG] /api/users/send-verification-otp called by user:", req.user?._id);
+
+  // Extra debug: Confirming req.user presence
+  if (!req.user) {
+    console.error("[DEBUG] resendVerificationOtp: No req.user present");
+    res.status(401);
+    throw new Error("Not authenticated");
+  }
+
   const user = await User.findById(req.user._id);
 
   if (!user) {
+    console.error("[DEBUG] resendVerificationOtp: user not found");
     res.status(404);
     throw new Error("User not found");
   }
+  console.log("[DEBUG] resendVerificationOtp: user found, will generate OTP");
   // generate new OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.emailVerificationToken = otp;
   user.emailVerificationExpires = Date.now() + 15 * 60 * 1000;
   await user.save();
+  console.log("[DEBUG] resendVerificationOtp: user saved, calling sendVerificationEmail");
   await sendVerificationEmail(user, otp);
+  console.log("[DEBUG] resendVerificationOtp: sendVerificationEmail call completed");
+
   res.json({ message: "Verification code sent!", otpForTest: process.env.NODE_ENV !== 'production' ? otp : undefined });
 });
 
