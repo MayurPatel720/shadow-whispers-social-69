@@ -489,17 +489,3 @@ export const setWeeklyPrompt = async (promptText: string) => {
 	const response = await api.post("/api/prompts/", { promptText });
 	return response.data;
 };
-
-// Add API for resend and verify OTP
-export const resendVerificationOtp = async (): Promise<any> => {
-  // Extra log for debugging frontend
-  console.log("[FRONTEND DEBUG] resendVerificationOtp called, attempting fetch...");
-  const response = await api.post("/api/users/send-verification-otp", {});
-  console.log("[FRONTEND DEBUG] resendVerificationOtp response:", response.data);
-  return response.data;
-};
-
-export const verifyEmailOtp = async (otp: string): Promise<any> => {
-  const response = await api.post("/api/users/verify-otp", { otp });
-  return response.data;
-};
