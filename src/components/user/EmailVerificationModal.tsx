@@ -43,9 +43,11 @@ const EmailVerificationModal: React.FC<EmailVerificationModalProps> = ({
   const handleResend = async () => {
     setLoading(true);
     try {
+      console.log("[FRONTEND DEBUG] handleResend triggered");
       await resendVerificationOtp();
       toast({ title: "Verification code sent", description: "Check your inbox." });
-    } catch {
+    } catch (e) {
+      console.error("[FRONTEND DEBUG] Error sending code:", e);
       toast({ title: "Error sending code", variant: "destructive" });
     } finally {
       setLoading(false);
