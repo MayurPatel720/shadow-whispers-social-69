@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import {
@@ -339,10 +340,16 @@ const PostCard: React.FC<PostCardProps> = ({
     username: post.username || '',
     email: '',
     fullName: '',
-    recognitionAttempts: 0,
-    successfulRecognitions: 0,
+    friends: [],
     recognizedUsers: [],
     identityRecognizers: [],
+    referralCode: '',
+    bio: '',
+    interests: [],
+    premiumMatchUnlocks: 0,
+    isEmailVerified: false,
+    recognitionAttempts: 0,
+    successfulRecognitions: 0,
   };
 
   // Handle both old imageUrl and new images/videos arrays
