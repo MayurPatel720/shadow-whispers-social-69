@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,7 +21,6 @@ import { useNavigate } from "react-router-dom";
 
 const PAGE_SIZE = 20;
 
-// This component assumes it is given partnerId and onBack props
 const WhisperConversation = ({ partnerId, onBack }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -189,6 +189,7 @@ const WhisperConversation = ({ partnerId, onBack }) => {
           <div className="mr-3">
             <AvatarGenerator
               emoji={partnerInfo?.avatarEmoji || "👤"}
+              nickname={partnerInfo?.anonymousAlias || partnerInfo?.username || "User"}
               size="md"
             />
           </div>
