@@ -16,6 +16,50 @@ const createTransporter = () => {
 // FRONTEND URL FOR PASSWORD RESET
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"; // fallback for local dev
 
+// Utility: generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send email verification OTP email
+const sendVerificationEmail = async (email, otp) => {
+  try {
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: process.env.SMTP_EMAIL,
+      to: email,
+      subject: "Verify your email - UnderCover",
+      html: `
+        <div style="background: #1a1a2e; color: #fff; padding:40px; border-radius:12px; 
+                    font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;">
+          <h1 style="color:#8b5cf6;font-size:2rem;font-weight:bold;margin:0 0 20px">🎭 UnderCover</h1>
+          <h2 style="font-size:1.5rem; color:#e0e7ff; margin-bottom:24px;">Verify Your Email</h2>
+          <p style="font-size:1.1rem; margin-bottom:18px;">
+            Hi! Welcome to UnderCover.<br>
+            Please enter the following code in the app to verify your email and join the shadow realm.
+          </p>
+          <div style="width:fit-content;margin:32px auto;padding:12px 36px;font-size:2rem;
+                      font-weight:bold;letter-spacing:.16em;background:#a855f7;color:white;
+                      border-radius:8px;box-shadow:0 4px 32px #a855f742">
+            ${otp}
+          </div>
+          <p style="color: #9ca3af;font-size:.93rem; margin-top:24px;">
+            This code will expire in <b>10 minutes</b>.<br>
+            If you did not create an account, just ignore this email.
+          </p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Verification email sent successfully');
+    return true;
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw new Error('Failed to send verification email');
+  }
+};
+
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken) => {
   try {
@@ -120,4 +164,6 @@ const sendPasswordResetEmail = async (email, resetToken) => {
 
 module.exports = {
   sendPasswordResetEmail,
+  sendVerificationEmail,
+  generateOTP,
 };

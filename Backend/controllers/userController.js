@@ -5,7 +5,7 @@ const User = require("../models/userModel");
 const { generateToken } = require("../utils/jwtHelper"); 
 const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
 const Post = require("../models/postModel");
-const { sendPasswordResetEmail } = require("../utils/emailService");
+const { sendPasswordResetEmail, sendVerificationEmail, generateOTP } = require("../utils/emailService");
 const crypto = require("crypto");
 
 // @desc    Register a new user
@@ -31,6 +31,10 @@ const registerUser = asyncHandler(async (req, res) => {
 	const anonymousAlias = generateAnonymousAlias();
 	const avatarEmoji = generateAvatar();
 
+	// ---- EMAIL VERIFICATION ----
+	const otp = generateOTP();
+	const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
+
 	// Create user
 	const user = await User.create({
 		username,
@@ -42,20 +46,19 @@ const registerUser = asyncHandler(async (req, res) => {
 		referralCode,
 		gender: gender || undefined,
 		interests: interests || [],
+		isEmailVerified: false,
+		emailVerificationOTP: otp,
+		emailVerificationOTPExpire: otpExpire,
 	});
+
+	// Send verification email
+	await sendVerificationEmail(email, otp);
 
 	if (user) {
 		res.status(201).json({
 			_id: user._id,
-			username: user.username,
-			fullName: user.fullName,
 			email: user.email,
-			anonymousAlias: user.anonymousAlias,
-			avatarEmoji: user.avatarEmoji,
-			token: generateToken(user._id),
-			gender: user.gender,
-			interests: user.interests,
-			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
+			isEmailVerified: user.isEmailVerified,
 		});
 	} else {
 		res.status(400);
@@ -552,6 +555,72 @@ const resetPassword = asyncHandler(async (req, res) => {
 	});
 });
 
+// @desc    Verify email
+// @route   POST /api/users/verify-email
+// @access  Public
+const verifyEmail = asyncHandler(async (req, res) => {
+	const { email, otp } = req.body;
+
+	if (!email || !otp) {
+		res.status(400);
+		throw new Error("Email and OTP are required");
+	}
+	const user = await User.findOne({ email });
+
+	if (!user) {
+		res.status(404);
+		throw new Error("User not found");
+	}
+	if (user.isEmailVerified) {
+		return res.status(400).json({ message: "Email already verified" });
+	}
+	if (!user.emailVerificationOTP || !user.emailVerificationOTPExpire) {
+		res.status(400);
+		throw new Error("No OTP generated. Request a new one.");
+	}
+	if (
+		user.emailVerificationOTP !== otp ||
+		user.emailVerificationOTPExpire < Date.now()
+	) {
+		res.status(400);
+		throw new Error("Invalid or expired OTP");
+	}
+
+	user.isEmailVerified = true;
+	user.emailVerificationOTP = undefined;
+	user.emailVerificationOTPExpire = undefined;
+	await user.save();
+
+	res.status(200).json({ success: true, message: "Email verified successfully" });
+});
+
+// @desc    Resend email verification OTP
+// @route   POST /api/users/resend-verification-email
+// @access  Public
+const resendVerificationEmail = asyncHandler(async (req, res) => {
+	const { email } = req.body;
+	if (!email) {
+		res.status(400);
+		throw new Error("Email is required");
+	}
+	const user = await User.findOne({ email });
+	if (!user) {
+		res.status(404);
+		throw new Error("User not found");
+	}
+	if (user.isEmailVerified) {
+		return res.status(400).json({ message: "Email already verified" });
+	}
+	const otp = generateOTP();
+	const otpExpire = new Date(Date.now() + 10 * 60 * 1000);
+	user.emailVerificationOTP = otp;
+	user.emailVerificationOTPExpire = otpExpire;
+	await user.save();
+	await sendVerificationEmail(email, otp);
+
+	res.status(200).json({ success: true, message: "Verification email resent" });
+});
+
 module.exports = {
 	registerUser,
 	loginUser,
@@ -567,4 +636,6 @@ module.exports = {
 	getUserPosts,
 	forgotPassword,
 	resetPassword,
+	verifyEmail,
+	resendVerificationEmail,
 };
