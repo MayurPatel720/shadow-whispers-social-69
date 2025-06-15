@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import ForgotPasswordModal from '@/components/auth/ForgotPasswordModal';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email' }),
@@ -21,6 +22,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login: React.FC = () => {
   const { login, isLoading } = useAuth();
   const [showPassword, setShowPassword] = React.useState(false);
+  const [showForgotPassword, setShowForgotPassword] = React.useState(false);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -101,6 +103,15 @@ const Login: React.FC = () => {
                   </FormItem>
                 )}
               />
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-purple-400 hover:text-purple-300 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <Button 
                 type="submit" 
                 className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg font-medium mt-4" 
@@ -124,6 +135,11 @@ const Login: React.FC = () => {
       <div className="text-center mt-8 text-gray-400 text-sm">
         <p>Step into anonymity. Be whoever you want to be.</p>
       </div>
+
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)} 
+      />
     </div>
   );
 };

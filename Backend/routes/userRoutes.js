@@ -1,3 +1,4 @@
+
 // routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
@@ -14,12 +15,16 @@ const {
 	getUserById,
 	updateOneSignalPlayerId,
 	getUserPosts,
+	forgotPassword,
+	resetPassword,
 } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
 // Public routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/forgot-password", forgotPassword);
+router.put("/reset-password/:resettoken", resetPassword);
 
 // Protected routes
 router.get("/profile", protect, getUserProfile);

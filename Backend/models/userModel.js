@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -27,6 +28,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please add a password"],
     minlength: 6,
+  },
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpire: {
+    type: Date,
   },
   posts: [
     {
@@ -85,7 +92,7 @@ const userSchema = new mongoose.Schema({
   },
   premiumMatchUnlocks: {
     type: Number,
-    default: 0, // - tracks how many premium match packs a user has bought
+    default: 0,
   },
 });
 
@@ -126,7 +133,6 @@ userSchema.methods.generateAnonymousAlias = async function () {
     const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
     alias = `${randomAdjective}${randomNoun}`;
 
-    // Check if alias is unique
     const existingUser = await this.model("User").findOne({ anonymousAlias: alias });
     if (!existingUser) {
       this.anonymousAlias = alias;
@@ -135,11 +141,21 @@ userSchema.methods.generateAnonymousAlias = async function () {
     attempt++;
   }
 
-  // Fallback: append a random number if unique alias not found
   const randomNum = Math.floor(Math.random() * 10000);
   alias = `${alias}${randomNum}`;
   this.anonymousAlias = alias;
   return alias;
+};
+
+// Generate password reset token
+userSchema.methods.getResetPasswordToken = function () {
+  const resetToken = crypto.randomBytes(20).toString('hex');
+  this.resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+  return resetToken;
 };
 
 // Generate random avatar emoji
@@ -160,7 +176,6 @@ userSchema.pre("save", async function (next) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 
-  // Set random avatarEmoji if not already set
   if (!this.avatarEmoji) {
     const randomIndex = Math.floor(Math.random() * avatarEmojis.length);
     this.avatarEmoji = avatarEmojis[randomIndex];

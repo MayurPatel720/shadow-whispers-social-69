@@ -5,6 +5,8 @@ const User = require("../models/userModel");
 const { generateToken } = require("../utils/jwtHelper"); 
 const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
 const Post = require("../models/postModel");
+const { sendPasswordResetEmail } = require("../utils/emailService");
+const crypto = require("crypto");
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -462,6 +464,94 @@ const getUserPosts = asyncHandler(async (req, res) => {
 	res.json(posts);
 });
 
+// @desc    Send password reset email
+// @route   POST /api/users/forgot-password
+// @access  Public
+const forgotPassword = asyncHandler(async (req, res) => {
+	const { email } = req.body;
+
+	if (!email) {
+		res.status(400);
+		throw new Error("Please provide an email address");
+	}
+
+	const user = await User.findOne({ email });
+
+	if (!user) {
+		res.status(404);
+		throw new Error("No user found with this email address");
+	}
+
+	// Get reset token
+	const resetToken = user.getResetPasswordToken();
+
+	await user.save({ validateBeforeSave: false });
+
+	try {
+		await sendPasswordResetEmail(email, resetToken);
+
+		res.status(200).json({
+			success: true,
+			message: "Password reset email sent successfully",
+		});
+	} catch (error) {
+		console.error("Error sending password reset email:", error);
+		user.resetPasswordToken = undefined;
+		user.resetPasswordExpire = undefined;
+
+		await user.save({ validateBeforeSave: false });
+
+		res.status(500);
+		throw new Error("Email could not be sent. Please try again later.");
+	}
+});
+
+// @desc    Reset password
+// @route   PUT /api/users/reset-password/:resettoken
+// @access  Public
+const resetPassword = asyncHandler(async (req, res) => {
+	const { password } = req.body;
+
+	if (!password) {
+		res.status(400);
+		throw new Error("Please provide a new password");
+	}
+
+	if (password.length < 6) {
+		res.status(400);
+		throw new Error("Password must be at least 6 characters long");
+	}
+
+	// Get hashed token
+	const resetPasswordToken = crypto
+		.createHash("sha256")
+		.update(req.params.resettoken)
+		.digest("hex");
+
+	const user = await User.findOne({
+		resetPasswordToken,
+		resetPasswordExpire: { $gt: Date.now() },
+	});
+
+	if (!user) {
+		res.status(400);
+		throw new Error("Invalid or expired reset token");
+	}
+
+	// Set new password
+	user.password = password;
+	user.resetPasswordToken = undefined;
+	user.resetPasswordExpire = undefined;
+
+	await user.save();
+
+	res.status(200).json({
+		success: true,
+		message: "Password reset successful",
+		token: generateToken(user._id),
+	});
+});
+
 module.exports = {
 	registerUser,
 	loginUser,
@@ -475,4 +565,6 @@ module.exports = {
 	getUserById,
 	updateOneSignalPlayerId,
 	getUserPosts,
+	forgotPassword,
+	resetPassword,
 };

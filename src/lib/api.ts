@@ -463,6 +463,27 @@ export const getAdminUser = async (userId: string): Promise<any> => {
 	return response.data;
 };
 
+// Password reset API calls
+export const forgotPassword = async (email: string): Promise<any> => {
+	try {
+		const response = await api.post("/api/users/forgot-password", { email });
+		return response.data;
+	} catch (error: any) {
+		console.error("Error sending forgot password email:", error);
+		throw error?.response?.data || error;
+	}
+};
+
+export const resetPassword = async (resetToken: string, password: string): Promise<any> => {
+	try {
+		const response = await api.put(`/api/users/reset-password/${resetToken}`, { password });
+		return response.data;
+	} catch (error: any) {
+		console.error("Error resetting password:", error);
+		throw error?.response?.data || error;
+	}
+};
+
 // OneSignal API calls
 export const updateOneSignalPlayerId = async (
 	playerId: string
