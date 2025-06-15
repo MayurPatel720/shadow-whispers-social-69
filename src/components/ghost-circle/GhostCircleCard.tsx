@@ -140,3 +140,4 @@ const GhostCircleCard: React.FC<GhostCircleCardProps> = ({ circle, onSelect }) =
 };
 
 export default GhostCircleCard;
+
