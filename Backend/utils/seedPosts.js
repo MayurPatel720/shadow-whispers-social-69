@@ -1,13 +1,26 @@
+
 const Post = require("../models/postModel");
 
 // Import generator functions from the generators file
-const { generateNickname, getRandomEmoji, getRandomColor } = require("./generators");
+const { generateAnonymousAlias, generateAvatar } = require("./generators");
 
-// Create generateIdentity function locally since it's not exported from generators
+// Generate random color from our theme
+const getRandomColor = () => {
+  const colors = [
+    "#8B5CF6", // Primary purple
+    "#9b87f5", // Light purple
+    "#7E69AB", // Medium purple
+    "#6E59A5", // Deep purple
+    "#D6BCFA", // Soft purple
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+};
+
+// Create generateIdentity function locally using the correct backend functions
 const generateIdentity = () => {
   return {
-    nickname: generateNickname(),
-    emoji: getRandomEmoji(),
+    nickname: generateAnonymousAlias(),
+    emoji: generateAvatar(),
     color: getRandomColor(),
   };
 };
