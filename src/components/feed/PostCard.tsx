@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import {
@@ -33,7 +34,7 @@ import {
 	editComment,
 	deleteComment,
 	replyToComment,
-	incrementShareCount,
+	sharePost,
 } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "@/hooks/use-toast";
@@ -204,7 +205,8 @@ const PostCard: React.FC<PostCardProps> = ({
 					break;
 			}
 
-			const response = await incrementShareCount(post._id);
+			// Use the correct sharePost function
+			const response = await sharePost(post._id);
 			setShareCount(response.shareCount);
 		} catch (error) {
 			console.error("Error sharing post:", error);

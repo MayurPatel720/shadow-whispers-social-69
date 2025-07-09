@@ -856,6 +856,137 @@ const getPostById = asyncHandler(async (req, res) => {
 	res.json(post);
 });
 
+// @desc    Share post
+// @route   POST /api/posts/:id/share
+// @access  Private
+const sharePost = asyncHandler(async (req, res) => {
+	const postId = req.params.id;
+
+	const post = await Post.findById(postId);
+
+	if (!post) {
+		res.status(404);
+		throw new Error("Post not found");
+	}
+
+	// Increment share count
+	const updatedPost = await Post.findByIdAndUpdate(
+		postId,
+		{ $inc: { shareCount: 1 } },
+		{ new: true }
+	);
+
+	// Invalidate related caches
+	await invalidatePostCaches(postId, post.ghostCircle);
+
+	res.status(200).json({ 
+		message: "Post shared successfully",
+		shareCount: updatedPost.shareCount 
+	});
+});
+
+// @desc    Delete reply
+// @route   DELETE /api/posts/:postId/comments/:commentId/replies/:replyId
+// @access  Private
+const deleteReply = asyncHandler(async (req, res) => {
+	const { postId, commentId, replyId } = req.params;
+
+	try {
+		const post = await Post.findById(postId);
+		if (!post) {
+			res.status(404);
+			throw new Error("Post not found");
+		}
+
+		const comment = post.comments.id(commentId);
+		if (!comment) {
+			res.status(404);
+			throw new Error("Comment not found");
+		}
+
+		const reply = comment.replies.id(replyId);
+		if (!reply) {
+			res.status(404);
+			throw new Error("Reply not found");
+		}
+
+		// Check if user is the reply author or post author
+		const isReplyAuthor = reply.user.toString() === req.user._id.toString();
+		const isPostAuthor = post.user.toString() === req.user._id.toString();
+
+		if (!isReplyAuthor && !isPostAuthor) {
+			res.status(403);
+			throw new Error("Not authorized to delete this reply");
+		}
+
+		// Remove the reply
+		comment.replies.pull(replyId);
+		await post.save();
+
+		// Invalidate related caches
+		await invalidatePostCaches(postId, post.ghostCircle);
+
+		res.json({ message: "Reply deleted successfully" });
+	} catch (error) {
+		console.error("Delete reply error:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
+// @desc    Update reply
+// @route   PUT /api/posts/:postId/comments/:commentId/replies/:replyId
+// @access  Private
+const updateReply = asyncHandler(async (req, res) => {
+	const { postId, commentId, replyId } = req.params;
+	const { content } = req.body;
+
+	if (!content) {
+		res.status(400);
+		throw new Error("Reply content is required");
+	}
+
+	try {
+		const post = await Post.findById(postId);
+		if (!post) {
+			res.status(404);
+			throw new Error("Post not found");
+		}
+
+		const comment = post.comments.id(commentId);
+		if (!comment) {
+			res.status(404);
+			throw new Error("Comment not found");
+		}
+
+		const reply = comment.replies.id(replyId);
+		if (!reply) {
+			res.status(404);
+			throw new Error("Reply not found");
+		}
+
+		// Check if user is the reply author
+		if (reply.user.toString() !== req.user._id.toString()) {
+			res.status(403);
+			throw new Error("Not authorized to update this reply");
+		}
+
+		// Update the reply content
+		reply.content = content;
+		await post.save();
+
+		// Invalidate related caches
+		await invalidatePostCaches(postId, post.ghostCircle);
+
+		res.json({
+			message: "Reply updated successfully",
+			reply: reply,
+		});
+	} catch (error) {
+		console.error("Update reply error:", error);
+		res.status(500).json({ message: "Server error" });
+	}
+});
+
 // @desc    Seed database with sample posts
 // @route   POST /api/posts/admin/seed
 // @access  Public (should be protected in production)
@@ -903,13 +1034,8 @@ module.exports = {
 	likePost,
 	addComment,
 	deleteComment,
-	// updateComment,
-	// addReply,
-	// deleteReply,
-	// updateReply,
 	getPaginatedPosts,
-	// sharePost,
-	// getGlobalFeed,
+	sharePost,
 	getGhostCirclePosts,
 	getPostById,
 	recognizeUser,
@@ -917,6 +1043,8 @@ module.exports = {
 	editComment,
 	incrementShareCount,
 	replyToComment,
+	deleteReply,
+	updateReply,
 	seedDatabase,
 	clearSeedPosts,
 };

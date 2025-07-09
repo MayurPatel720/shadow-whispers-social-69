@@ -1,3 +1,4 @@
+
 const express = require("express");
 const router = express.Router();
 const {
@@ -55,21 +56,21 @@ router.put("/:postId/comments/:commentId", protect, editComment);
 router.post("/:postId/comments/:commentId/reply", protect, replyToComment);
 
 // @desc Delete reply
-// router.delete(
-// 	"/:postId/comments/:commentId/replies/:replyId",
-// 	protect,
-// 	deleteReply
-// );
+router.delete(
+	"/:postId/comments/:commentId/replies/:replyId",
+	protect,
+	deleteReply
+);
 
-// // @desc Update reply
-// router.put(
-// 	"/:postId/comments/:commentId/replies/:replyId",
-// 	protect,
-// 	updateReply
-// );
+// @desc Update reply
+router.put(
+	"/:postId/comments/:commentId/replies/:replyId",
+	protect,
+	updateReply
+);
 
 // @desc Share post
-// router.post("/:id/share", protect, sharePost);
+router.post("/:id/share", protect, sharePost);
 
 // @desc Seed database with sample posts
 router.post("/seed", seedDatabase);

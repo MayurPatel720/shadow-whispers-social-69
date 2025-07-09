@@ -443,6 +443,34 @@ export const deleteConversation = async (userId: string): Promise<any> => {
 	}
 };
 
+// Add missing share post function
+export const sharePost = async (postId: string): Promise<{ shareCount: number }> => {
+	const response = await api.post(`/api/posts/${postId}/share`);
+	return response.data;
+};
+
+// Add missing reply functions
+export const deleteReply = async (
+	postId: string,
+	commentId: string,
+	replyId: string
+): Promise<void> => {
+	await api.delete(`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`);
+};
+
+export const updateReply = async (
+	postId: string,
+	commentId: string,
+	replyId: string,
+	content: string
+): Promise<any> => {
+	const response = await api.put(
+		`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`,
+		{ content }
+	);
+	return response.data;
+};
+
 // Admin API calls
 export const getAdminPosts = async (): Promise<any[]> => {
 	const response = await api.get("/api/admin/posts");
