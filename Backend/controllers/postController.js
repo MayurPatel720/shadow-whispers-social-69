@@ -943,9 +943,11 @@ const deleteReply = asyncHandler(async (req, res) => {
 			throw new Error("Not authorized to delete this reply");
 		}
 
-		// Remove the reply
-		comment.replies.pull(replyId);
-		await post.save();
+		// Remove the reply using pull
+		await Post.findOneAndUpdate(
+			{ _id: postId, "comments._id": commentId },
+			{ $pull: { "comments.$.replies": { _id: replyId } } }
+		);
 
 		// Invalidate related caches
 		await invalidatePostCaches(postId, post.ghostCircle);
@@ -970,40 +972,40 @@ const updateReply = asyncHandler(async (req, res) => {
 	}
 
 	try {
-		const post = await Post.findById(postId);
+		const post = await Post.findOneAndUpdate(
+			{
+				_id: postId,
+				"comments._id": commentId,
+				"comments.replies._id": replyId,
+				"comments.replies.user": req.user._id
+			},
+			{
+				$set: { "comments.$[comment].replies.$[reply].content": content }
+			},
+			{
+				arrayFilters: [
+					{ "comment._id": commentId },
+					{ "reply._id": replyId }
+				],
+				new: true
+			}
+		);
+
 		if (!post) {
 			res.status(404);
-			throw new Error("Post not found");
+			throw new Error("Post, comment, reply not found, or not authorized");
 		}
 
+		// Find the updated reply
 		const comment = post.comments.id(commentId);
-		if (!comment) {
-			res.status(404);
-			throw new Error("Comment not found");
-		}
-
-		const reply = comment.replies.id(replyId);
-		if (!reply) {
-			res.status(404);
-			throw new Error("Reply not found");
-		}
-
-		// Check if user is the reply author
-		if (reply.user.toString() !== req.user._id.toString()) {
-			res.status(403);
-			throw new Error("Not authorized to update this reply");
-		}
-
-		// Update the reply content
-		reply.content = content;
-		await post.save();
+		const updatedReply = comment.replies.id(replyId);
 
 		// Invalidate related caches
 		await invalidatePostCaches(postId, post.ghostCircle);
 
 		res.json({
 			message: "Reply updated successfully",
-			reply: reply,
+			reply: updatedReply,
 		});
 	} catch (error) {
 		console.error("Update reply error:", error);

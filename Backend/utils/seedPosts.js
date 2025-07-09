@@ -1,5 +1,16 @@
 const Post = require("../models/postModel");
-const { generateIdentity } = require("./generators");
+
+// Import generator functions from the generators file
+const { generateNickname, getRandomEmoji, getRandomColor } = require("./generators");
+
+// Create generateIdentity function locally since it's not exported from generators
+const generateIdentity = () => {
+  return {
+    nickname: generateNickname(),
+    emoji: getRandomEmoji(),
+    color: getRandomColor(),
+  };
+};
 
 // Diverse seed post content across different themes
 const seedPostsData = [
