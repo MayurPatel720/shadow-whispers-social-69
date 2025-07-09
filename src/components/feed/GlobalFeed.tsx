@@ -50,6 +50,11 @@ const GlobalFeed = () => {
 		? data.pages.flatMap((pg: { posts: any[] }) => pg.posts)
 		: [];
 
+	// Log posts for debugging
+	useEffect(() => {
+		console.log("Global feed posts:", allPosts.length, allPosts);
+	}, [allPosts]);
+
 	useEffect(() => {
 		const observer = new window.IntersectionObserver(
 			(entries) => {

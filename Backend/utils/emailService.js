@@ -1,291 +1,524 @@
 
-const nodemailer = require('nodemailer');
+const nodemailer = require("nodemailer");
 
 // Create transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    secure: false, // true for 465, false for other ports
+    service: "gmail",
     auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
+      user: process.env.EMAIL_FROM || "your-email@gmail.com",
+      pass: process.env.EMAIL_PASSWORD || "your-app-password",
     },
   });
 };
 
-// FRONTEND URL FOR PASSWORD RESET
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"; // fallback for local dev
-
-// Utility: generate 6-digit OTP
+// Generate 6-digit OTP
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Send email verification OTP email
+// Send verification email with OTP
 const sendVerificationEmail = async (email, otp) => {
-  try {
-    const transporter = createTransporter();
-    const mailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: email,
-      subject: "🎭 Verify Your UnderCover Email - Your Shadow Awaits",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Email Verification - UnderCover</title>
-          <style>
-            @media screen and (max-width: 600px) {
-              .container { width: 100% !important; margin: 0 !important; border-radius: 0 !important; }
-              .header { padding: 30px 20px !important; }
-              .content { padding: 30px 20px !important; }
-              .footer { padding: 20px !important; }
-              .title { font-size: 28px !important; }
-              .subtitle { font-size: 16px !important; }
-              .otp-container { padding: 15px 25px !important; margin: 15px 0 !important; }
-              .otp-code { font-size: 32px !important; letter-spacing: 4px !important; }
-              .features-grid { display: block !important; }
-              .feature-item { margin-bottom: 15px !important; }
-              .emoji { font-size: 28px !important; }
-              .section-padding { padding: 20px !important; }
-            }
-          </style>
-        </head>
-        <body style="margin: 0; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); color: #ffffff; min-height: 100vh;">
-          <div class="container" style="max-width: 100%; width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
-            
-            <!-- Header with Gradient -->
-            <div class="header" style="background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%); padding: 40px 30px; text-align: center; position: relative;">
-              <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><pattern id=\"grain\" width=\"100\" height=\"100\" patternUnits=\"userSpaceOnUse\"><circle cx=\"50\" cy=\"50\" r=\"1\" fill=\"white\" opacity=\"0.1\"/></pattern></defs><rect width=\"100\" height=\"100\" fill=\"url(%23grain)\"/></svg>'); opacity: 0.3;"></div>
-              <div style="position: relative; z-index: 1;">
-                <div class="emoji" style="font-size: 40px; margin-bottom: 10px;">🎭</div>
-                <h1 class="title" style="margin: 0; font-size: 32px; font-weight: bold; color: white; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">UnderCover</h1>
-                <div class="subtitle" style="font-size: 16px; color: rgba(255,255,255,0.9); font-weight: 500; margin-top: 8px;">Email Verification</div>
-              </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div class="content" style="padding: 40px 30px;">
-              <div style="text-align: center; margin-bottom: 30px;">
-                <div style="display: inline-block; padding: 20px; background: rgba(139, 92, 246, 0.15); border-radius: 50%; margin-bottom: 20px; border: 2px solid rgba(139, 92, 246, 0.3);">
-                  <div style="font-size: 48px;">🔐</div>
-                </div>
-                <h2 style="margin: 0; font-size: 24px; color: #ffffff; font-weight: 700; line-height: 1.3;">Welcome to the Shadows!</h2>
-                <p style="margin: 12px 0 0 0; color: #cbd5e1; font-size: 15px; line-height: 1.6;">Your anonymous identity awaits verification</p>
-              </div>
-              
-              <!-- Welcome Message -->
-              <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border-left: 4px solid #8b5cf6; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
-                <p style="margin: 0; color: #e2e8f0; line-height: 1.7; font-size: 15px;">
-                  🌟 <strong>Welcome to UnderCover!</strong><br><br>
-                  You're about to join a community where anonymity meets authenticity. Your shadow identity keeps you safe while you connect, share, and discover others in the realm of mysteries.
-                </p>
-              </div>
-              
-              <!-- OTP Section -->
-              <div style="text-align: center; margin: 40px 0;">
-                <p style="margin: 0 0 15px 0; color: #94a3b8; font-size: 15px;">
-                  Enter this verification code in the app:
-                </p>
-                <div class="otp-container" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); padding: 18px 35px; border-radius: 16px; box-shadow: 0 15px 35px rgba(139, 92, 246, 0.4); margin: 15px 0;">
-                  <div class="otp-code" style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: white; font-family: 'Courier New', monospace; text-shadow: 0 2px 10px rgba(0,0,0,0.3);">
-                    ${otp}
-                  </div>
-                </div>
-                <p style="margin: 15px 0 0 0; color: #64748b; font-size: 13px;">
-                  This code expires in <strong style="color: #8b5cf6;">10 minutes</strong>
-                </p>
-              </div>
-              
-              <!-- Features Preview -->
-              <div class="section-padding" style="background: rgba(255,255,255,0.03); border-radius: 16px; padding: 25px; margin: 30px 0;">
-                <h3 style="margin: 0 0 15px 0; color: #8b5cf6; font-size: 18px; font-weight: 600; text-align: center;">🚀 What awaits you:</h3>
-                <div class="features-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
-                  <div class="feature-item" style="text-align: center; padding: 12px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;">💬</div>
-                    <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">Anonymous Whispers</div>
-                  </div>
-                  <div class="feature-item" style="text-align: center; padding: 12px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;">🕵️</div>
-                    <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">Identity Recognition</div>
-                  </div>
-                  <div class="feature-item" style="text-align: center; padding: 12px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;">🎭</div>
-                    <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">Ghost Circles</div>
-                  </div>
-                  <div class="feature-item" style="text-align: center; padding: 12px;">
-                    <div style="font-size: 28px; margin-bottom: 8px;">🌙</div>
-                    <div style="color: #e2e8f0; font-size: 13px; font-weight: 500;">Shadow Posts</div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Security Notice -->
-              <div style="border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px; background: rgba(139, 92, 246, 0.05); margin-top: 30px;">
-                <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                  <span style="font-size: 20px; margin-right: 10px;">🛡️</span>
-                  <strong style="color: #8b5cf6; font-size: 16px;">Security Notice</strong>
-                </div>
-                <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; line-height: 1.7; font-size: 14px;">
-                  <li>This code expires in <strong>10 minutes</strong></li>
-                  <li>Never share this code with anyone</li>
-                  <li>If you didn't create an account, ignore this email</li>
-                  <li>Your identity remains anonymous until you choose to reveal it</li>
-                </ul>
-              </div>
-            </div>
-            
-            <!-- Footer -->
-            <div class="footer" style="background: rgba(0,0,0,0.3); padding: 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
-              <div style="margin-bottom: 12px;">
-                <span style="font-size: 20px;">🌙</span>
-                <span style="font-size: 20px; margin: 0 6px;">✨</span>
-                <span style="font-size: 20px;">🎭</span>
-              </div>
-              <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 15px; font-weight: 500;">
-                Welcome to the realm of mysteries
-              </p>
-              <p style="margin: 0; color: #64748b; font-size: 12px; line-height: 1.5;">
-                © 2024 UnderCover. All rights reserved.<br>
-                This is an automated message, please do not reply.
-              </p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
-    };
+  const transporter = createTransporter();
 
-    await transporter.sendMail(mailOptions);
-    console.log('Verification email sent successfully');
-    return true;
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || "noreply@example.com",
+    to: email,
+    subject: "UnderKover - Verify Your Email",
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Email Verification</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+            margin: 0;
+            padding: 20px;
+          }
+          
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+          }
+          
+          .header {
+            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+            padding: 40px 30px;
+            text-align: center;
+          }
+          
+          .logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 10px;
+          }
+          
+          .tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+          }
+          
+          .content {
+            padding: 40px 30px;
+          }
+          
+          .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          
+          .message {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+          }
+          
+          .otp-container {
+            background: rgba(147, 51, 234, 0.1);
+            border: 2px solid #9333ea;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin: 30px 0;
+          }
+          
+          .otp-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+          
+          .otp-code {
+            font-size: 36px;
+            font-weight: 800;
+            color: #9333ea;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+          }
+          
+          .expiry {
+            font-size: 14px;
+            color: #ef4444;
+            margin-top: 15px;
+          }
+          
+          .footer {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid rgba(147, 51, 234, 0.2);
+          }
+          
+          .footer-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+          }
+          
+          @media only screen and (max-width: 600px) {
+            body {
+              padding: 10px;
+            }
+            
+            .container {
+              border-radius: 12px;
+            }
+            
+            .header {
+              padding: 30px 20px;
+            }
+            
+            .logo {
+              font-size: 28px;
+            }
+            
+            .tagline {
+              font-size: 14px;
+            }
+            
+            .content {
+              padding: 30px 20px;
+            }
+            
+            .title {
+              font-size: 22px;
+            }
+            
+            .message {
+              font-size: 15px;
+            }
+            
+            .otp-container {
+              padding: 20px;
+              margin: 25px 0;
+            }
+            
+            .otp-code {
+              font-size: 30px;
+              letter-spacing: 6px;
+            }
+            
+            .footer {
+              padding: 20px;
+            }
+          }
+          
+          @media only screen and (max-width: 400px) {
+            .otp-code {
+              font-size: 24px;
+              letter-spacing: 4px;
+            }
+            
+            .logo {
+              font-size: 24px;
+            }
+            
+            .title {
+              font-size: 20px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">UnderKover</div>
+            <div class="tagline">Share your truth, find your tribe</div>
+          </div>
+          
+          <div class="content">
+            <h1 class="title">Verify Your Email</h1>
+            <p class="message">
+              Welcome to the underground! Use the verification code below to complete your registration and start sharing your secrets anonymously.
+            </p>
+            
+            <div class="otp-container">
+              <div class="otp-label">Verification Code</div>
+              <div class="otp-code">${otp}</div>
+              <div class="expiry">Expires in 10 minutes</div>
+            </div>
+            
+            <p class="message">
+              If you didn't create an account with UnderKover, you can safely ignore this email.
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p class="footer-text">
+              This is an automated message from UnderKover.<br>
+              Your secrets are safe with us. 🎭
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
+
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Verification email sent successfully:", result.messageId);
+    return result;
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    throw new Error('Failed to send verification email');
+    console.error("Error sending verification email:", error);
+    throw new Error("Failed to send verification email");
   }
 };
 
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken) => {
-  try {
-    const transporter = createTransporter();
+  const transporter = createTransporter();
+  
+  // Updated reset URL to match the frontend route
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
-    // Point to frontend reset password page instead of backend
-    const resetUrl = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
-
-    const mailOptions = {
-      from: process.env.SMTP_EMAIL,
-      to: email,
-      subject: '🔐 Reset Your UnderCover Password',
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Password Reset - UnderCover</title>
-          <style>
-            @media screen and (max-width: 600px) {
-              .container { width: 100% !important; margin: 0 !important; border-radius: 0 !important; }
-              .header { padding: 30px 20px !important; }
-              .content { padding: 30px 20px !important; }
-              .footer { padding: 20px !important; }
-              .title { font-size: 28px !important; }
-              .subtitle { font-size: 16px !important; }
-              .reset-button { padding: 14px 28px !important; font-size: 15px !important; }
-              .link-box { padding: 10px !important; font-size: 12px !important; }
-              .emoji { font-size: 28px !important; }
+  const mailOptions = {
+    from: process.env.EMAIL_FROM || "noreply@example.com",
+    to: email,
+    subject: "UnderKover - Reset Your Password",
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset</title>
+        <style>
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+          }
+          
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #ffffff;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #1a1a2e 100%);
+            margin: 0;
+            padding: 20px;
+          }
+          
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+          }
+          
+          .header {
+            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+            padding: 40px 30px;
+            text-align: center;
+          }
+          
+          .logo {
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 10px;
+          }
+          
+          .tagline {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 16px;
+          }
+          
+          .content {
+            padding: 40px 30px;
+          }
+          
+          .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 20px;
+            text-align: center;
+          }
+          
+          .message {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+          }
+          
+          .button-container {
+            text-align: center;
+            margin: 30px 0;
+          }
+          
+          .reset-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #9333ea 0%, #7c3aed 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3);
+            transition: all 0.3s ease;
+          }
+          
+          .reset-button:hover {
+            background: linear-gradient(135deg, #7c3aed 0%, #6b21a8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(147, 51, 234, 0.4);
+          }
+          
+          .expiry-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+          }
+          
+          .expiry-text {
+            color: #fca5a5;
+            font-size: 14px;
+            font-weight: 500;
+          }
+          
+          .footer {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid rgba(147, 51, 234, 0.2);
+          }
+          
+          .footer-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            line-height: 1.5;
+          }
+          
+          .alternative-link {
+            word-break: break-all;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+          }
+          
+          @media only screen and (max-width: 600px) {
+            body {
+              padding: 10px;
             }
-          </style>
-        </head>
-        <body style="margin: 0; padding: 10px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background-color: #0f0f23; color: #ffffff; min-height: 100vh;">
-          <div class="container" style="max-width: 100%; width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
             
-            <!-- Header -->
-            <div class="header" style="background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%); padding: 35px 25px; text-align: center;">
-              <div class="emoji" style="font-size: 28px; margin-bottom: 8px;">🎭</div>
-              <div class="title" style="font-size: 28px; font-weight: bold; color: white; margin-bottom: 6px;">UnderCover</div>
-              <div class="subtitle" style="font-size: 15px; color: rgba(255,255,255,0.9); font-weight: 500;">Password Reset Request</div>
-            </div>
+            .container {
+              border-radius: 12px;
+            }
             
-            <!-- Content -->
-            <div class="content" style="padding: 35px 25px;">
-              <div style="text-align: center; margin-bottom: 25px;">
-                <div style="display: inline-block; padding: 18px; background: rgba(139, 92, 246, 0.1); border-radius: 50%; margin-bottom: 18px;">
-                  <div style="font-size: 40px;">🔑</div>
-                </div>
-                <h2 style="margin: 0; font-size: 22px; color: #ffffff; font-weight: 600;">Reset Your Password</h2>
-              </div>
-              
-              <div style="background: rgba(255,255,255,0.05); border-left: 4px solid #8b5cf6; padding: 18px; border-radius: 8px; margin-bottom: 25px;">
-                <p style="margin: 0; color: #e5e7eb; line-height: 1.6; font-size: 15px;">
-                  Hello there, shadow dweller! 👋<br><br>
-                  Someone (hopefully you) requested to reset the password for your UnderCover account. 
-                  Don't worry - your secret identity is safe with us!
-                </p>
-              </div>
-              
-              <!-- Reset Button -->
-              <div style="text-align: center; margin: 35px 0;">
-                <a href="${resetUrl}" class="reset-button" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: white; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3); transition: all 0.3s ease;">
-                  🚀 Reset My Password
-                </a>
-              </div>
-              
-              <!-- Alternative Link -->
-              <div style="background: rgba(255,255,255,0.03); padding: 18px; border-radius: 8px; margin-bottom: 25px;">
-                <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px; text-align: center;">
-                  Button not working? Copy and paste this link:
-                </p>
-                <div class="link-box" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 6px; word-break: break-all; text-align: center;">
-                  <a href="${resetUrl}" style="color: #8b5cf6; text-decoration: none; font-size: 13px;">${resetUrl}</a>
-                </div>
-              </div>
-              
-              <!-- Security Notice -->
-              <div style="border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 8px; padding: 18px; background: rgba(139, 92, 246, 0.05);">
-                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                  <span style="font-size: 18px; margin-right: 8px;">⚠️</span>
-                  <strong style="color: #8b5cf6; font-size: 15px;">Security Notice</strong>
-                </div>
-                <ul style="margin: 0; padding-left: 18px; color: #d1d5db; line-height: 1.6; font-size: 14px;">
-                  <li>This link will expire in <strong>10 minutes</strong></li>
-                  <li>If you didn't request this reset, please ignore this email</li>
-                  <li>Never share this link with anyone</li>
-                </ul>
-              </div>
-            </div>
+            .header {
+              padding: 30px 20px;
+            }
             
-            <!-- Footer -->
-            <div class="footer" style="background: rgba(0,0,0,0.2); padding: 25px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1);">
-              <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px;">
-                Stay anonymous, stay secure 🛡️
-              </p>
-              <p style="margin: 0; color: #6b7280; font-size: 11px;">
-                © 2024 UnderCover. All rights reserved.<br>
-                This is an automated message, please do not reply.
-              </p>
-            </div>
+            .logo {
+              font-size: 28px;
+            }
+            
+            .tagline {
+              font-size: 14px;
+            }
+            
+            .content {
+              padding: 30px 20px;
+            }
+            
+            .title {
+              font-size: 22px;
+            }
+            
+            .message {
+              font-size: 15px;
+            }
+            
+            .reset-button {
+              padding: 12px 30px;
+              font-size: 15px;
+            }
+            
+            .footer {
+              padding: 20px;
+            }
+            
+            .alternative-link {
+              font-size: 11px;
+              padding: 12px;
+            }
+          }
+          
+          @media only screen and (max-width: 400px) {
+            .logo {
+              font-size: 24px;
+            }
+            
+            .title {
+              font-size: 20px;
+            }
+            
+            .reset-button {
+              padding: 10px 25px;
+              font-size: 14px;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">UnderKover</div>
+            <div class="tagline">Share your truth, find your tribe</div>
           </div>
-        </body>
-        </html>
-      `,
-    };
+          
+          <div class="content">
+            <h1 class="title">Reset Your Password</h1>
+            <p class="message">
+              We received a request to reset your password. Click the button below to create a new password for your UnderKover account.
+            </p>
+            
+            <div class="button-container">
+              <a href="${resetUrl}" class="reset-button">Reset Password</a>
+            </div>
+            
+            <div class="expiry-warning">
+              <p class="expiry-text">⚠️ This link expires in 10 minutes for security</p>
+            </div>
+            
+            <p class="message">
+              If the button doesn't work, copy and paste this link into your browser:
+            </p>
+            
+            <div class="alternative-link">
+              ${resetUrl}
+            </div>
+            
+            <p class="message">
+              If you didn't request a password reset, you can safely ignore this email. Your account remains secure.
+            </p>
+          </div>
+          
+          <div class="footer">
+            <p class="footer-text">
+              This is an automated message from UnderKover.<br>
+              Your privacy and security are our priority. 🔒
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+  };
 
-    await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent successfully');
-    return true;
+  try {
+    const result = await transporter.sendMail(mailOptions);
+    console.log("Password reset email sent successfully:", result.messageId);
+    return result;
   } catch (error) {
-    console.error('Error sending password reset email:', error);
-    throw new Error('Failed to send password reset email');
+    console.error("Error sending password reset email:", error);
+    throw new Error("Failed to send password reset email");
   }
 };
 
 module.exports = {
-  sendPasswordResetEmail,
   sendVerificationEmail,
+  sendPasswordResetEmail,
   generateOTP,
 };

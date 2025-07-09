@@ -1,3 +1,4 @@
+
 const asyncHandler = require("express-async-handler");
 const Post = require("../models/postModel");
 const User = require("../models/userModel");
@@ -354,13 +355,13 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 						typeof cachedPosts === "string"
 							? JSON.parse(cachedPosts)
 							: cachedPosts;
-					if (Array.isArray(parsedPosts)) {
+					if (Array.isArray(parsedPosts) && parsedPosts.length >= 20) {
 						return res.status(200).json({
 							posts: parsedPosts,
 							hasMore: parsedPosts.length === limit,
 						});
 					} else {
-						console.warn("Invalid cached posts data:", parsedPosts);
+						console.warn("Cached posts insufficient, fetching fresh data");
 						await redis.del(CACHE_KEYS.GLOBAL_FEED);
 					}
 				} catch (error) {
@@ -374,7 +375,30 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	}
 
 	try {
+		// Get regular posts first
 		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
+		
+		// If we don't have enough posts and this is the first page, add seed posts
+		if (!after && posts.length < 20) {
+			console.log(`Only ${posts.length} regular posts found, checking for seed posts...`);
+			
+			// Check if seed posts exist, if not create them
+			const seedPostsCount = await Post.countDocuments({ isSeedPost: true, expiresAt: { $gt: new Date() } });
+			if (seedPostsCount === 0) {
+				console.log("No seed posts found, creating them...");
+				await createSeedPosts();
+			}
+			
+			// Get seed posts to fill the gap
+			const seedPosts = await Post.find({
+				isSeedPost: true,
+				expiresAt: { $gt: new Date() },
+				ghostCircle: { $exists: false }
+			}).sort({ _id: -1 }).limit(20 - posts.length).lean();
+			
+			console.log(`Adding ${seedPosts.length} seed posts to feed`);
+			posts.push(...seedPosts);
+		}
 
 		// Only cache first/default page
 		if (!after && limit === 20 && redis.isAvailable()) {
