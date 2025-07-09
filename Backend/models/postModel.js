@@ -110,6 +110,15 @@ const postSchema = mongoose.Schema(
       type: Number,
       default: 0, // Initialize to 0 for new posts
     },
+    // Add seed post fields
+    isSeedPost: {
+      type: Boolean,
+      default: false,
+    },
+    theme: {
+      type: String,
+      enum: ['confession', 'secret', 'loneliness', 'love', 'relationship', 'work', 'career', 'family', 'existential', 'philosophy', 'funny', 'quirky', 'regret', 'struggle'],
+    },
   },
   {
     timestamps: true,

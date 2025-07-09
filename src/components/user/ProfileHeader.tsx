@@ -1,3 +1,4 @@
+
 import React from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface ProfileHeaderProps {
 	onShowMessages: () => void;
 	onWhisper: () => void;
 	onShowRecognitions?: () => void;
+	userId?: string;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
@@ -29,9 +31,18 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 	onShowMessages,
 	onWhisper,
 	onShowRecognitions,
+	userId,
 }) => {
 	const isMobile = useIsMobile();
 	const navigate = useNavigate();
+
+	const handleWhisperClick = () => {
+		if (userId && userId !== user?._id) {
+			// Navigate to whispers page with the specific user selected
+			navigate(`/whispers`, { state: { selectUserId: userId } });
+		}
+	};
+
 	return (
 		<CardHeader className="p-2 sm:p-4 md:p-5 pb-0 w-full">
 			{/* DESKTOP Row (avatar/name left, actions right) */}
@@ -97,7 +108,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={onWhisper}
+								onClick={handleWhisperClick}
 								className="w-full sm:w-auto"
 							>
 								<UserRound size={16} className="mr-2" />
@@ -179,7 +190,7 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
 							<Button
 								variant="outline"
 								size="sm"
-								onClick={onWhisper}
+								onClick={handleWhisperClick}
 								className="w-full sm:w-auto"
 							>
 								<UserRound size={16} className="mr-2" />

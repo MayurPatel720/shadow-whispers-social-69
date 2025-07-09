@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -43,7 +44,11 @@ const userSchema = new mongoose.Schema({
   ],
   anonymousAlias: { type: String, unique: true },
   avatarEmoji: { type: String },
-  referralCode: { type: String, unique: true },
+  referralCode: { 
+    type: String, 
+    unique: true,
+    sparse: true // This allows null/undefined values while maintaining uniqueness for non-null values
+  },
   referralCount: { type: Number, default: 0 },
   referredBy: {
     type: mongoose.Schema.Types.ObjectId,

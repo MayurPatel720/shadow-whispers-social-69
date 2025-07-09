@@ -1,3 +1,4 @@
+
 // routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
@@ -17,7 +18,10 @@ const {
   forgotPassword,
   resetPassword,
   verifyEmail,
-  resendVerificationEmail
+  resendVerificationEmail,
+  getReferralLeaderboard,
+  processReferral,
+  claimReward
 } = require("../controllers/userController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -40,5 +44,10 @@ router.get("/recognitions", protect, getRecognitions);
 router.post("/revoke-recognition", protect, revokeRecognition);
 router.post("/onesignal-player-id", protect, updateOneSignalPlayerId);
 router.get("/userposts/:userId", protect, getUserPosts);
+
+// Referral routes
+router.get("/referral-leaderboard", protect, getReferralLeaderboard);
+router.post("/process-referral", protect, processReferral);
+router.post("/claim-reward", protect, claimReward);
 
 module.exports = router;

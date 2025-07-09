@@ -1,4 +1,3 @@
-// src/components/AppShell.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import "../../../public/lovable-uploads/UnderKover_logo2.png";
 import {
@@ -10,6 +9,7 @@ import {
 	X,
 	PlusCircle,
 	LogOut,
+	LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WhisperModal from "../whisper/WhisperModal";
@@ -22,14 +22,16 @@ const NavItem: React.FC<{
 	label: string;
 	active?: boolean;
 	onClick?: () => void;
-}> = ({ icon, label, active = false, onClick }) => {
+	disabled?: boolean;
+}> = ({ icon, label, active = false, onClick, disabled = false }) => {
 	return (
 		<Button
 			variant={active ? "secondary" : "ghost"}
 			className={`justify-start w-full ${
 				active ? "bg-purple-600/20 text-purple-500" : "text-muted-foreground"
-			}`}
-			onClick={onClick}
+			} ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+			onClick={disabled ? undefined : onClick}
+			disabled={disabled}
 		>
 			{icon}
 			<span className="ml-2">{label}</span>
@@ -47,7 +49,7 @@ const AppShell = ({ children }: AppShellProps) => {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 	const [currentTab, setCurrentTab] = useState("Home");
 	const [whisperModalOpen, setWhisperModalOpen] = useState(false);
-	const { user, logout } = useAuth();
+	const { user, logout, isAuthenticated } = useAuth();
 
 	useEffect(() => {
 		if (location.pathname === "/") setCurrentTab("Home");
@@ -55,11 +57,23 @@ const AppShell = ({ children }: AppShellProps) => {
 		else if (location.pathname === "/ghost-circles") setCurrentTab("Circles");
 		else if (location.pathname === "/profile") setCurrentTab("Profile");
 		else if (location.pathname === "/referrals") setCurrentTab("Referrals");
-		// Always close menu on route change for safety
 		setMobileMenuOpen(false);
 	}, [location.pathname]);
 
+	const handleNavigation = (path: string, requiresAuth: boolean = false) => {
+		if (requiresAuth && !isAuthenticated) {
+			navigate("/login");
+			return;
+		}
+		navigate(path);
+		setMobileMenuOpen(false);
+	};
+
 	const openWhisperModal = () => {
+		if (!isAuthenticated) {
+			navigate("/login");
+			return;
+		}
 		setWhisperModalOpen(true);
 		setMobileMenuOpen(false);
 	};
@@ -67,7 +81,7 @@ const AppShell = ({ children }: AppShellProps) => {
 	const userIdentity = useMemo(
 		() => ({
 			emoji: user?.avatarEmoji || "🎭",
-			nickname: user?.anonymousAlias || "Anonymous",
+			nickname: user?.anonymousAlias || "Anonymous User",
 			color: "#6E59A5",
 		}),
 		[user]
@@ -75,10 +89,9 @@ const AppShell = ({ children }: AppShellProps) => {
 
 	const handleLogout = () => {
 		logout();
-		navigate("/login");
+		navigate("/");
 	};
 
-	// Improved: Lock scroll ONLY while menu open, clean up on unmount, always clean up if menu closes
 	useEffect(() => {
 		if (mobileMenuOpen) {
 			document.body.classList.add("overflow-hidden");
@@ -90,11 +103,10 @@ const AppShell = ({ children }: AppShellProps) => {
 		};
 	}, [mobileMenuOpen]);
 
-	// Extra guard: Remove scroll lock on route change (in case of edge-case navigation bugs)
 	useEffect(() => {
-		document.body.classList.remove('overflow-hidden');
+		document.body.classList.remove("overflow-hidden");
 		return () => {
-			document.body.classList.remove('overflow-hidden');
+			document.body.classList.remove("overflow-hidden");
 		};
 	}, [location.pathname]);
 
@@ -117,48 +129,73 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				<div className="p-4 flex-1">
-					<div
-						onClick={() => navigate("/profile")}
-						className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
-					>
-						<AvatarGenerator
-							emoji={userIdentity.emoji}
-							nickname={user?.anonymousAlias}
-							color={userIdentity.color}
-							size="md"
-						/>
-						<div>
-							<h2 className="text-lg font-bold">{user?.anonymousAlias}</h2>
-							<p className="text-xs text-muted-foreground">
-								Your anonymous identity
-							</p>
+					{isAuthenticated ? (
+						<div
+							onClick={() => handleNavigation("/profile", true)}
+							className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
+						>
+							<AvatarGenerator
+								emoji={userIdentity.emoji}
+								nickname={user?.anonymousAlias}
+								color={userIdentity.color}
+								size="md"
+							/>
+							<div>
+								<h2 className="text-lg font-bold">{user?.anonymousAlias}</h2>
+								<p className="text-xs text-muted-foreground">
+									Your anonymous identity
+								</p>
+							</div>
 						</div>
-					</div>
+					) : (
+						<div className="flex items-center gap-3 bg-background rounded-lg p-3 mb-6 border border-purple-500/20">
+							<AvatarGenerator
+								emoji={userIdentity.emoji}
+								nickname={userIdentity.nickname}
+								color={userIdentity.color}
+								size="md"
+							/>
+							<div>
+								<h2 className="text-lg font-bold">{userIdentity.nickname}</h2>
+								<p className="text-xs text-muted-foreground">
+									<button
+										onClick={() => navigate("/login")}
+										className="text-purple-500 hover:text-purple-400"
+									>
+										Log in to personalize
+									</button>
+								</p>
+							</div>
+						</div>
+					)}
 
 					<div className="space-y-1">
 						<NavItem
 							icon={<Home size={18} />}
 							label="Home"
 							active={currentTab === "Home"}
-							onClick={() => navigate("/")}
+							onClick={() => handleNavigation("/")}
 						/>
 						<NavItem
 							icon={<Users size={18} />}
 							label="Ghost Circles"
 							active={currentTab === "Circles"}
-							onClick={() => navigate("/ghost-circles")}
+							onClick={() => handleNavigation("/ghost-circles", true)}
+							disabled={!isAuthenticated}
 						/>
 						<NavItem
 							icon={<MessageSquare size={18} />}
 							label="Whispers"
 							active={currentTab === "Whispers"}
-							onClick={() => navigate("/whispers")}
+							onClick={() => handleNavigation("/whispers", true)}
+							disabled={!isAuthenticated}
 						/>
 						<NavItem
 							icon={<UserRound size={18} />}
 							label="Profile"
 							active={currentTab === "Profile"}
-							onClick={() => navigate("/profile")}
+							onClick={() => handleNavigation("/profile", true)}
+							disabled={!isAuthenticated}
 						/>
 					</div>
 
@@ -171,20 +208,29 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				<div className="p-4">
-					<Button
-						onClick={handleLogout}
-						className="w-full bg-red-500 hover:bg-red-700 text-white"
-					>
-						<LogOut size={16} className="mr-2" />
-						Log Out
-					</Button>
+					{isAuthenticated ? (
+						<Button
+							onClick={handleLogout}
+							className="w-full bg-red-500 hover:bg-red-700 text-white"
+						>
+							<LogOut size={16} className="mr-2" />
+							Log Out
+						</Button>
+					) : (
+						<Button
+							onClick={() => navigate("/login")}
+							className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+						>
+							<LogIn size={16} className="mr-2" />
+							Log In
+						</Button>
+					)}
 				</div>
 			</div>
 
 			{/* Mobile Menu */}
 			{mobileMenuOpen && (
 				<>
-					{/* Overlay to prevent background scroll and interaction */}
 					<div
 						className="fixed inset-0 bg-black/80 z-40 md:hidden transition-opacity duration-300"
 						aria-hidden="true"
@@ -192,13 +238,13 @@ const AppShell = ({ children }: AppShellProps) => {
 						onClick={() => setMobileMenuOpen(false)}
 					></div>
 					<div
-						className="fixed left-0 right-0 bottom-0 z-50 flex md:hidden flex-col animate-slide-up transition-all duration-300"
+						className="fixed left-0 right-0 bottom-0 z-50 flex md:hidden flex-col animate-slide-up transition-all duration-300 bg-card"
 						style={{
-							height: "90vh", // 90% of viewport height
+							height: "90vh",
 							maxHeight: "90vh",
 						}}
 					>
-						<div className="p-4 flex justify-between items-center border-b border-border bg-background rounded-t-xl">
+						<div className="p-4 flex justify-between items-center border-b border-border">
 							<h1 className="text-xl font-bold text-purple-500 flex items-center">
 								<img
 									src="/lovable-uploads/UnderKover_logo2.png"
@@ -215,72 +261,110 @@ const AppShell = ({ children }: AppShellProps) => {
 								<X />
 							</Button>
 						</div>
-						<div className="p-4 flex-1 overflow-y-auto bg-background">
-							<div
-								onClick={() => navigate("/profile")}
-								className="flex items-center gap-3 bg-gray-800 rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
-							>
-								<AvatarGenerator
-									emoji={userIdentity.emoji}
-									nickname={user?.anonymousAlias}
-									color={userIdentity.color}
-									size="md"
-								/>
-								<div>
-									<h2 className="text-lg font-bold">{user?.anonymousAlias}</h2>
-									<p className="text-xs text-muted-foreground">
-										Your anonymous identity
-									</p>
+						<div className="p-4 flex-1 overflow-y-auto">
+							{isAuthenticated ? (
+								<div
+									onClick={() => handleNavigation("/profile", true)}
+									className="flex items-center gap-3 bg-background rounded-lg p-3 mb-6 border border-purple-500/20 hover:cursor-pointer"
+								>
+									<AvatarGenerator
+										emoji={userIdentity.emoji}
+										nickname={user?.anonymousAlias}
+										color={userIdentity.color}
+										size="md"
+									/>
+									<div>
+										<h2 className="text-lg font-bold">
+											{user?.anonymousAlias}
+										</h2>
+										<p className="text-xs text-muted-foreground">
+											Your anonymous identity
+										</p>
+									</div>
 								</div>
-							</div>
+							) : (
+								<div className="flex items-center gap-3 bg-background rounded-lg p-3 mb-6 border border-purple-500/20">
+									<AvatarGenerator
+										emoji={userIdentity.emoji}
+										nickname={userIdentity.nickname}
+										color={userIdentity.color}
+										size="md"
+									/>
+									<div>
+										<h2 className="text-lg font-bold">
+											{userIdentity.nickname}
+										</h2>
+										<p className="text-xs text-muted-foreground">
+											<button
+												onClick={() => navigate("/login")}
+												className="text-purple-500 hover:text-purple-400"
+											>
+												Log in to personalize
+											</button>
+										</p>
+									</div>
+								</div>
+							)}
 							<div className="space-y-2">
 								<NavItem
 									icon={<Home size={18} />}
 									label="Home"
 									active={currentTab === "Home"}
-									onClick={() => navigate("/")}
+									onClick={() => handleNavigation("/")}
 								/>
 								<NavItem
 									icon={<Users size={18} />}
 									label="Ghost Circles"
 									active={currentTab === "Circles"}
-									onClick={() => navigate("/ghost-circles")}
+									onClick={() => handleNavigation("/ghost-circles", true)}
+									disabled={!isAuthenticated}
 								/>
 								<NavItem
 									icon={<MessageSquare size={18} />}
 									label="Whispers"
 									active={currentTab === "Whispers"}
-									onClick={() => navigate("/whispers")}
+									onClick={() => handleNavigation("/whispers", true)}
+									disabled={!isAuthenticated}
 								/>
 								<NavItem
 									icon={<UserRound size={18} />}
 									label="Profile"
 									active={currentTab === "Profile"}
-									onClick={() => navigate("/profile")}
+									onClick={() => handleNavigation("/profile", true)}
+									disabled={!isAuthenticated}
 								/>
 							</div>
 							<Button
 								onClick={openWhisperModal}
-								className="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white"
+								className="flex items-center justify-center p-2 rounded-lg mt-6 w-full border border-purple-600 hover:bg-purple-700 text-white"
 							>
 								<MessageSquare size={16} className="mr-2" /> New Whisper
 							</Button>
 						</div>
-						<div className="p-4 border-t border-border bg-background">
-							<Button
-								onClick={handleLogout}
-								className="w-full bg-red-500 hover:bg-red-700 text-white"
-							>
-								<LogOut size={16} className="mr-2" />
-								Log Out
-							</Button>
+						<div className="p-4 border-t border-border">
+							{isAuthenticated ? (
+								<Button
+									onClick={handleLogout}
+									className="w-full bg-red-500 hover:bg-red-700 text-white"
+								>
+									<LogOut size={16} className="mr-2" />
+									Log Out
+								</Button>
+							) : (
+								<Button
+									onClick={() => navigate("/login")}
+									className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+								>
+									<LogIn size={16} className="mr-2" />
+									Log In
+								</Button>
+							)}
 						</div>
 					</div>
 				</>
 			)}
 
 			{/* Main Content */}
-			{/* Make feed area scrollable, not full page. */}
 			<div className="flex-1 flex flex-col h-screen min-h-0">
 				{/* Mobile Top Bar */}
 				<div className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-sm border-b border-border p-4 flex justify-between items-center">
@@ -315,7 +399,7 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				{/* Children (Page Content) */}
-				<div className="flex-1 min-h-0 overflow-y-auto">{children}</div>
+				<div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0">{children}</div>
 
 				{/* Bottom Navigation (Mobile) */}
 				<div className="md:hidden fixed bottom-0 w-full bg-card border-t border-border p-2 flex justify-around z-50">
@@ -327,7 +411,7 @@ const AppShell = ({ children }: AppShellProps) => {
 								? "text-purple-500"
 								: "text-muted-foreground"
 						}
-						onClick={() => navigate("/")}
+						onClick={() => handleNavigation("/")}
 					>
 						<Home size={20} />
 					</Button>
@@ -339,7 +423,8 @@ const AppShell = ({ children }: AppShellProps) => {
 								? "text-purple-500"
 								: "text-muted-foreground"
 						}
-						onClick={() => navigate("/ghost-circles")}
+						onClick={() => handleNavigation("/ghost-circles", true)}
+						disabled={!isAuthenticated}
 					>
 						<Users size={20} />
 					</Button>
@@ -359,7 +444,8 @@ const AppShell = ({ children }: AppShellProps) => {
 								? "text-purple-500"
 								: "text-muted-foreground"
 						}
-						onClick={() => navigate("/whispers")}
+						onClick={() => handleNavigation("/whispers", true)}
+						disabled={!isAuthenticated}
 					>
 						<MessageSquare size={20} />
 					</Button>
@@ -371,7 +457,8 @@ const AppShell = ({ children }: AppShellProps) => {
 								? "text-purple-500"
 								: "text-muted-foreground"
 						}
-						onClick={() => navigate("/profile")}
+						onClick={() => handleNavigation("/profile", true)}
+						disabled={!isAuthenticated}
 					>
 						<UserRound size={20} />
 					</Button>

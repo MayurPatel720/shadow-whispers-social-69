@@ -1,4 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import React, { useState } from "react";
+import {
+	BrowserRouter as Router,
+	Routes,
+	Route,
+	Outlet,
+	useNavigate,
+} from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
@@ -7,7 +14,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import SmoothScrollProvider from "./components/providers/SmoothScrollProvider";
 import LoginSuccessAnimation from "./components/animations/LoginSuccessAnimation";
-import React, { useState } from "react";
+import { useRequestNotificationPermission } from "./hooks/useRequestNotificationPermission";
 
 // Pages
 import Login from "./pages/Login";
@@ -25,7 +32,6 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminPanel from "./pages/AdminPanel";
 import AdminMatchStats from "./pages/AdminMatchStats";
 import NotFound from "./pages/NotFound";
-import VerifyEmail from "./pages/VerifyEmail"; // <--- NEW
 
 // Layout
 import AppShell from "./components/layout/AppShell";
@@ -33,99 +39,167 @@ import AppShell from "./components/layout/AppShell";
 const queryClient = new QueryClient();
 
 function GlobalApp() {
-  const { showLoginAnimation, setShowLoginAnimation } = useAuth();
-  const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
+	const { showLoginAnimation, setShowLoginAnimation } = useAuth();
+	const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
+	const navigate = useNavigate();
+	
+	// Use the notification permission hook
+	const notificationDialog = useRequestNotificationPermission();
 
-  return (
-    <>
-      {/* Render animation overlay if login/registration success */}
-      {showLoginAnimation && (
-        <div className="fixed inset-0 z-[99] bg-black/70 flex items-center justify-center">
-          <LoginSuccessAnimation 
-            onComplete={() => {
-              setShowLoginAnimation(false);
-              setLoginAnimNavPending(true);
-              // Let the redirect happen, only after animation.
-              window.location.pathname = "/";
-            }}
-          />
-        </div>
-      )}
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        {/* Remove verify-email as its UI is moved to settings tab */}
-        {/* <Route path="/verify-email" element={<VerifyEmail />} /> */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+	return (
+		<>
+			{/* Render animation overlay if login/registration success */}
+			{showLoginAnimation && (
+				<div className="fixed inset-0 z-[99] bg-black/70 flex items-center justify-center">
+					<LoginSuccessAnimation
+						onComplete={() => {
+							setShowLoginAnimation(false);
+							setLoginAnimNavPending(true);
+							// Use navigate for SPA transition
+							navigate("/");
+						}}
+					/>
+				</div>
+			)}
+			<Routes>
+				{/* Public routes */}
+				<Route path="/login" element={<Login />} />
+				<Route path="/register" element={<Register />} />
+				<Route path="/reset-password" element={<ResetPassword />} />
+				<Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Admin routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedAdminRoute>
-              <AdminPanel />
-            </ProtectedAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/match-stats"
-          element={
-            <ProtectedAdminRoute>
-              <AdminMatchStats />
-            </ProtectedAdminRoute>
-          }
-        />
+				{/* Combined root route with public and protected sub-routes */}
+				<Route
+					path="/"
+					element={
+						<AppShell>
+							<Outlet />
+						</AppShell>
+					}
+				>
+					<Route index element={<Index />} /> {/* Public */}
+					<Route path="invite/:circleId" element={<InvitePage />} />{" "}
+					{/* Public */}
+					<Route
+						path="profile"
+						element={
+							<ProtectedRoute>
+								<ProfilePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="profile/:userId"
+						element={
+							<ProtectedRoute>
+								<ProfilePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="ghost-circles"
+						element={
+							<ProtectedRoute>
+								<GhostCircles />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="chat"
+						element={
+							<ProtectedRoute>
+								<WhispersPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="chat/:userId"
+						element={
+							<ProtectedRoute>
+								<WhispersPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="whispers"
+						element={
+							<ProtectedRoute>
+								<WhispersPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="recognitions"
+						element={
+							<ProtectedRoute>
+								<RecognitionsPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="referrals"
+						element={
+							<ProtectedRoute>
+								<ReferralPage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="matches"
+						element={
+							<ProtectedRoute>
+								<MatchesPage />
+							</ProtectedRoute>
+						}
+					/>
+				</Route>
 
-        {/* Protected routes with AppShell */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <AppShell>
-                <Outlet />
-              </AppShell>
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Index />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="profile/:userId" element={<ProfilePage />} />
-          <Route path="ghost-circles" element={<GhostCircles />} />
-          <Route path="invite/:circleId" element={<InvitePage />} />
-          <Route path="chat" element={<WhispersPage />} />
-          <Route path="chat/:userId" element={<WhispersPage />} />
-          <Route path="whispers" element={<WhispersPage />} />
-          <Route path="recognitions" element={<RecognitionsPage />} />
-          <Route path="referrals" element={<ReferralPage />} />
-          <Route path="matches" element={<MatchesPage />} />
-        </Route>
+				{/* Admin routes */}
+				<Route
+					path="/admin"
+					element={
+						<ProtectedAdminRoute>
+							<AdminPanel />
+						</ProtectedAdminRoute>
+					}
+				/>
+				<Route
+					path="/admin/match-stats"
+					element={
+						<ProtectedAdminRoute>
+							<AdminMatchStats />
+						</ProtectedAdminRoute>
+					}
+				/>
 
-        {/* 404 route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-    </>
-  );
+				{/* 404 route */}
+				<Route path="*" element={<NotFound />} />
+			</Routes>
+			<Toaster />
+			{/* Render notification permission dialog */}
+			{notificationDialog}
+		</>
+	);
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <SmoothScrollProvider>
-        <AdminProvider>
-          <Router>
-            <AuthProvider>
-              <div className="App">
-                <GlobalApp />
-              </div>
-            </AuthProvider>
-          </Router>
-        </AdminProvider>
-      </SmoothScrollProvider>
-    </QueryClientProvider>
-  );
+	return (
+		<QueryClientProvider client={queryClient}>
+			<SmoothScrollProvider>
+				<AdminProvider>
+					<Router
+						future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+					>
+						<AuthProvider>
+							<div className="App">
+								<GlobalApp />
+							</div>
+						</AuthProvider>
+					</Router>
+				</AdminProvider>
+			</SmoothScrollProvider>
+		</QueryClientProvider>
+	);
 }
 
 export default App;

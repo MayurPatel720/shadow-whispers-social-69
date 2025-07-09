@@ -1,3 +1,4 @@
+
 import React, { useContext, useEffect } from "react";
 import ProfileComponent from "@/components/user/ProfileComponent";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,9 @@ const ProfilePage = () => {
     : user?.anonymousAlias || "Unknown User"; // Use auth user for own profile
 
   const handleWhisperClick = () => {
-    if (userId) {
-      navigate(`/chat/${userId}`);
+    if (userId && userId !== user?._id) {
+      // Navigate to whispers page with the specific user selected
+      navigate(`/whispers`, { state: { selectUserId: userId } });
     }
   };
 

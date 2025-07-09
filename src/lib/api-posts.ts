@@ -15,5 +15,3 @@ export const getPaginatedPosts = async ({
   const response = await api.get(`/api/posts/global${query}`);
   return response.data;
 };
-
-// ... add more post-related API functions from api.ts as needed

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getUserReferralInfo, trackReferralShare } from "@/lib/api-referral";
@@ -23,7 +22,6 @@ const ReferralShare = () => {
     queryFn: getUserReferralInfo,
   });
 
-
   const handleCopyCode = () => {
     if (referralInfo?.referralCode) {
       navigator.clipboard.writeText(referralInfo.referralCode);
@@ -42,7 +40,7 @@ const ReferralShare = () => {
 
   const handleCopyLink = () => {
     if (referralInfo?.referralCode) {
-      const referralUrl = `${getBaseUrl()}/invite?code=${referralInfo.referralCode}`;
+      const referralUrl = `${getBaseUrl()}/register?code=${referralInfo.referralCode}`;
       navigator.clipboard.writeText(referralUrl);
       toast({
         title: "Referral link copied!",
@@ -54,7 +52,7 @@ const ReferralShare = () => {
   const handleShare = async (platform: string) => {
     try {
       let shareUrl = "";
-      const referralUrl = `${getBaseUrl()}/invite?code=${referralInfo?.referralCode}`;
+      const referralUrl = `${getBaseUrl()}/register?code=${referralInfo?.referralCode}`;
       const shareText = "Unmask the fun—join me on Undercover with my code!";
 
       switch (platform) {
@@ -135,7 +133,7 @@ const ReferralShare = () => {
                 <div className="flex gap-2">
                   <Input
                     readOnly
-                    value={`${getBaseUrl()}/invite?code=${referralInfo?.referralCode || ""}`}
+                    value={`${getBaseUrl()}/register?code=${referralInfo?.referralCode || ""}`}
                     className="font-mono text-xs bg-muted"
                   />
                   <Button variant="outline" onClick={handleCopyLink}>

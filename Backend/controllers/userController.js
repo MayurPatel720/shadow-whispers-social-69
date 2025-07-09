@@ -8,6 +8,28 @@ const Post = require("../models/postModel");
 const { sendPasswordResetEmail, sendVerificationEmail, generateOTP } = require("../utils/emailService");
 const crypto = require("crypto");
 
+// Function to generate unique referral code
+const generateUniqueReferralCode = async () => {
+	let code;
+	let isUnique = false;
+	let attempts = 0;
+	
+	while (!isUnique && attempts < 10) {
+		code = Math.random().toString(36).substring(2, 8).toUpperCase();
+		const existingUser = await User.findOne({ referralCode: code });
+		if (!existingUser) {
+			isUnique = true;
+		}
+		attempts++;
+	}
+	
+	if (!isUnique) {
+		throw new Error("Failed to generate unique referral code");
+	}
+	
+	return code;
+};
+
 // @desc    Register a new user
 // @route   POST /api/users/register
 // @access  Public
@@ -19,61 +41,105 @@ const registerUser = asyncHandler(async (req, res) => {
 		throw new Error("Please fill in all fields");
 	}
 
-	// Check if user exists
-	const userExists = await User.findOne({ email });
-
-	if (userExists) {
+	// Check if user exists by email
+	const userExistsByEmail = await User.findOne({ email });
+	if (userExistsByEmail) {
 		res.status(400);
-		throw new Error("User already exists");
+		throw new Error("A user with this email already exists");
+	}
+
+	// Check if user exists by username
+	const userExistsByUsername = await User.findOne({ username });
+	if (userExistsByUsername) {
+		res.status(400);
+		throw new Error("This username is already taken. Please choose a different username.");
 	}
 
 	// Generate anonymous alias and avatar
 	const anonymousAlias = generateAnonymousAlias();
 	const avatarEmoji = generateAvatar();
 
+	// Generate unique referral code for the new user
+	const userReferralCode = await generateUniqueReferralCode();
+
 	// ---- EMAIL VERIFICATION ----
 	const otp = generateOTP();
 	const otpExpire = new Date(Date.now() + 10 * 60 * 1000); // 10 min from now
 
-	// Create user
-	const user = await User.create({
-		username,
-		fullName,
-		email,
-		password,
-		anonymousAlias,
-		avatarEmoji,
-		referralCode,
-		gender: gender || undefined,
-		interests: interests || [],
-		isEmailVerified: false,
-		emailVerificationOTP: otp,
-		emailVerificationOTPExpire: otpExpire,
-	});
-
-	// Send verification email
-	try {
-		await sendVerificationEmail(email, otp);
-		console.log(`Verification email sent to ${email} with OTP: ${otp}`);
-	} catch (emailError) {
-		console.error("Failed to send verification email:", emailError);
-		// Don't fail registration if email fails, but log it
+	// Handle referral if provided
+	let referredByUser = null;
+	if (referralCode && referralCode.trim() !== '') {
+		referredByUser = await User.findOne({ referralCode: referralCode.trim() });
+		if (referredByUser) {
+			// Increment referral count for the referrer
+			referredByUser.referralCount = (referredByUser.referralCount || 0) + 1;
+			await referredByUser.save();
+		}
 	}
 
-	if (user) {
-		res.status(201).json({
-			_id: user._id,
-			username: user.username,
-			fullName: user.fullName,
-			email: user.email,
-			anonymousAlias: user.anonymousAlias,
-			avatarEmoji: user.avatarEmoji,
-			isEmailVerified: user.isEmailVerified,
-			token: generateToken(user._id),
+	try {
+		// Create user
+		const user = await User.create({
+			username,
+			fullName,
+			email,
+			password,
+			anonymousAlias,
+			avatarEmoji,
+			referralCode: userReferralCode, // Use generated unique code
+			referredBy: referredByUser ? referredByUser._id : null,
+			gender: gender || undefined,
+			interests: interests || [],
+			isEmailVerified: false,
+			emailVerificationOTP: otp,
+			emailVerificationOTPExpire: otpExpire,
 		});
-	} else {
-		res.status(400);
-		throw new Error("Invalid user data");
+
+		// Send verification email
+		try {
+			await sendVerificationEmail(email, otp);
+			console.log(`Verification email sent to ${email} with OTP: ${otp}`);
+		} catch (emailError) {
+			console.error("Failed to send verification email:", emailError);
+			// Don't fail registration if email fails, but log it
+		}
+
+		if (user) {
+			res.status(201).json({
+				_id: user._id,
+				username: user.username,
+				fullName: user.fullName,
+				email: user.email,
+				anonymousAlias: user.anonymousAlias,
+				avatarEmoji: user.avatarEmoji,
+				referralCode: user.referralCode,
+				isEmailVerified: user.isEmailVerified,
+				token: generateToken(user._id),
+			});
+		} else {
+			res.status(400);
+			throw new Error("Invalid user data");
+		}
+	} catch (error) {
+		// Handle MongoDB duplicate key errors specifically
+		if (error.code === 11000) {
+			const duplicateField = Object.keys(error.keyValue)[0];
+			let errorMessage = "Registration failed due to duplicate data";
+			
+			if (duplicateField === 'email') {
+				errorMessage = "A user with this email already exists";
+			} else if (duplicateField === 'username') {
+				errorMessage = "This username is already taken. Please choose a different username.";
+			} else if (duplicateField === 'referralCode') {
+				errorMessage = "Failed to generate unique referral code. Please try again.";
+			}
+			
+			res.status(400);
+			throw new Error(errorMessage);
+		}
+		
+		// Re-throw other errors
+		throw error;
 	}
 });
 
@@ -150,12 +216,14 @@ const getUserProfile = asyncHandler(async (req, res) => {
 			friends: user.friends,
 			recognizedUsers: user.recognizedUsers,
 			referralCode: user.referralCode,
+			referralCount: user.referralCount || 0,
 			oneSignalPlayerId: user.oneSignalPlayerId,
 			bio: user.bio || "",
 			gender: user.gender,
 			interests: user.interests || [],
 			premiumMatchUnlocks: user.premiumMatchUnlocks || 0,
 			isEmailVerified: user.isEmailVerified,
+			claimedRewards: user.claimedRewards || [],
 		});
 	} else {
 		res.status(404);
@@ -709,6 +777,160 @@ const resendVerificationEmail = asyncHandler(async (req, res) => {
 	}
 });
 
+// @desc    Get referral leaderboard
+// @route   GET /api/users/referral-leaderboard
+// @access  Private
+const getReferralLeaderboard = asyncHandler(async (req, res) => {
+	try {
+		const users = await User.find({ referralCount: { $gt: 0 } })
+			.sort({ referralCount: -1 })
+			.limit(50)
+			.select('anonymousAlias avatarEmoji referralCount');
+
+		const leaderboard = users.map((user, index) => ({
+			position: index + 1,
+			userId: user._id,
+			anonymousAlias: user.anonymousAlias,
+			avatarEmoji: user.avatarEmoji,
+			referralsCount: user.referralCount,
+		}));
+
+		res.json(leaderboard);
+	} catch (error) {
+		console.error('Error fetching referral leaderboard:', error);
+		res.status(500);
+		throw new Error('Failed to fetch leaderboard');
+	}
+});
+
+// @desc    Process referral
+// @route   POST /api/users/process-referral
+// @access  Private
+const processReferral = asyncHandler(async (req, res) => {
+	const { referralCode, referredUserId } = req.body;
+
+	if (!referralCode || !referredUserId) {
+		res.status(400);
+		throw new Error("Referral code and referred user ID are required");
+	}
+
+	try {
+		const referrer = await User.findOne({ referralCode });
+		if (!referrer) {
+			return res.json({ success: false, message: "Invalid referral code" });
+		}
+
+		const referredUser = await User.findById(referredUserId);
+		if (!referredUser) {
+			return res.json({ success: false, message: "User not found" });
+		}
+
+		// Check if user was already referred
+		if (referredUser.referredBy) {
+			return res.json({ success: false, message: "User already has a referrer" });
+		}
+
+		// Update referral count and set referredBy
+		referrer.referralCount = (referrer.referralCount || 0) + 1;
+		referredUser.referredBy = referrer._id;
+
+		await referrer.save();
+		await referredUser.save();
+
+		res.json({ success: true, message: "Referral processed successfully" });
+	} catch (error) {
+		console.error('Error processing referral:', error);
+		res.status(500);
+		throw new Error('Failed to process referral');
+	}
+});
+
+// @desc    Claim reward
+// @route   POST /api/users/claim-reward
+// @access  Private
+const claimReward = asyncHandler(async (req, res) => {
+	const { tierLevel } = req.body;
+
+	if (!tierLevel) {
+		res.status(400);
+		throw new Error("Tier level is required");
+	}
+
+	try {
+		const user = await User.findById(req.user._id);
+		if (!user) {
+			res.status(404);
+			throw new Error("User not found");
+		}
+
+		const referralCount = user.referralCount || 0;
+		let rewardType, rewardDescription;
+
+		// Define reward tiers
+		switch (tierLevel) {
+			case 1:
+				if (referralCount < 5) {
+					return res.status(400).json({ message: "Not enough referrals for this tier" });
+				}
+				rewardType = "badge";
+				rewardDescription = "Shadow Recruiter Badge";
+				break;
+			case 2:
+				if (referralCount < 10) {
+					return res.status(400).json({ message: "Not enough referrals for this tier" });
+				}
+				rewardType = "cash";
+				rewardDescription = "₹100 Cash Reward";
+				break;
+			case 3:
+				if (referralCount < 20) {
+					return res.status(400).json({ message: "Not enough referrals for this tier" });
+				}
+				rewardType = "premium";
+				rewardDescription = "Premium Features Access";
+				break;
+			default:
+				return res.status(400).json({ message: "Invalid tier level" });
+		}
+
+		// Check if reward already claimed
+		const alreadyClaimed = user.claimedRewards?.some(reward => reward.tierLevel === tierLevel);
+		if (alreadyClaimed) {
+			return res.status(400).json({ message: "Reward already claimed for this tier" });
+		}
+
+		// Add reward to claimed rewards
+		if (!user.claimedRewards) {
+			user.claimedRewards = [];
+		}
+
+		user.claimedRewards.push({
+			tierLevel,
+			rewardType,
+			rewardDescription,
+			status: "pending",
+			claimedAt: new Date(),
+		});
+
+		await user.save();
+
+		res.json({
+			success: true,
+			message: "Reward claimed successfully",
+			reward: {
+				tierLevel,
+				rewardType,
+				rewardDescription,
+				status: "pending",
+			},
+		});
+	} catch (error) {
+		console.error('Error claiming reward:', error);
+		res.status(500);
+		throw new Error('Failed to claim reward');
+	}
+});
+
 module.exports = {
 	registerUser,
 	loginUser,
@@ -726,4 +948,7 @@ module.exports = {
 	resetPassword,
 	verifyEmail,
 	resendVerificationEmail,
+	getReferralLeaderboard,
+	processReferral,
+	claimReward,
 };

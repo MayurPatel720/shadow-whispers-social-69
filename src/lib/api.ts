@@ -4,8 +4,9 @@ import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
 // Create axios instance with base URL
-// const API_URL = "http://localhost:8900";
-const API_URL = "https://undercover-service.onrender.com";
+const API_URL = "http://localhost:8900";
+// const API_URL = "https://backend-whisperer-fix-5ztr.vercel.app/";
+// const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
 	baseURL: API_URL,
@@ -114,9 +115,22 @@ export const registerUser = async (
 		return response.data;
 	} catch (error: any) {
 		console.error("Registration error:", error.response || error);
-		throw new Error(
-			error?.response?.data?.message || "An error occurred during registration"
-		);
+
+		// Handle specific error messages from backend
+		let errorMessage = "An error occurred during registration";
+
+		if (error?.response?.data?.message) {
+			errorMessage = error.response.data.message;
+		} else if (error?.response?.status === 400) {
+			errorMessage =
+				"Registration failed. Please check your information and try again.";
+		} else if (error?.response?.status === 500) {
+			errorMessage = "Server error. Please try again later.";
+		} else if (error?.message) {
+			errorMessage = error.message;
+		}
+
+		throw new Error(errorMessage);
 	}
 };
 
@@ -474,9 +488,14 @@ export const forgotPassword = async (email: string): Promise<any> => {
 	}
 };
 
-export const resetPassword = async (resetToken: string, password: string): Promise<any> => {
+export const resetPassword = async (
+	resetToken: string,
+	password: string
+): Promise<any> => {
 	try {
-		const response = await api.put(`/api/users/reset-password/${resetToken}`, { password });
+		const response = await api.put(`/api/users/reset-password/${resetToken}`, {
+			password,
+		});
 		return response.data;
 	} catch (error: any) {
 		console.error("Error resetting password:", error);

@@ -40,17 +40,29 @@ const WhispersPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Handle userId passed via query string
+  // Handle userId passed via query string or state
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const userIdFromQS = params.get("userId");
-    if (userIdFromQS && user) {
-      setSelectedConversation({ _id: userIdFromQS });
-      params.delete("userId");
-      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    const userIdFromState = location.state?.selectUserId;
+    
+    if ((userIdFromQS || userIdFromState) && user) {
+      const targetUserId = userIdFromQS || userIdFromState;
+      setSelectedConversation({ _id: targetUserId });
+      
+      // Clean up URL if userId was in query string
+      if (userIdFromQS) {
+        params.delete("userId");
+        navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+      }
+      
+      // Clean up state
+      if (userIdFromState) {
+        navigate(location.pathname, { replace: true });
+      }
     }
     // eslint-disable-next-line
-  }, [location.search, user]);
+  }, [location.search, location.state, user]);
   
   useEffect(() => {
     if (user && !joinedMatch) {

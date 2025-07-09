@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,7 +121,8 @@ const ProfileComponent = ({
 
 	const handleWhisperClick = () => {
 		if (targetUserId && targetUserId !== user?._id) {
-			navigate(`/chat/${targetUserId}`);
+			// Navigate to whispers page with the specific user selected
+			navigate(`/whispers`, { state: { selectUserId: targetUserId } });
 		} else {
 			toast({
 				variant: "destructive",
@@ -216,6 +216,7 @@ const ProfileComponent = ({
 					onShowMatches={handleShowMatches}
 					onShowMessages={handleShowMessages}
 					onWhisper={handleWhisperClick}
+					userId={targetUserId}
 				/>
 				<CardContent className="p-2 sm:p-4 md:p-6 pt-3">
 					<div className="border-t border-border my-2 sm:my-3"></div>

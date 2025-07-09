@@ -90,7 +90,7 @@ const Register: React.FC = () => {
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       <div className="w-full max-w-md text-center mb-8 mt-8">
-        <h1 className="text-5xl font-bold text-white mb-2">UnderCover</h1>
+        <h1 className="text-5xl font-bold text-white mb-2">UnderKover</h1>
         <p className="text-gray-300 text-lg">Create your anonymous identity</p>
         {referralCode && (
           <div className="mt-2 py-1 px-3 bg-purple-700/50 rounded-full inline-block">
