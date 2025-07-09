@@ -1,5 +1,7 @@
 
+
 const Post = require("../models/postModel");
+const mongoose = require("mongoose");
 
 // Import generator functions from the generators file
 const { generateAnonymousAlias, generateAvatar } = require("./generators");
@@ -206,8 +208,8 @@ const createSeedPosts = async () => {
       const postData = seedPostsData[i];
       const identity = generateIdentity();
       
-      // Generate fake user ID (we'll use a consistent pattern for seed posts)
-      const fakeUserId = `seed_user_${String(i).padStart(3, '0')}`;
+      // Generate fake user ID using ObjectId
+      const fakeUserId = new mongoose.Types.ObjectId();
       
       // Create timestamp (spread across last 7 days)
       const daysAgo = Math.floor(i / 3); // Roughly 3 posts per day
@@ -221,7 +223,7 @@ const createSeedPosts = async () => {
       const fakeLikes = [];
       for (let j = 0; j < postData.likes; j++) {
         fakeLikes.push({
-          user: `fake_user_${j}_${i}`,
+          user: new mongoose.Types.ObjectId(),
           anonymousAlias: generateIdentity().nickname,
           createdAt: new Date(createdAt.getTime() + (j * 1000 * 60 * Math.random() * 120))
         });
@@ -245,8 +247,8 @@ const createSeedPosts = async () => {
       for (let k = 0; k < postData.comments; k++) {
         const commentIdentity = generateIdentity();
         fakeComments.push({
-          _id: `fake_comment_${k}_${i}`,
-          user: `fake_commenter_${k}_${i}`,
+          _id: new mongoose.Types.ObjectId(),
+          user: new mongoose.Types.ObjectId(),
           anonymousAlias: commentIdentity.nickname,
           avatarEmoji: commentIdentity.emoji,
           content: commentTexts[k % commentTexts.length],
@@ -310,3 +312,4 @@ module.exports = {
   seedPostsData,
   autoInitializeSeedPosts
 };
+
