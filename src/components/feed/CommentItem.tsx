@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { MoreHorizontal, Reply } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { deleteComment, editComment, replyToComment, deleteReply, updateReply } from "@/lib/api";
@@ -44,10 +45,17 @@ const CommentItem = ({
     try {
       await deleteComment(postId, comment._id);
       onDelete(comment._id);
-      toast.success("Comment deleted successfully");
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully",
+      });
     } catch (error) {
       console.error("Error deleting comment:", error);
-      toast.error("Failed to delete comment");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete comment",
+      });
     }
   };
 
@@ -55,10 +63,17 @@ const CommentItem = ({
     try {
       await editComment(postId, comment._id, newContent);
       onEdit(comment._id, newContent);
-      toast.success("Comment updated successfully");
+      toast({
+        title: "Success",
+        description: "Comment updated successfully",
+      });
     } catch (error) {
       console.error("Error editing comment:", error);
-      toast.error("Failed to update comment");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update comment",
+      });
     }
   };
 
@@ -69,10 +84,17 @@ const CommentItem = ({
         onReply(comment._id, response.reply);
       }
       setIsReplyModalOpen(false);
-      toast.success("Reply added successfully");
+      toast({
+        title: "Success",
+        description: "Reply added successfully",
+      });
     } catch (error) {
       console.error("Error replying to comment:", error);
-      toast.error("Failed to add reply");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add reply",
+      });
     }
   };
 
@@ -82,10 +104,17 @@ const CommentItem = ({
       if (onDeleteReply) {
         onDeleteReply(comment._id, replyId);
       }
-      toast.success("Reply deleted successfully");
+      toast({
+        title: "Success",
+        description: "Reply deleted successfully",
+      });
     } catch (error) {
       console.error("Error deleting reply:", error);
-      toast.error("Failed to delete reply");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete reply",
+      });
     }
   };
 
@@ -95,10 +124,17 @@ const CommentItem = ({
       if (onEditReply) {
         onEditReply(comment._id, replyId, newContent);
       }
-      toast.success("Reply updated successfully");
+      toast({
+        title: "Success",
+        description: "Reply updated successfully",
+      });
     } catch (error) {
       console.error("Error updating reply:", error);
-      toast.error("Failed to update reply");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update reply",
+      });
     }
   };
 

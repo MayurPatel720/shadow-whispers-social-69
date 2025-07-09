@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import {
@@ -578,6 +577,7 @@ const PostCard: React.FC<PostCardProps> = ({
 										key={comment._id}
 										comment={comment}
 										postId={post._id}
+										currentUserId={currentUserId || ""}
 										onDelete={handleDeleteComment}
 										onEdit={handleEditComment}
 										onReply={handleReplyToComment}
