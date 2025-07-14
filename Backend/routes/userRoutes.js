@@ -2,6 +2,7 @@
 // routes/userRoutes.js
 const express = require("express");
 const router = express.Router();
+const { isFakeUser } = require('../controllers/fakeUserController');
 const {
   registerUser,
   loginUser,
@@ -49,5 +50,24 @@ router.get("/userposts/:userId", protect, getUserPosts);
 router.get("/referral-leaderboard", protect, getReferralLeaderboard);
 router.post("/process-referral", protect, processReferral);
 router.post("/claim-reward", protect, claimReward);
+
+// @desc    Get user profile (handles both real and fake users)
+// @route   GET /api/users/:id
+// @access  Public
+router.get("/:id", async (req, res, next) => {
+  try {
+    // Check if this is a fake user first
+    if (await isFakeUser(req.params.id)) {
+      // Redirect to fake user controller
+      const fakeUserController = require('../controllers/fakeUserController');
+      return fakeUserController.getFakeUserProfile(req, res);
+    }
+    // Otherwise handle as normal user
+    return getUserProfile(req, res, next);
+  } catch (error) {
+    console.error('Error in user profile route:', error);
+    return getUserProfile(req, res, next);
+  }
+});
 
 module.exports = router;

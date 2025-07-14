@@ -2,6 +2,7 @@
 
 const Post = require("../models/postModel");
 const mongoose = require("mongoose");
+const { getRandomFakeUsers, initializeFakeUsers } = require("./fakeUserGenerator");
 
 // Import generator functions from the generators file
 const { generateAnonymousAlias, generateAvatar } = require("./generators");
@@ -191,107 +192,172 @@ const generateTimestamp = (daysAgo, hoursRange = [9, 22]) => {
   return date;
 };
 
+// Generate expiry date (30 days from now for seed posts)
+const generateExpiryDate = () => {
+  const now = new Date();
+  return new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
+};
+
 const createSeedPosts = async () => {
   try {
-    console.log("Starting seed posts creation...");
+    // Initialize fake users first
+    await initializeFakeUsers();
     
-    // Check if seed posts already exist
-    const existingSeedPosts = await Post.countDocuments({ isSeedPost: true });
-    if (existingSeedPosts > 0) {
-      console.log(`${existingSeedPosts} seed posts already exist. Skipping creation.`);
-      return [];
+    // Check if valid seed posts already exist (not expired)
+    const existingPosts = await Post.countDocuments({ 
+      isSeedPost: true, 
+      expiresAt: { $gt: new Date() } 
+    });
+    
+    if (existingPosts >= seedPostsData.length * 0.8) { // Keep creating if less than 80% remain
+      console.log(`${existingPosts} valid seed posts already exist. Skipping creation.`);
+      return;
     }
 
-    const seedPosts = [];
+    console.log("Starting seed posts creation...");
+    
+    // Get fake users for posts
+    const fakeUsers = await getRandomFakeUsers(seedPostsData.length * 2); // Get more users than needed for variety
+    if (fakeUsers.length === 0) {
+      throw new Error("No fake users available for seed posts");
+    }
+    
+    const posts = [];
     
     for (let i = 0; i < seedPostsData.length; i++) {
       const postData = seedPostsData[i];
-      const identity = generateIdentity();
       
-      // Generate fake user ID using ObjectId
-      const fakeUserId = new mongoose.Types.ObjectId();
+      // Use a random fake user for this post
+      const fakeUser = fakeUsers[i % fakeUsers.length];
       
-      // Create timestamp (spread across last 7 days)
-      const daysAgo = Math.floor(i / 3); // Roughly 3 posts per day
+      // Create timestamp (spread across last 7 days, with some recent ones)
+      const daysAgo = Math.floor(Math.random() * 7); // More randomness in timing
       const createdAt = generateTimestamp(daysAgo);
       
-      // Calculate expiry (24 hours from creation, but extend for recent posts)
-      const expiresAt = new Date(createdAt);
-      expiresAt.setHours(expiresAt.getHours() + 24);
+      // Set expiry to 30 days from now (much longer for seed posts)
+      const expiresAt = generateExpiryDate();
       
-      // Create fake likes array
+      // Get additional fake users for likes and comments
+      const interactionUsers = await getRandomFakeUsers(Math.max(postData.likes + postData.comments, 10));
+      
+      // Generate fake likes
       const fakeLikes = [];
       for (let j = 0; j < postData.likes; j++) {
+        const likeUser = interactionUsers[j % interactionUsers.length];
         fakeLikes.push({
-          user: new mongoose.Types.ObjectId(),
-          anonymousAlias: generateIdentity().nickname,
+          user: likeUser._id,
+          anonymousAlias: likeUser.anonymousAlias,
           createdAt: new Date(createdAt.getTime() + (j * 1000 * 60 * Math.random() * 120))
         });
       }
       
-      // Create fake comments array
-      const fakeComments = [];
+      // Generate fake comments with more realistic content
       const commentTexts = [
-        "I feel this so much 😔",
-        "You're not alone in this",
-        "Been there, sending virtual hugs",
-        "This hits different at 2am",
-        "Why is this so relatable?",
-        "Same energy honestly",
-        "I needed to hear this today",
-        "This is too real",
-        "Felt this in my soul",
-        "Big mood"
+        "I felt this in my soul 💭",
+        "Thank you for sharing this, you're not alone",
+        "This made me think differently about things",
+        "Same here, glad I'm not the only one",
+        "Your honesty is refreshing in a world of facades",
+        "This hits different when you're going through it",
+        "Sending virtual hugs 🤗",
+        "The vulnerability here is beautiful",
+        "I needed to read this today",
+        "You put into words what I couldn't express",
+        "This resonates so deeply with me",
+        "Brave of you to share this truth",
+        "Your words give me comfort",
+        "I see myself in this post",
+        "Thank you for being real with us"
       ];
       
+      const fakeComments = [];
       for (let k = 0; k < postData.comments; k++) {
-        const commentIdentity = generateIdentity();
+        const commentUser = interactionUsers[(postData.likes + k) % interactionUsers.length];
         fakeComments.push({
           _id: new mongoose.Types.ObjectId(),
-          user: new mongoose.Types.ObjectId(),
-          anonymousAlias: commentIdentity.nickname,
-          avatarEmoji: commentIdentity.emoji,
+          user: commentUser._id,
+          anonymousAlias: commentUser.anonymousAlias,
+          avatarEmoji: commentUser.avatarEmoji,
           content: commentTexts[k % commentTexts.length],
-          createdAt: new Date(createdAt.getTime() + (k * 1000 * 60 * 60 * Math.random() * 12)),
+          createdAt: new Date(createdAt.getTime() + (k * 1000 * 60 * Math.random() * 180)),
           replies: []
         });
       }
-
-      const seedPost = {
-        user: fakeUserId,
+      
+      const post = {
+        user: fakeUser._id,
         content: postData.content,
-        anonymousAlias: identity.nickname,
-        avatarEmoji: identity.emoji,
+        anonymousAlias: fakeUser.anonymousAlias,
+        avatarEmoji: fakeUser.avatarEmoji,
         likes: fakeLikes,
         comments: fakeComments,
-        shareCount: Math.floor(Math.random() * 5),
         expiresAt: expiresAt,
-        createdAt: createdAt,
-        updatedAt: createdAt,
         isSeedPost: true,
-        theme: postData.theme
+        theme: postData.theme,
+        shareCount: Math.floor(Math.random() * 8), // Random share count 0-7
+        createdAt: createdAt,
+        updatedAt: createdAt
       };
 
-      seedPosts.push(seedPost);
+      posts.push(post);
     }
 
-    // Insert all seed posts
-    await Post.insertMany(seedPosts);
-    console.log(`Successfully created ${seedPosts.length} seed posts`);
+    // Insert all posts at once
+    const insertedPosts = await Post.insertMany(posts);
+    console.log(`Successfully created ${insertedPosts.length} seed posts`);
     
-    return seedPosts;
+    // Update fake users with their posts
+    for (let i = 0; i < insertedPosts.length; i++) {
+      const post = insertedPosts[i];
+      const fakeUser = fakeUsers[i % fakeUsers.length];
+      await require('../models/fakeUserModel').findByIdAndUpdate(
+        fakeUser._id,
+        { $push: { posts: post._id } }
+      );
+    }
+    
+    return insertedPosts;
   } catch (error) {
     console.error("Error creating seed posts:", error);
     throw error;
   }
 };
 
-// Auto-initialize seed posts when server starts
+// Automatically initialize seed posts when this module is loaded
 const autoInitializeSeedPosts = async () => {
   try {
+    await require('./fakeUserGenerator').initializeFakeUsers();
     await createSeedPosts();
   } catch (error) {
-    console.error("Auto seed initialization failed:", error);
+    console.error("Failed to auto-initialize seed posts:", error);
+  }
+};
+
+// Clean up expired seed posts and create new ones
+const maintainSeedPosts = async () => {
+  try {
+    // Remove expired seed posts
+    const deletedResult = await Post.deleteMany({
+      isSeedPost: true,
+      expiresAt: { $lt: new Date() }
+    });
+    
+    if (deletedResult.deletedCount > 0) {
+      console.log(`Removed ${deletedResult.deletedCount} expired seed posts`);
+    }
+    
+    // Check if we need to create more
+    const currentCount = await Post.countDocuments({
+      isSeedPost: true,
+      expiresAt: { $gt: new Date() }
+    });
+    
+    if (currentCount < seedPostsData.length * 0.8) {
+      console.log(`Only ${currentCount} valid seed posts remaining, refreshing...`);
+      await createSeedPosts();
+    }
+  } catch (error) {
+    console.error("Error maintaining seed posts:", error);
   }
 };
 
@@ -310,6 +376,7 @@ module.exports = {
   createSeedPosts,
   removeSeedPosts,
   seedPostsData,
-  autoInitializeSeedPosts
+  autoInitializeSeedPosts,
+  maintainSeedPosts
 };
 

@@ -382,10 +382,14 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 		if (!after && posts.length < 20) {
 			console.log(`Only ${posts.length} regular posts found, checking for seed posts...`);
 			
-			// Check if seed posts exist, if not create them
-			const seedPostsCount = await Post.countDocuments({ isSeedPost: true, expiresAt: { $gt: new Date() } });
-			if (seedPostsCount === 0) {
-				console.log("No seed posts found, creating them...");
+			// Check if valid seed posts exist, if not create them
+			const validSeedPostsCount = await Post.countDocuments({ 
+				isSeedPost: true, 
+				expiresAt: { $gt: new Date() } 
+			});
+			
+			if (validSeedPostsCount < 15) { // Maintain at least 15 seed posts
+				console.log(`Only ${validSeedPostsCount} valid seed posts found, creating/refreshing them...`);
 				await createSeedPosts();
 			}
 			
@@ -394,10 +398,13 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 				isSeedPost: true,
 				expiresAt: { $gt: new Date() },
 				ghostCircle: { $exists: false }
-			}).sort({ _id: -1 }).limit(20 - posts.length).lean();
+			}).sort({ createdAt: -1 }).limit(20 - posts.length).lean();
 			
 			console.log(`Adding ${seedPosts.length} seed posts to feed`);
 			posts.push(...seedPosts);
+			
+			// Sort combined posts by creation date (newest first)
+			posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 		}
 
 		// Only cache first/default page
