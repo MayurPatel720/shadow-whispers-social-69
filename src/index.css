@@ -61,6 +61,27 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Fix cursor issues */
+  img, svg, button, [role="button"] {
+    user-select: none;
+    cursor: pointer;
+  }
+
+  div, span:not(.text-content) {
+    user-select: none;
+  }
+
+  /* Allow text selection only for actual text content */
+  p, h1, h2, h3, h4, h5, h6, .text-content {
+    user-select: text;
+    cursor: text;
+  }
+
+  /* Default cursor for interactive elements */
+  a, button, [role="button"], .cursor-pointer {
+    cursor: pointer;
+  }
 }
 
 @keyframes glow {

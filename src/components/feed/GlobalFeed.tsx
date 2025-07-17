@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import EmptyFeedState from "./EmptyFeedState";
 import EmptyFeedMessage from "./EmptyFeedMessage";
-import FeedFilterDialog from "./FeedFilterDialog";
+import FeedSwitcher from "./FeedSwitcher";
 import CollegeSelectionDialog from "./CollegeSelectionDialog";
 import AreaSelectionDialog from "./AreaSelectionDialog";
 import { getGlobalFeed, getCollegeFeed, getAreaFeed, updateUserProfile } from "@/lib/api-feed";
@@ -187,23 +188,20 @@ const GlobalFeed = () => {
 		<div className="min-h-screen bg-background relative">
 			<div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
 				<div className="flex items-center justify-between max-w-2xl mx-auto p-4">
-					<div className="flex items-center space-x-2">
+					<div className="flex items-center space-x-3">
 						<TrendingUp className="h-5 w-5 text-purple-500" />
-						<h1 className="text-xl font-bold text-foreground">Feed</h1>
-					</div>
-					<div className="flex items-center gap-2">
-						<FeedFilterDialog
+						<FeedSwitcher
 							currentFilter={feedType}
 							onFilterChange={handleFeedTypeChange}
 						/>
-						<Button
-							disabled={isAuthenticated === false}
-							onClick={() => setIsCreatePostOpen(true)}
-							className="sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect"
-						>
-							<Plus className="h-4 w-4" />
-						</Button>
 					</div>
+					<Button
+						disabled={isAuthenticated === false}
+						onClick={() => setIsCreatePostOpen(true)}
+						className="sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect"
+					>
+						<Plus className="h-4 w-4" />
+					</Button>
 				</div>
 			</div>
 
