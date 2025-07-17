@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -188,8 +187,8 @@ const GlobalFeed = () => {
 		<div className="min-h-screen bg-background relative">
 			<div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
 				<div className="flex items-center justify-between max-w-2xl mx-auto p-4">
-					<div className="flex items-center space-x-3">
-						<TrendingUp className="h-5 w-5 text-purple-500" />
+					<div className="flex items-center space-x-4">
+						<h1 className="text-xl font-bold text-foreground">Feed</h1>
 						<FeedSwitcher
 							currentFilter={feedType}
 							onFilterChange={handleFeedTypeChange}
@@ -198,9 +197,11 @@ const GlobalFeed = () => {
 					<Button
 						disabled={isAuthenticated === false}
 						onClick={() => setIsCreatePostOpen(true)}
-						className="sm:flex bg-purple-600 hover:bg-purple-700 text-white hover-scale glow-effect"
+						size="sm"
+						className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
 					>
-						<Plus className="h-4 w-4" />
+						<Plus className="h-4 w-4 mr-1" />
+						Post
 					</Button>
 				</div>
 			</div>
