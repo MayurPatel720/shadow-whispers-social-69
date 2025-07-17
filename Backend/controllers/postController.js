@@ -48,6 +48,110 @@ const invalidatePostCaches = async (postId, ghostCircleId = null) => {
 	}
 };
 
+// @desc    Get paginated posts for global feed
+// @route   GET /api/posts/global
+// @access  Public
+const getPaginatedPosts = asyncHandler(async (req, res) => {
+	const redis = getRedisClient();
+	const limit = Math.min(Number(req.query.limit) || 20, 50);
+	const after = req.query.after;
+
+	// Global feed should only show posts without college or area fields
+	const query = {
+		ghostCircle: { $exists: false },
+		expiresAt: { $gt: new Date() },
+		college: { $exists: false },
+		area: { $exists: false }
+	};
+	
+	if (after) {
+		query._id = { $lt: after };
+	}
+
+	// Try to get from cache when no pagination
+	if (!after && limit === 20 && redis.isAvailable()) {
+		try {
+			const cachedPosts = await redis.get(CACHE_KEYS.GLOBAL_FEED);
+			if (cachedPosts) {
+				try {
+					const parsedPosts =
+						typeof cachedPosts === "string"
+							? JSON.parse(cachedPosts)
+							: cachedPosts;
+					if (Array.isArray(parsedPosts) && parsedPosts.length >= 20) {
+						return res.status(200).json({
+							posts: parsedPosts,
+							hasMore: parsedPosts.length === limit,
+						});
+					} else {
+						console.warn("Cached posts insufficient, fetching fresh data");
+						await redis.del(CACHE_KEYS.GLOBAL_FEED);
+					}
+				} catch (error) {
+					console.error("Cache retrieval error:", error, "value:", cachedPosts);
+					await redis.del(CACHE_KEYS.GLOBAL_FEED);
+				}
+			}
+		} catch (error) {
+			console.error("Cache retrieval error:", error);
+		}
+	}
+
+	try {
+		// First get regular posts (non-seed posts)
+		const regularPosts = await Post.find({
+			...query,
+			isSeedPost: { $ne: true }
+		}).sort({ _id: -1 }).limit(limit).lean();
+
+		console.log(`Found ${regularPosts.length} regular global posts`);
+
+		let posts = regularPosts;
+		
+		// If we don't have enough regular posts, add seed posts
+		if (regularPosts.length < limit) {
+			const seedPostsNeeded = limit - regularPosts.length;
+			const seedPosts = await Post.find({
+				...query,
+				isSeedPost: true
+			}).sort({ _id: -1 }).limit(seedPostsNeeded).lean();
+			
+			console.log(`Adding ${seedPosts.length} seed posts to global feed`);
+			posts = [...regularPosts, ...seedPosts];
+		}
+
+		// Only cache first/default page
+		if (!after && limit === 20 && redis.isAvailable()) {
+			try {
+				await redis.del(CACHE_KEYS.GLOBAL_FEED);
+				await redis.setex(
+					CACHE_KEYS.GLOBAL_FEED,
+					CACHE_TTL.GLOBAL_FEED,
+					JSON.stringify(posts)
+				);
+			} catch (error) {
+				console.error("Cache storage error:", error);
+			}
+		}
+
+		const hasMore = posts.length === limit;
+		console.log("Global feed response:", {
+			postsCount: posts.length,
+			hasMore,
+		});
+		res.status(200).json({ posts, hasMore });
+	} catch (error) {
+		console.error("Global feed error:", error);
+		res.status(500).json({
+			message: "Failed to fetch posts",
+			error:
+				process.env.NODE_ENV === "development"
+					? error.message
+					: "Internal server error",
+		});
+	}
+});
+
 // @desc    Get paginated posts for college feed
 // @route   GET /api/posts/college
 // @access  Public
@@ -60,6 +164,7 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 		return res.status(400).json({ message: "College parameter is required" });
 	}
 
+	// College feed should only show posts with the specific college field
 	const query = {
 		ghostCircle: { $exists: false },
 		expiresAt: { $gt: new Date() },
@@ -102,6 +207,7 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 		return res.status(400).json({ message: "Area parameter is required" });
 	}
 
+	// Area feed should only show posts with the specific area field
 	const query = {
 		ghostCircle: { $exists: false },
 		expiresAt: { $gt: new Date() },
@@ -169,10 +275,14 @@ const createPost = asyncHandler(async (req, res) => {
 	};
 
 	// Add college/area based on feedType and user profile
+	console.log(`Creating post for feedType: ${feedType}, user college: ${user.college}, user area: ${user.area}`);
+	
 	if (feedType === "college" && user.college) {
 		postData.college = user.college;
+		console.log(`Post will be created for college: ${user.college}`);
 	} else if (feedType === "area" && user.area) {
 		postData.area = user.area;
+		console.log(`Post will be created for area: ${user.area}`);
 	}
 	// For global feed, don't add college or area fields
 
@@ -206,6 +316,13 @@ const createPost = asyncHandler(async (req, res) => {
 
 		// Create the post
 		const [post] = await Post.create([postData], { session });
+
+		console.log(`Post created successfully:`, {
+			id: post._id,
+			feedType,
+			college: post.college,
+			area: post.area
+		});
 
 		// Add post ID to the user's posts array
 		await User.findByIdAndUpdate(
@@ -419,89 +536,6 @@ const deletePost = asyncHandler(async (req, res) => {
 	await invalidatePostCaches(req.params.id, post.ghostCircle);
 
 	res.json({ message: "Post deleted successfully" });
-});
-
-// @desc    Get paginated posts for global feed
-// @route   GET /api/posts/global
-// @access  Public
-const getPaginatedPosts = asyncHandler(async (req, res) => {
-	const redis = getRedisClient();
-	const limit = Math.min(Number(req.query.limit) || 20, 50);
-	const after = req.query.after;
-
-	const query = {
-		ghostCircle: { $exists: false },
-		expiresAt: { $gt: new Date() },
-		college: { $exists: false },
-		area: { $exists: false }
-	};
-	
-	if (after) {
-		query._id = { $lt: after };
-	}
-
-	// Try to get from cache when no pagination
-	if (!after && limit === 20 && redis.isAvailable()) {
-		try {
-			const cachedPosts = await redis.get(CACHE_KEYS.GLOBAL_FEED);
-			if (cachedPosts) {
-				try {
-					const parsedPosts =
-						typeof cachedPosts === "string"
-							? JSON.parse(cachedPosts)
-							: cachedPosts;
-					if (Array.isArray(parsedPosts) && parsedPosts.length >= 20) {
-						return res.status(200).json({
-							posts: parsedPosts,
-							hasMore: parsedPosts.length === limit,
-						});
-					} else {
-						console.warn("Cached posts insufficient, fetching fresh data");
-						await redis.del(CACHE_KEYS.GLOBAL_FEED);
-					}
-				} catch (error) {
-					console.error("Cache retrieval error:", error, "value:", cachedPosts);
-					await redis.del(CACHE_KEYS.GLOBAL_FEED);
-				}
-			}
-		} catch (error) {
-			console.error("Cache retrieval error:", error);
-		}
-	}
-
-	try {
-		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
-
-		// Only cache first/default page
-		if (!after && limit === 20 && redis.isAvailable()) {
-			try {
-				await redis.del(CACHE_KEYS.GLOBAL_FEED);
-				await redis.setex(
-					CACHE_KEYS.GLOBAL_FEED,
-					CACHE_TTL.GLOBAL_FEED,
-					JSON.stringify(posts)
-				);
-			} catch (error) {
-				console.error("Cache storage error:", error);
-			}
-		}
-
-		const hasMore = posts.length === limit;
-		console.log("Global feed response:", {
-			postsCount: posts.length,
-			hasMore,
-		});
-		res.status(200).json({ posts, hasMore });
-	} catch (error) {
-		console.error("Global feed error:", error);
-		res.status(500).json({
-			message: "Failed to fetch posts",
-			error:
-				process.env.NODE_ENV === "development"
-					? error.message
-					: "Internal server error",
-		});
-	}
 });
 
 // @desc    Add comment to post
