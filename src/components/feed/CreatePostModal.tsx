@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader, X, Image as ImageIcon, Video, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
+import { createPost } from "@/lib/api-posts";
 import { useAuth } from "@/context/AuthContext";
 import UnifiedMediaUpload from "@/components/ui/unified-media-upload";
 
@@ -73,7 +73,15 @@ const CreatePostModal = ({
         size: 0
       }));
 
-      const postData = {
+      const postData: {
+        content: string;
+        images: string[];
+        videos: Array<{ url: string; thumbnail: string; duration: number; size: number; }>;
+        feedType: "global" | "college" | "area";
+        ghostCircleId?: string;
+        college?: string;
+        area?: string;
+      } = {
         content: content.trim(),
         images: imageUrls,
         videos: videoData,
@@ -96,7 +104,7 @@ const CreatePostModal = ({
 
       console.log("Creating post with data:", postData);
 
-      await api.post("/api/posts", postData);
+      await createPost(postData);
       
       toast({
         title: "Success",
