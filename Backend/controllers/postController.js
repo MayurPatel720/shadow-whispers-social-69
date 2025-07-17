@@ -242,7 +242,7 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-	const { content, ghostCircleId, imageUrl, images, videos, expiresIn, feedType } = req.body;
+	const { content, ghostCircleId, imageUrl, images, videos, expiresIn, feedType, college, area } = req.body;
 
 	// Check if content, image, or video is provided
 	if (
@@ -259,9 +259,6 @@ const createPost = asyncHandler(async (req, res) => {
 	const expiryTime = new Date();
 	expiryTime.setHours(expiryTime.getHours() + (expiresIn || 24));
 
-	// Get user details to include college/area based on feedType
-	const user = await User.findById(req.user._id).lean();
-
 	// Prepare the post data
 	const postData = {
 		user: req.user._id,
@@ -274,15 +271,15 @@ const createPost = asyncHandler(async (req, res) => {
 		expiresAt: expiryTime,
 	};
 
-	// Add college/area based on feedType and user profile
-	console.log(`Creating post for feedType: ${feedType}, user college: ${user.college}, user area: ${user.area}`);
+	// Add college/area based on feedType and values from request
+	console.log(`Creating post for feedType: ${feedType}, college from request: ${college}, area from request: ${area}`);
 	
-	if (feedType === "college" && user.college) {
-		postData.college = user.college;
-		console.log(`Post will be created for college: ${user.college}`);
-	} else if (feedType === "area" && user.area) {
-		postData.area = user.area;
-		console.log(`Post will be created for area: ${user.area}`);
+	if (feedType === "college" && college) {
+		postData.college = college;
+		console.log(`Post will be created for college: ${college}`);
+	} else if (feedType === "area" && area) {
+		postData.area = area;
+		console.log(`Post will be created for area: ${area}`);
 	}
 	// For global feed, don't add college or area fields
 
