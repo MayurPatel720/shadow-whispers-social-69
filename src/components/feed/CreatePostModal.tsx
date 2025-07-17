@@ -84,8 +84,22 @@ const CreatePostModal = ({
     }
   };
 
-  const handleMediaUpload = (files: Array<{ type: 'image' | 'video', url: string, file?: File }>) => {
-    setMediaFiles(files);
+  const handleFileSelect = (files: { images: File[]; videos: File[] }) => {
+    const newMediaFiles: Array<{ type: 'image' | 'video', url: string, file?: File }> = [];
+    
+    // Process image files
+    files.images.forEach(file => {
+      const url = URL.createObjectURL(file);
+      newMediaFiles.push({ type: 'image', url, file });
+    });
+    
+    // Process video files
+    files.videos.forEach(file => {
+      const url = URL.createObjectURL(file);
+      newMediaFiles.push({ type: 'video', url, file });
+    });
+    
+    setMediaFiles(prev => [...prev, ...newMediaFiles]);
   };
 
   const removeMedia = (index: number) => {
@@ -123,9 +137,9 @@ const CreatePostModal = ({
           />
 
           <UnifiedMediaUpload
-            onUpload={handleMediaUpload}
+            onFileSelect={handleFileSelect}
             maxFiles={5}
-            currentFiles={mediaFiles}
+            currentFileCount={mediaFiles.length}
           />
 
           {mediaFiles.length > 0 && (
