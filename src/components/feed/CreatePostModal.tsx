@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader, X, Video, Camera, Image as ImageIcon } from "lucide-react";
+import { Loader, X, Image as ImageIcon, Video, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api-posts";
 import { useAuth } from "@/context/AuthContext";
@@ -162,106 +162,99 @@ const CreatePostModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-background border-border p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-lg font-semibold text-center">
-            Create new post
+      <DialogContent className="sm:max-w-[500px] bg-background border-border">
+        <DialogHeader>
+          <DialogTitle className="text-foreground">
+            Share Your Truth 
+            {ghostCircleId ? " in Circle" : ` (${getFeedDisplayName()} feed)`}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="px-6 pb-6">
-          <div className="border-b border-border pb-4 mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                <span className="text-lg">{user?.avatarEmoji || "🎭"}</span>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{user?.anonymousAlias || "Anonymous"}</p>
-                <p className="text-sm text-muted-foreground">
-                  {ghostCircleId ? "Posting to Ghost Circle" : `Posting to ${getFeedDisplayName()}`}
-                </p>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+            <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
+              <span className="text-lg">{user?.avatarEmoji || "🎭"}</span>
+            </div>
+            <div>
+              <p className="font-medium text-foreground">{user?.anonymousAlias || "Anonymous"}</p>
+              <p className="text-sm text-muted-foreground">
+                {ghostCircleId ? "Posting to Ghost Circle" : `Posting to ${getFeedDisplayName()} feed`}
+              </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind? Share your thoughts..."
-              className="min-h-[100px] resize-none border-0 p-0 text-base placeholder:text-muted-foreground focus:ring-0 focus:border-0"
-              disabled={isSubmitting}
-            />
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="What's on your mind? Share your thoughts anonymously..."
+            className="min-h-[120px] resize-none bg-background border-border focus:border-purple-500"
+            disabled={isSubmitting}
+          />
 
-            {mediaFiles.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                {mediaFiles.map((file, index) => (
-                  <div key={index} className="relative group">
-                    <div className="relative overflow-hidden rounded-lg">
+          <UnifiedMediaUpload
+            onFileSelect={handleFileSelect}
+            maxFiles={5}
+            currentFileCount={mediaFiles.length}
+          />
+
+          {mediaFiles.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {mediaFiles.map((file, index) => (
+                <Card key={index} className="relative">
+                  <CardContent className="p-2">
+                    <div className="relative">
                       {file.type === 'image' ? (
                         <img
                           src={file.url}
                           alt="Upload preview"
-                          className="w-full h-32 object-cover"
+                          className="w-full h-24 object-cover rounded"
                         />
                       ) : (
-                        <div className="w-full h-32 bg-muted rounded-lg flex items-center justify-center">
+                        <div className="w-full h-24 bg-muted rounded flex items-center justify-center">
                           <Video className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
-                      <button
+                      <Button
                         type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
                         onClick={() => removeMedia(index)}
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X className="h-3 w-3" />
-                      </button>
+                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-4 border-t border-border">
-              <div className="flex items-center space-x-1">
-                <UnifiedMediaUpload
-                  onFileSelect={handleFileSelect}
-                  maxFiles={5}
-                  currentFileCount={mediaFiles.length}
-                />
-                <span className="text-sm text-muted-foreground ml-2">
-                  Add photos or videos
-                </span>
-              </div>
-
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => onOpenChange(false)}
-                  disabled={isSubmitting}
-                  className="text-muted-foreground"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || (!content.trim() && mediaFiles.length === 0)}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      Sharing...
-                    </>
-                  ) : (
-                    "Share"
-                  )}
-                </Button>
-              </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </form>
-        </div>
+          )}
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || (!content.trim() && mediaFiles.length === 0)}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                  Posting...
+                </>
+              ) : (
+                "Share Truth"
+              )}
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,5 +1,12 @@
 
 import React from "react";
+import { ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FeedSwitcherProps {
   currentFilter: "global" | "college" | "area";
@@ -10,28 +17,54 @@ const FeedSwitcher: React.FC<FeedSwitcherProps> = ({
   currentFilter,
   onFilterChange,
 }) => {
-  const feedOptions = [
-    { id: "global", label: "Global" },
-    { id: "college", label: "College" },
-    { id: "area", label: "Area" },
-  ];
+  const getFeedLabel = () => {
+    switch (currentFilter) {
+      case "global":
+        return "Global";
+      case "college":
+        return "College";
+      case "area":
+        return "Area";
+      default:
+        return "Global";
+    }
+  };
 
   return (
-    <div className="flex bg-muted rounded-lg p-1">
-      {feedOptions.map((option) => (
-        <button
-          key={option.id}
-          onClick={() => onFilterChange(option.id as "global" | "college" | "area")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-            currentFilter === option.id
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-1 text-xl font-bold text-foreground hover:text-purple-400 transition-colors">
+          {getFeedLabel()}
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-32 bg-card border-border">
+        <DropdownMenuItem
+          onClick={() => onFilterChange("global")}
+          className={`cursor-pointer ${
+            currentFilter === "global" ? "bg-purple-600/20 text-purple-400" : ""
           }`}
         >
-          {option.label}
-        </button>
-      ))}
-    </div>
+          Global
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onFilterChange("college")}
+          className={`cursor-pointer ${
+            currentFilter === "college" ? "bg-purple-600/20 text-purple-400" : ""
+          }`}
+        >
+          College
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onFilterChange("area")}
+          className={`cursor-pointer ${
+            currentFilter === "area" ? "bg-purple-600/20 text-purple-400" : ""
+          }`}
+        >
+          Area
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 
