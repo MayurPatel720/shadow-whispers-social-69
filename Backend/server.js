@@ -23,7 +23,6 @@ const whisperMatchRoutes = require("./routes/whisperMatchRoutes");
 const amaRoutes = require("./routes/amaRoutes");
 const matchRoutes = require("./routes/matchRoutes");
 const adminMatchRoutes = require("./routes/adminMatchRoutes");
-const fakeUserRoutes = require("./routes/fakeUserRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -123,13 +122,13 @@ ConnectTODB();
 
 // Initialize seed system after DB connection
 setTimeout(async () => {
-  try {
-    const { autoInitializeSeedPosts } = require('./utils/seedPosts');
-    await autoInitializeSeedPosts();
-    console.log('✅ Seed posts system initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize seed posts:', error);
-  }
+	try {
+		const { autoInitializeSeedPosts } = require("./utils/seedPosts");
+		await autoInitializeSeedPosts();
+		console.log("✅ Seed posts system initialized");
+	} catch (error) {
+		console.error("❌ Failed to initialize seed posts:", error);
+	}
 }, 2000);
 
 // Health check route (before other routes for faster response)
@@ -144,7 +143,6 @@ app.get("/healthcheck", (req, res) => {
 // API Routes
 app.use("/api", indexRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/fake-users", fakeUserRoutes);
 app.use("/api/ghost-circles", ghostCircleRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/whispers", whisperRoutes);

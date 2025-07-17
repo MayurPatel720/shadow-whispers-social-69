@@ -931,6 +931,123 @@ const claimReward = asyncHandler(async (req, res) => {
 	}
 });
 
+// @desc    Delete user account and all associated data
+// @route   DELETE /api/users/account
+// @access  Private
+const deleteUserAccount = asyncHandler(async (req, res) => {
+	const userId = req.user._id;
+
+	try {
+		// Start a transaction to ensure all deletions happen together
+		const session = await require('mongoose').startSession();
+		session.startTransaction();
+
+		try {
+			// 1. Delete all posts by the user
+			const Post = require("../models/postModel");
+			await Post.deleteMany({ user: userId }, { session });
+
+			// 2. Remove user from all comments and replies in other posts
+			await Post.updateMany(
+				{ "comments.user": userId },
+				{ $pull: { comments: { user: userId } } },
+				{ session }
+			);
+
+			// 3. Remove user from all replies in comments
+			await Post.updateMany(
+				{ "comments.replies.user": userId },
+				{ $pull: { "comments.$[].replies": { user: userId } } },
+				{ session }
+			);
+
+			// 4. Remove user from likes in all posts
+			await Post.updateMany(
+				{ "likes.user": userId },
+				{ $pull: { likes: { user: userId } } },
+				{ session }
+			);
+
+			// 5. Delete all whispers sent or received by the user
+			const Whisper = require("../models/whisperModel");
+			await Whisper.deleteMany({
+				$or: [{ sender: userId }, { receiver: userId }]
+			}, { session });
+
+			// 6. Remove user from ghost circles and delete circles they created
+			const GhostCircle = require("../models/ghostCircleModel");
+			
+			// Delete ghost circles created by the user
+			await GhostCircle.deleteMany({ creator: userId }, { session });
+
+			// Remove user from all ghost circles as member or admin
+			await GhostCircle.updateMany(
+				{ "members.userId": userId },
+				{ $pull: { members: { userId: userId } } },
+				{ session }
+			);
+
+			await GhostCircle.updateMany(
+				{ admins: userId },
+				{ $pull: { admins: userId } },
+				{ session }
+			);
+
+			// 7. Remove user from other users' friends lists
+			await User.updateMany(
+				{ friends: userId },
+				{ $pull: { friends: userId } },
+				{ session }
+			);
+
+			// 8. Remove user from recognition lists
+			await User.updateMany(
+				{ recognizedUsers: userId },
+				{ $pull: { recognizedUsers: userId } },
+				{ session }
+			);
+
+			await User.updateMany(
+				{ identityRecognizers: userId },
+				{ $pull: { identityRecognizers: userId } },
+				{ session }
+			);
+
+			// 9. Update referral data - remove referredBy references
+			await User.updateMany(
+				{ referredBy: userId },
+				{ $unset: { referredBy: "" } },
+				{ session }
+			);
+
+			// 10. Finally, delete the user account
+			await User.findByIdAndDelete(userId, { session });
+
+			// Commit the transaction
+			await session.commitTransaction();
+			session.endSession();
+
+			console.log(`User account ${userId} and all associated data deleted successfully`);
+
+			res.status(200).json({
+				success: true,
+				message: "Account and all associated data deleted successfully"
+			});
+
+		} catch (error) {
+			// Rollback the transaction on error
+			await session.abortTransaction();
+			session.endSession();
+			throw error;
+		}
+
+	} catch (error) {
+		console.error("Error deleting user account:", error);
+		res.status(500);
+		throw new Error("Failed to delete account. Please try again later.");
+	}
+});
+
 module.exports = {
 	registerUser,
 	loginUser,
@@ -951,4 +1068,5 @@ module.exports = {
 	getReferralLeaderboard,
 	processReferral,
 	claimReward,
+	deleteUserAccount,
 };

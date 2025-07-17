@@ -6,6 +6,7 @@ import { User, Post } from "@/types/user";
 // Create axios instance with base URL
 const API_URL = "http://localhost:8900";
 // const API_URL = "https://backend-whisperer-fix-5ztr.vercel.app/";
+// const API_URL = "https://code-inspect-buddy-bot-production.up.railway.app/";
 // const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
@@ -444,7 +445,9 @@ export const deleteConversation = async (userId: string): Promise<any> => {
 };
 
 // Add missing share post function
-export const sharePost = async (postId: string): Promise<{ shareCount: number }> => {
+export const sharePost = async (
+	postId: string
+): Promise<{ shareCount: number }> => {
 	const response = await api.post(`/api/posts/${postId}/share`);
 	return response.data;
 };
@@ -455,7 +458,9 @@ export const deleteReply = async (
 	commentId: string,
 	replyId: string
 ): Promise<void> => {
-	await api.delete(`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`);
+	await api.delete(
+		`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`
+	);
 };
 
 export const updateReply = async (
@@ -556,4 +561,15 @@ export const setWeeklyPrompt = async (promptText: string) => {
 	// Use admin credentials already handled in api instance
 	const response = await api.post("/api/prompts/", { promptText });
 	return response.data;
+};
+
+// Delete user account and all associated data
+export const deleteUserAccount = async (): Promise<any> => {
+	try {
+		const response = await api.delete("/api/users/account");
+		return response.data;
+	} catch (error: any) {
+		console.error("Error deleting user account:", error);
+		throw error?.response?.data || error;
+	}
 };

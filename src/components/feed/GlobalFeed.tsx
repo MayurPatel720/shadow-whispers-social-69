@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -6,20 +5,57 @@ import { Loader, Plus, TrendingUp } from "lucide-react";
 import PostCard from "./PostCard";
 import CreatePostModal from "./CreatePostModal";
 import EmptyFeedState from "./EmptyFeedState";
-import { getPaginatedPosts } from "@/lib/api-posts";
+import EmptyFeedMessage from "./EmptyFeedMessage";
+import FeedFilterDialog from "./FeedFilterDialog";
+import CollegeSelectionDialog from "./CollegeSelectionDialog";
+import AreaSelectionDialog from "./AreaSelectionDialog";
+import { getGlobalFeed, getCollegeFeed, getAreaFeed, updateUserProfile } from "@/lib/api-feed";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-// Infinite posts feed using scroll observer
 const PAGE_SIZE = 20;
+
+type FeedType = "global" | "college" | "area";
 
 const GlobalFeed = () => {
 	const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
+	const [feedType, setFeedType] = useState<FeedType>("global");
+	const [userCollege, setUserCollege] = useState<string>("");
+	const [userArea, setUserArea] = useState<string>("");
+	const [showCollegeDialog, setShowCollegeDialog] = useState(false);
+	const [showAreaDialog, setShowAreaDialog] = useState(false);
 	const queryClient = useQueryClient();
 	const loadMoreRef = useRef<HTMLDivElement>(null);
-	const { isAuthenticated } = useAuth();
+	const { isAuthenticated, user } = useAuth();
 	const navigate = useNavigate();
+
+	// Load user's college and area from localStorage on mount
+	useEffect(() => {
+		const savedCollege = localStorage.getItem("userCollege");
+		const savedArea = localStorage.getItem("userArea");
+		const savedFeedType = localStorage.getItem("feedType") as FeedType;
+		
+		if (savedCollege) setUserCollege(savedCollege);
+		if (savedArea) setUserArea(savedArea);
+		if (savedFeedType) setFeedType(savedFeedType);
+	}, []);
+
+	const getFeedData = async ({ pageParam = null }) => {
+		const filters = {
+			limit: PAGE_SIZE,
+			after: pageParam as string | null,
+		};
+
+		switch (feedType) {
+			case "college":
+				return getCollegeFeed({ ...filters, college: userCollege });
+			case "area":
+				return getAreaFeed({ ...filters, area: userArea });
+			default:
+				return getGlobalFeed(filters);
+		}
+	};
 
 	const {
 		data,
@@ -30,12 +66,8 @@ const GlobalFeed = () => {
 		error,
 		refetch,
 	} = useInfiniteQuery({
-		queryKey: ["posts", "infinite"],
-		queryFn: ({ pageParam = null }) =>
-			getPaginatedPosts({
-				limit: PAGE_SIZE,
-				after: pageParam as string | null,
-			}),
+		queryKey: ["posts", "feed", feedType, userCollege, userArea],
+		queryFn: getFeedData,
 		getNextPageParam: (lastPage) => {
 			if (!lastPage || !lastPage.hasMore) return undefined;
 			const posts = lastPage.posts;
@@ -44,16 +76,12 @@ const GlobalFeed = () => {
 		},
 		initialPageParam: null,
 		refetchInterval: 30000,
+		enabled: feedType === "global" || (feedType === "college" && !!userCollege) || (feedType === "area" && !!userArea),
 	});
 
 	const allPosts = data
 		? data.pages.flatMap((pg: { posts: any[] }) => pg.posts)
 		: [];
-
-	// Log posts for debugging
-	useEffect(() => {
-		console.log("Global feed posts:", allPosts.length, allPosts);
-	}, [allPosts]);
 
 	useEffect(() => {
 		const observer = new window.IntersectionObserver(
@@ -69,14 +97,62 @@ const GlobalFeed = () => {
 			observer.observe(loadMoreRef.current);
 		}
 		return () => {
-			// eslint-disable-next-line react-hooks/exhaustive-deps
 			if (loadMoreRef.current) observer.unobserve(loadMoreRef.current);
 		};
 	}, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
 	const handlePostCreated = () => {
-		queryClient.invalidateQueries({ queryKey: ["posts", "infinite"] });
+		queryClient.invalidateQueries({ queryKey: ["posts", "feed"] });
 		setIsCreatePostOpen(false);
+	};
+
+	const handleFeedTypeChange = (newFeedType: FeedType) => {
+		if (newFeedType === "college" && !userCollege) {
+			setShowCollegeDialog(true);
+			return;
+		}
+		if (newFeedType === "area" && !userArea) {
+			setShowAreaDialog(true);
+			return;
+		}
+		
+		setFeedType(newFeedType);
+		localStorage.setItem("feedType", newFeedType);
+	};
+
+	const handleCollegeSelect = async (college: string) => {
+		setUserCollege(college);
+		localStorage.setItem("userCollege", college);
+		setFeedType("college");
+		localStorage.setItem("feedType", "college");
+		
+		// Update user profile
+		try {
+			await updateUserProfile({ college });
+		} catch (error) {
+			console.error("Failed to update user profile:", error);
+		}
+	};
+
+	const handleAreaSelect = async (area: string) => {
+		setUserArea(area);
+		localStorage.setItem("userArea", area);
+		setFeedType("area");
+		localStorage.setItem("feedType", "area");
+		
+		// Update user profile
+		try {
+			await updateUserProfile({ area });
+		} catch (error) {
+			console.error("Failed to update user profile:", error);
+		}
+	};
+
+	const shouldShowEmptyState = () => {
+		return (
+			(feedType === "college" && !userCollege) ||
+			(feedType === "area" && !userArea)
+		);
 	};
 
 	if (isLoading) {
@@ -116,6 +192,10 @@ const GlobalFeed = () => {
 						<h1 className="text-xl font-bold text-foreground">Feed</h1>
 					</div>
 					<div className="flex items-center gap-2">
+						<FeedFilterDialog
+							currentFilter={feedType}
+							onFilterChange={handleFeedTypeChange}
+						/>
 						<Button
 							disabled={isAuthenticated === false}
 							onClick={() => setIsCreatePostOpen(true)}
@@ -129,8 +209,15 @@ const GlobalFeed = () => {
 
 			<div className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">
 				<WeeklyPromptBanner />
-				
-				{allPosts.length === 0 ? (
+
+				{shouldShowEmptyState() ? (
+					<EmptyFeedMessage
+						feedType={feedType}
+						onCreatePost={() => setIsCreatePostOpen(true)}
+						onSwitchFeed={() => handleFeedTypeChange("global")}
+						isAuthenticated={isAuthenticated}
+					/>
+				) : allPosts.length === 0 ? (
 					<EmptyFeedState
 						onCreatePost={() => setIsCreatePostOpen(true)}
 						isAuthenticated={isAuthenticated}
@@ -177,6 +264,21 @@ const GlobalFeed = () => {
 				open={isCreatePostOpen}
 				onOpenChange={setIsCreatePostOpen}
 				onSuccess={handlePostCreated}
+				currentFeedType={feedType}
+			/>
+
+			<CollegeSelectionDialog
+				open={showCollegeDialog}
+				onOpenChange={setShowCollegeDialog}
+				onCollegeSelect={handleCollegeSelect}
+				currentCollege={userCollege}
+			/>
+
+			<AreaSelectionDialog
+				open={showAreaDialog}
+				onOpenChange={setShowAreaDialog}
+				onAreaSelect={handleAreaSelect}
+				currentArea={userArea}
 			/>
 		</div>
 	);

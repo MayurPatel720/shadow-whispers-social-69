@@ -8,17 +8,17 @@ const {
 	updatePost,
 	deletePost,
 	editComment,
-	addReply,
 	deleteReply,
 	updateReply,
 	getPaginatedPosts,
+	getCollegeFeed,
+	getAreaFeed,
 	sharePost,
-	seedDatabase,
-	clearSeedPosts,
 	addComment,
 	likePost,
 	deleteComment,
 	replyToComment,
+	getComments,
 } = require("../controllers/postController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -27,6 +27,12 @@ router.post("/", protect, createPost);
 
 // @desc Get paginated posts for global feed
 router.get("/global", getPaginatedPosts);
+
+// @desc Get paginated posts for college feed
+router.get("/college", getCollegeFeed);
+
+// @desc Get paginated posts for area feed
+router.get("/area", getAreaFeed);
 
 // @desc Get all posts
 router.get("/", getPosts);
@@ -54,6 +60,7 @@ router.put("/:postId/comments/:commentId", protect, editComment);
 
 // @desc Add reply to comment
 router.post("/:postId/comments/:commentId/reply", protect, replyToComment);
+router.get("/:id/comments", protect, getComments);
 
 // @desc Delete reply
 router.delete(
@@ -71,11 +78,5 @@ router.put(
 
 // @desc Share post
 router.post("/:id/share", protect, sharePost);
-
-// @desc Seed database with sample posts
-router.post("/seed", seedDatabase);
-
-// @desc Clear seed posts
-router.delete("/seed", clearSeedPosts);
 
 module.exports = router;

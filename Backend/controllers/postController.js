@@ -1,4 +1,3 @@
-
 const asyncHandler = require("express-async-handler");
 const Post = require("../models/postModel");
 const User = require("../models/userModel");
@@ -6,7 +5,6 @@ const GhostCircle = require("../models/ghostCircleModel");
 const mongoose = require("mongoose");
 const { getRedisClient } = require("../utils/redisClient");
 const cloudinary = require("cloudinary").v2;
-const { createSeedPosts, removeSeedPosts } = require("../utils/seedPosts");
 
 // Cache keys
 const CACHE_KEYS = {
@@ -50,12 +48,95 @@ const invalidatePostCaches = async (postId, ghostCircleId = null) => {
 	}
 };
 
+// @desc    Get paginated posts for college feed
+// @route   GET /api/posts/college
+// @access  Public
+const getCollegeFeed = asyncHandler(async (req, res) => {
+	const limit = Math.min(Number(req.query.limit) || 20, 50);
+	const after = req.query.after;
+	const college = req.query.college;
+
+	if (!college) {
+		return res.status(400).json({ message: "College parameter is required" });
+	}
+
+	const query = {
+		ghostCircle: { $exists: false },
+		expiresAt: { $gt: new Date() },
+		college: college
+	};
+
+	if (after) {
+		query._id = { $lt: after };
+	}
+
+	try {
+		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
+		const hasMore = posts.length === limit;
+		
+		console.log("College feed response:", {
+			college,
+			postsCount: posts.length,
+			hasMore,
+		});
+		
+		res.status(200).json({ posts, hasMore });
+	} catch (error) {
+		console.error("College feed error:", error);
+		res.status(500).json({
+			message: "Failed to fetch college posts",
+			error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+		});
+	}
+});
+
+// @desc    Get paginated posts for area feed
+// @route   GET /api/posts/area
+// @access  Public
+const getAreaFeed = asyncHandler(async (req, res) => {
+	const limit = Math.min(Number(req.query.limit) || 20, 50);
+	const after = req.query.after;
+	const area = req.query.area;
+
+	if (!area) {
+		return res.status(400).json({ message: "Area parameter is required" });
+	}
+
+	const query = {
+		ghostCircle: { $exists: false },
+		expiresAt: { $gt: new Date() },
+		area: area
+	};
+
+	if (after) {
+		query._id = { $lt: after };
+	}
+
+	try {
+		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
+		const hasMore = posts.length === limit;
+		
+		console.log("Area feed response:", {
+			area,
+			postsCount: posts.length,
+			hasMore,
+		});
+		
+		res.status(200).json({ posts, hasMore });
+	} catch (error) {
+		console.error("Area feed error:", error);
+		res.status(500).json({
+			message: "Failed to fetch area posts",
+			error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
+		});
+	}
+});
+
 // @desc    Create a new post (global or in ghost circle)
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-	const { content, ghostCircleId, imageUrl, images, videos, expiresIn } =
-		req.body;
+	const { content, ghostCircleId, imageUrl, images, videos, expiresIn, feedType } = req.body;
 
 	// Check if content, image, or video is provided
 	if (
@@ -72,6 +153,9 @@ const createPost = asyncHandler(async (req, res) => {
 	const expiryTime = new Date();
 	expiryTime.setHours(expiryTime.getHours() + (expiresIn || 24));
 
+	// Get user details to include college/area based on feedType
+	const user = await User.findById(req.user._id).lean();
+
 	// Prepare the post data
 	const postData = {
 		user: req.user._id,
@@ -83,6 +167,14 @@ const createPost = asyncHandler(async (req, res) => {
 		avatarEmoji: req.user.avatarEmoji,
 		expiresAt: expiryTime,
 	};
+
+	// Add college/area based on feedType and user profile
+	if (feedType === "college" && user.college) {
+		postData.college = user.college;
+	} else if (feedType === "area" && user.area) {
+		postData.area = user.area;
+	}
+	// For global feed, don't add college or area fields
 
 	// Check if the post is for a specific ghost circle
 	if (ghostCircleId) {
@@ -340,7 +432,10 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	const query = {
 		ghostCircle: { $exists: false },
 		expiresAt: { $gt: new Date() },
+		college: { $exists: false },
+		area: { $exists: false }
 	};
+	
 	if (after) {
 		query._id = { $lt: after };
 	}
@@ -375,37 +470,7 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	}
 
 	try {
-		// Get regular posts first
 		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
-		
-		// If we don't have enough posts and this is the first page, add seed posts
-		if (!after && posts.length < 20) {
-			console.log(`Only ${posts.length} regular posts found, checking for seed posts...`);
-			
-			// Check if valid seed posts exist, if not create them
-			const validSeedPostsCount = await Post.countDocuments({ 
-				isSeedPost: true, 
-				expiresAt: { $gt: new Date() } 
-			});
-			
-			if (validSeedPostsCount < 15) { // Maintain at least 15 seed posts
-				console.log(`Only ${validSeedPostsCount} valid seed posts found, creating/refreshing them...`);
-				await createSeedPosts();
-			}
-			
-			// Get seed posts to fill the gap
-			const seedPosts = await Post.find({
-				isSeedPost: true,
-				expiresAt: { $gt: new Date() },
-				ghostCircle: { $exists: false }
-			}).sort({ createdAt: -1 }).limit(20 - posts.length).lean();
-			
-			console.log(`Adding ${seedPosts.length} seed posts to feed`);
-			posts.push(...seedPosts);
-			
-			// Sort combined posts by creation date (newest first)
-			posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-		}
 
 		// Only cache first/default page
 		if (!after && limit === 20 && redis.isAvailable()) {
@@ -422,7 +487,7 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 		}
 
 		const hasMore = posts.length === limit;
-		console.log("Global feed response (public):", {
+		console.log("Global feed response:", {
 			postsCount: posts.length,
 			hasMore,
 		});
@@ -1020,44 +1085,6 @@ const updateReply = asyncHandler(async (req, res) => {
 	}
 });
 
-// @desc    Seed database with sample posts
-// @route   POST /api/posts/admin/seed
-// @access  Public (should be protected in production)
-const seedDatabase = asyncHandler(async (req, res) => {
-	try {
-		const seedPosts = await createSeedPosts();
-		res.status(201).json({
-			message: `Successfully created ${seedPosts.length} seed posts`,
-			count: seedPosts.length,
-		});
-	} catch (error) {
-		console.error("Error seeding database:", error);
-		res.status(500).json({
-			message: "Failed to seed database",
-			error: error.message,
-		});
-	}
-});
-
-// @desc    Clear all seed posts from database
-// @route   DELETE /api/posts/admin/seed
-// @access  Public (should be protected in production)
-const clearSeedPosts = asyncHandler(async (req, res) => {
-	try {
-		const result = await removeSeedPosts();
-		res.status(200).json({
-			message: `Successfully removed ${result.deletedCount} seed posts`,
-			deletedCount: result.deletedCount,
-		});
-	} catch (error) {
-		console.error("Error clearing seed posts:", error);
-		res.status(500).json({
-			message: "Failed to clear seed posts",
-			error: error.message,
-		});
-	}
-});
-
 module.exports = {
 	createPost,
 	getPosts,
@@ -1068,6 +1095,8 @@ module.exports = {
 	addComment,
 	deleteComment,
 	getPaginatedPosts,
+	getCollegeFeed,
+	getAreaFeed,
 	sharePost,
 	getGhostCirclePosts,
 	getPostById,
@@ -1078,6 +1107,4 @@ module.exports = {
 	replyToComment,
 	deleteReply,
 	updateReply,
-	seedDatabase,
-	clearSeedPosts,
 };

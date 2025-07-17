@@ -3,11 +3,14 @@ import GlobalFeed from "@/components/feed/GlobalFeed";
 import { useRequestNotificationPermission } from "@/hooks/useRequestNotificationPermission";
 
 const Index = () => {
-  useRequestNotificationPermission();
+	const notificationDialog = useRequestNotificationPermission();
 
-  return (
-    <GlobalFeed />
-  );
+	return (
+		<>
+			<GlobalFeed />
+			{notificationDialog}
+		</>
+	);
 };
 
 export default Index;

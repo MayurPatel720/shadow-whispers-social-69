@@ -6,26 +6,41 @@ import { useAuth } from "@/context/AuthContext";
 import NotificationPermissionDialog from "@/components/notifications/NotificationPermissionDialog";
 
 export function useRequestNotificationPermission() {
-	const { isAuthenticated, user } = useAuth();
+	const { isAuthenticated, user, showLoginAnimation } = useAuth();
 	const [showDialog, setShowDialog] = useState(false);
 	const [permissionChecked, setPermissionChecked] = useState(false);
 
 	useEffect(() => {
-		// Only check for authenticated users
-		if (!isAuthenticated || !user || permissionChecked) return;
+		// Don't show dialog during login animation or if user is not authenticated
+		if (!isAuthenticated || !user || permissionChecked || showLoginAnimation) return;
 
 		async function checkNotificationPermission() {
 			try {
-				if (!oneSignalService.isSupported()) return;
+				if (!oneSignalService.isSupported()) {
+					setPermissionChecked(true);
+					return;
+				}
 
 				const { isSubscribed, permission } = await oneSignalService.getSubscriptionStatus();
 				
-				// Only show dialog if user is not subscribed and permission is not granted
-				if (!isSubscribed && permission !== "granted") {
+				// If permission is already granted or user is already subscribed, don't show dialog
+				if (permission === "granted" || isSubscribed) {
+					setPermissionChecked(true);
+					return;
+				}
+
+				// If permission was previously denied, don't show dialog again
+				if (permission === "denied") {
+					setPermissionChecked(true);
+					return;
+				}
+
+				// Only show dialog if permission is default (not asked before) and user is not subscribed
+				if (permission === "default" && !isSubscribed) {
 					// Wait a bit for user to settle in before showing dialog
 					setTimeout(() => {
 						setShowDialog(true);
-					}, 2000);
+					}, 3000);
 				}
 				
 				setPermissionChecked(true);
@@ -36,7 +51,7 @@ export function useRequestNotificationPermission() {
 		}
 
 		checkNotificationPermission();
-	}, [isAuthenticated, user, permissionChecked]);
+	}, [isAuthenticated, user, permissionChecked, showLoginAnimation]);
 
 	const handleEnableNotifications = async () => {
 		try {
@@ -57,7 +72,7 @@ export function useRequestNotificationPermission() {
 
 	const handleDeclineNotifications = () => {
 		setShowDialog(false);
-		// Don't show again for this session
+		// Mark as checked so we don't show again
 		setPermissionChecked(true);
 	};
 

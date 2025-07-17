@@ -108,7 +108,14 @@ const postSchema = mongoose.Schema(
     },
     shareCount: {
       type: Number,
-      default: 0, // Initialize to 0 for new posts
+      default: 0,
+    },
+    // Add college and area fields
+    college: {
+      type: String,
+    },
+    area: {
+      type: String,
     },
     // Add seed post fields
     isSeedPost: {

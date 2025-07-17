@@ -16,6 +16,7 @@ import WhisperModal from "../whisper/WhisperModal";
 import { useAuth } from "@/context/AuthContext";
 import AvatarGenerator from "../user/AvatarGenerator";
 import { useLocation, useNavigate } from "react-router-dom";
+import Footer from "./Footer";
 
 const NavItem: React.FC<{
 	icon: React.ReactNode;
@@ -399,7 +400,10 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				{/* Children (Page Content) */}
-				<div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0">{children}</div>
+				<div className="flex-1 min-h-0 overflow-y-auto pb-20 md:pb-0 flex flex-col">
+					<div className="flex-1">{children}</div>
+					<Footer />
+				</div>
 
 				{/* Bottom Navigation (Mobile) */}
 				<div className="md:hidden fixed bottom-0 w-full bg-card border-t border-border p-2 flex justify-around z-50">
