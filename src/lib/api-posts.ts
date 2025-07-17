@@ -29,6 +29,25 @@ export const getPaginatedPosts = async ({
   if (feedType === "college") endpoint = "/api/posts/college";
   if (feedType === "area") endpoint = "/api/posts/area";
   
+  console.log(`Fetching ${feedType} feed from ${endpoint}${query}`);
+  
   const response = await api.get(`${endpoint}${query}`);
+  console.log(`Received ${response.data.posts?.length || 0} posts from ${feedType} feed`);
+  
+  return response.data;
+};
+
+export const createPost = async (postData: {
+  content: string;
+  images?: string[];
+  videos?: Array<{ url: string; thumbnail?: string; duration?: number }>;
+  feedType?: "global" | "college" | "area";
+  college?: string;
+  area?: string;
+  ghostCircleId?: string;
+}): Promise<Post> => {
+  console.log("Creating post with data:", postData);
+  const response = await api.post("/api/posts", postData);
+  console.log("Post created:", response.data);
   return response.data;
 };

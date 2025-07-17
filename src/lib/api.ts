@@ -206,7 +206,10 @@ export const createPost = async (
 	ghostCircleId?: string,
 	imageUrl?: string,
 	images?: string[],
-	videos?: Array<{ url: string; thumbnail?: string; duration?: number }>
+	videos?: Array<{ url: string; thumbnail?: string; duration?: number }>,
+	feedType?: "global" | "college" | "area",
+	college?: string,
+	area?: string
 ): Promise<Post> => {
 	try {
 		const postData = {
@@ -215,8 +218,14 @@ export const createPost = async (
 			...(imageUrl && { imageUrl }),
 			...(images && images.length > 0 && { images }),
 			...(videos && videos.length > 0 && { videos }),
+			...(feedType && { feedType }),
+			...(college && { college }),
+			...(area && { area }),
 		};
+		
+		console.log("Creating post with data:", postData);
 		const response = await api.post("/api/posts", postData);
+		console.log("Post created successfully:", response.data);
 		return response.data;
 	} catch (error: any) {
 		console.error("Error creating post:", error);

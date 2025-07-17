@@ -43,6 +43,25 @@ const CreatePostModal = ({
       return;
     }
 
+    // Check if required fields are present for specific feed types
+    if (currentFeedType === "college" && !localStorage.getItem("userCollege")) {
+      toast({
+        title: "Error",
+        description: "Please select a college to post in the college feed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (currentFeedType === "area" && !localStorage.getItem("userArea")) {
+      toast({
+        title: "Error",
+        description: "Please select an area to post in the area feed",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -62,11 +81,26 @@ const CreatePostModal = ({
         ...(ghostCircleId && { ghostCircleId })
       };
 
+      // Add college or area based on current feed type
+      if (currentFeedType === "college") {
+        const userCollege = localStorage.getItem("userCollege");
+        if (userCollege) {
+          postData.college = userCollege;
+        }
+      } else if (currentFeedType === "area") {
+        const userArea = localStorage.getItem("userArea");
+        if (userArea) {
+          postData.area = userArea;
+        }
+      }
+
+      console.log("Creating post with data:", postData);
+
       await api.post("/api/posts", postData);
       
       toast({
         title: "Success",
-        description: "Post created successfully!",
+        description: `Post created successfully in ${currentFeedType} feed!`,
       });
       
       setContent("");
@@ -74,6 +108,7 @@ const CreatePostModal = ({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: any) {
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description: error.response?.data?.message || "Failed to create post",
@@ -106,12 +141,24 @@ const CreatePostModal = ({
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const getFeedDisplayName = () => {
+    switch (currentFeedType) {
+      case "college":
+        return `College (${localStorage.getItem("userCollege")})`;
+      case "area":
+        return `Area (${localStorage.getItem("userArea")})`;
+      default:
+        return "Global";
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-background border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">
-            Share Your Truth {ghostCircleId ? "in Circle" : `(${currentFeedType} feed)`}
+            Share Your Truth 
+            {ghostCircleId ? " in Circle" : ` (${getFeedDisplayName()} feed)`}
           </DialogTitle>
         </DialogHeader>
         
@@ -123,7 +170,7 @@ const CreatePostModal = ({
             <div>
               <p className="font-medium text-foreground">{user?.anonymousAlias || "Anonymous"}</p>
               <p className="text-sm text-muted-foreground">
-                {ghostCircleId ? "Posting to Ghost Circle" : `Posting to ${currentFeedType} feed`}
+                {ghostCircleId ? "Posting to Ghost Circle" : `Posting to ${getFeedDisplayName()} feed`}
               </p>
             </div>
           </div>
