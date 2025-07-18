@@ -69,9 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(data);
       setShowLoginAnimation(true);
       
-      // Check if onboarding is needed
+      // Check if onboarding is needed - show after animation completes
       if (!data.onboardingComplete) {
-        setTimeout(() => setShowOnboarding(true), 2000); // Show after login animation
+        setTimeout(() => {
+          setShowLoginAnimation(false);
+          setTimeout(() => setShowOnboarding(true), 500); // Small delay after animation ends
+        }, 3000); // Animation duration
+      } else {
+        setTimeout(() => setShowLoginAnimation(false), 3000);
       }
       
       toast({
@@ -115,11 +120,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(data);
       setShowLoginAnimation(true);
       
-      // Always show onboarding for new users
+      // Always show onboarding for new users after animation completes
       setTimeout(() => {
-        console.log("Showing onboarding modal...");
-        setShowOnboarding(true);
-      }, 2500); // Show after login animation completes
+        setShowLoginAnimation(false);
+        setTimeout(() => {
+          console.log("Showing onboarding modal...");
+          setShowOnboarding(true);
+        }, 500); // Small delay after animation ends
+      }, 3000); // Animation duration
       
       toast({
         title: "Account created!",

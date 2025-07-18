@@ -125,11 +125,11 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
       modal={true}
     >
       <DialogContent 
-        className="max-w-2xl w-full h-[600px] p-0 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-800/50"
+        className="max-w-4xl w-[95vw] max-h-[90vh] h-auto min-h-[500px] p-0 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-800/50 sm:w-full"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full min-h-[500px]">
           <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
           <div className="flex-1 overflow-y-auto">
             {renderStep()}

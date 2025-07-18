@@ -139,10 +139,10 @@ const Register: React.FC = () => {
 	};
 
 	return (
-		<div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-			<div className="w-full max-w-md text-center mb-8 mt-8">
-				<h1 className="text-5xl font-bold text-white mb-2">UnderKover</h1>
-				<p className="text-gray-300 text-lg">Create your anonymous identity</p>
+		<div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 py-4 px-4">
+			<div className="w-full max-w-md text-center mb-6">
+				<h1 className="text-4xl sm:text-5xl font-bold text-white mb-2">UnderKover</h1>
+				<p className="text-gray-300 text-base sm:text-lg">Create your anonymous identity</p>
 				{referralCode && (
 					<div className="mt-2 py-1 px-3 bg-purple-700/50 rounded-full inline-block">
 						<p className="text-sm text-purple-200">
@@ -153,17 +153,17 @@ const Register: React.FC = () => {
 			</div>
 
 			<Card className="w-full max-w-md border-purple-700/50 bg-black/40 backdrop-blur-md text-gray-100 shadow-xl">
-				<CardHeader className="space-y-2 text-center border-b border-purple-800/30 pb-6">
-					<CardTitle className="text-2xl font-bold text-purple-400">
+				<CardHeader className="space-y-2 text-center border-b border-purple-800/30 pb-4">
+					<CardTitle className="text-xl sm:text-2xl font-bold text-purple-400">
 						Create Your Mask
 					</CardTitle>
-					<CardDescription className="text-gray-400">
+					<CardDescription className="text-gray-400 text-sm">
 						Join the shadow realm where identities remain hidden
 					</CardDescription>
 				</CardHeader>
-				<CardContent className="pt-6">
+				<CardContent className="pt-4">
 					<Form {...form}>
-						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+						<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
 							<FormField
 								control={form.control}
 								name="username"
@@ -426,7 +426,7 @@ const Register: React.FC = () => {
 
 							<Button
 								type="submit"
-								className="w-full bg-purple-600 hover:bg-purple-700 py-6 text-lg font-medium mt-6"
+								className="w-full bg-purple-600 hover:bg-purple-700 py-4 sm:py-6 text-base sm:text-lg font-medium mt-4"
 								disabled={isLoading}
 							>
 								{isLoading ? (
@@ -463,7 +463,7 @@ const Register: React.FC = () => {
 						</form>
 					</Form>
 				</CardContent>
-				<CardFooter className="flex justify-center pt-2 pb-6">
+				<CardFooter className="flex justify-center pt-2 pb-4">
 					<p className="text-sm text-gray-400">
 						Already part of the shadows?{" "}
 						<Link
@@ -476,7 +476,7 @@ const Register: React.FC = () => {
 				</CardFooter>
 			</Card>
 
-			<div className="text-center mt-6 text-gray-400 text-sm mb-4">
+			<div className="text-center mt-4 text-gray-400 text-sm">
 				<p>Your true identity stays hidden. Your shadow self roams free.</p>
 			</div>
 		</div>
