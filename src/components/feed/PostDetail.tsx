@@ -26,8 +26,8 @@ const PostDetail: React.FC = () => {
 <PostCard 
   post={{ 
     ...post, 
-    user: post.author?._id || post.user || '', 
-    username: post.author?.username || post.username || '',
+    user: post.author?._id || '', 
+    username: post.author?.username || '',
     anonymousAlias: post.author?.anonymousAlias || post.anonymousAlias || 'Anonymous', 
     avatarEmoji: post.author?.avatarEmoji || post.avatarEmoji || '🎭', 
     comments: post.comments || [], 
