@@ -43,7 +43,9 @@ const registerSchema = z
 	.object({
 		username: z
 			.string()
-			.min(3, { message: "Username must be at least 3 characters" }),
+			.min(3, { message: "Username must be at least 3 characters" })
+			.max(20, { message: "Username cannot exceed 20 characters" })
+			.regex(/^[a-zA-Z0-9_]+$/, { message: "Username can only contain letters, numbers, and underscores" }),
 		fullName: z.string().min(2, { message: "Please enter your full name" }),
 		email: z.string().email({ message: "Please enter a valid email" }),
 		password: z
@@ -66,13 +68,20 @@ const registerSchema = z
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register: React.FC = () => {
-	const { register: registerUser, isLoading } = useAuth();
+	const { register: registerUser, isLoading, isAuthenticated } = useAuth();
 	const [showPassword, setShowPassword] = React.useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 	const [referralCode, setReferralCode] = useState<string | null>(null);
 	const location = useLocation();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+
+	// Redirect if already authenticated
+	useEffect(() => {
+		if (isAuthenticated) {
+			navigate("/");
+		}
+	}, [isAuthenticated, navigate]);
 
 	// Extract referral code from URL
 	useEffect(() => {
@@ -106,8 +115,14 @@ const Register: React.FC = () => {
 
 	const onSubmit = async (data: RegisterFormValues) => {
 		try {
-			// Expect proper return type
-			const result = await registerUser(
+			console.log("Submitting registration form with data:", {
+				username: data.username,
+				fullName: data.fullName,
+				email: data.email,
+				referralCode: data.referralCode,
+			});
+
+			await registerUser(
 				data.username,
 				data.fullName,
 				data.email,
@@ -115,10 +130,11 @@ const Register: React.FC = () => {
 				data.referralCode
 			);
 
-			// No redirect to verify-email, just animation then home
-			// Email verified status & UI are now handled in profile/settings
+			console.log("Registration completed successfully");
+			// Navigation will be handled by login animation and auth context
 		} catch (error: any) {
-			console.error("Registration error:", error);
+			console.error("Registration error in component:", error);
+			// Error toast is already handled in AuthContext
 		}
 	};
 
@@ -338,6 +354,31 @@ const Register: React.FC = () => {
 											If someone invited you, enter their referral code here
 										</FormDescription>
 										<FormMessage className="text-red-400" />
+									</FormItem>
+								)}
+							/>
+
+							<FormField
+								control={form.control}
+								name="isAdult"
+								render={({ field }) => (
+									<FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border border-purple-800/30 p-4">
+										<FormControl>
+											<Checkbox
+												checked={field.value}
+												onCheckedChange={field.onChange}
+												className="data-[state=checked]:bg-purple-600 border-purple-500"
+											/>
+										</FormControl>
+										<div className="space-y-1 leading-none">
+											<FormLabel className="text-purple-300">
+												I am at least 18 years old
+											</FormLabel>
+											<FormDescription className="text-xs text-gray-400">
+												You must be 18 or older to use this platform.
+											</FormDescription>
+										</div>
+										<FormMessage />
 									</FormItem>
 								)}
 							/>

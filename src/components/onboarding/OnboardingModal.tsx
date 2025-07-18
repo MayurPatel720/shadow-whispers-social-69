@@ -30,6 +30,14 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
 
   const totalSteps = 6;
 
+  // Reset to first step when modal opens
+  useEffect(() => {
+    if (open) {
+      setCurrentStep(1);
+      setOnboardingData({});
+    }
+  }, [open]);
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -55,12 +63,20 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   const completeOnboarding = async () => {
     setIsLoading(true);
     try {
+      console.log("Completing onboarding with data:", onboardingData);
+      
       const updatedUser = await updateUserProfile({
         ...onboardingData,
         onboardingComplete: true,
       });
+      
+      console.log("Onboarding completed, updated user:", updatedUser);
       updateUser(updatedUser);
       onOpenChange(false);
+
+      // Reset state
+      setCurrentStep(1);
+      setOnboardingData({});
     } catch (error) {
       console.error("Failed to complete onboarding:", error);
     } finally {
@@ -103,8 +119,16 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-full h-[600px] p-0 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-800/50">
+    <Dialog 
+      open={open} 
+      onOpenChange={onOpenChange}
+      modal={true}
+    >
+      <DialogContent 
+        className="max-w-2xl w-full h-[600px] p-0 overflow-hidden bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border-purple-800/50"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <div className="flex flex-col h-full">
           <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
           <div className="flex-1 overflow-y-auto">

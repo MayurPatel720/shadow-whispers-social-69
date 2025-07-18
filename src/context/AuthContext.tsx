@@ -45,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const token = localStorage.getItem("token");
     if (token) {
       // Fetch user data or validate token
-      // For now, just set a default user
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
@@ -57,30 +56,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           localStorage.removeItem("token");
           localStorage.removeItem("user");
         }
-      } else {
-        setUser({
-          _id: "default_user_id",
-          username: "DefaultUser",
-          fullName: "Default User",
-          email: "default@example.com",
-          posts: [],
-          anonymousAlias: "Anonymous",
-          avatarEmoji: "🎭",
-          referralCode: "",
-          referralCount: 0,
-          friends: [],
-          ghostCircles: [],
-          recognizedUsers: [],
-          identityRecognizers: [],
-          recognitionAttempts: 0,
-          successfulRecognitions: 0,
-          recognitionRevocations: [],
-          bio: "",
-          claimedRewards: [],
-          interests: [],
-          premiumMatchUnlocks: 0,
-          isEmailVerified: false,
-        });
       }
     }
   }, []);
@@ -124,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   ) => {
     setIsLoading(true);
     try {
+      console.log("Starting registration process...");
       const data = await registerUser(
         username,
         fullName,
@@ -131,23 +107,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         password,
         referralCode
       );
+      
+      console.log("Registration successful, received data:", data);
+      
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
       setShowLoginAnimation(true);
       
       // Always show onboarding for new users
-      setTimeout(() => setShowOnboarding(true), 2000);
+      setTimeout(() => {
+        console.log("Showing onboarding modal...");
+        setShowOnboarding(true);
+      }, 2500); // Show after login animation completes
       
       toast({
         title: "Account created!",
         description: "Welcome to UnderKover! Let's get you set up.",
       });
     } catch (error: any) {
+      console.error("Registration failed:", error);
       toast({
         variant: "destructive",
         title: "Registration failed",
-        description: error.message || "Something went wrong",
+        description: error.message || "Something went wrong during registration. Please try again.",
       });
       throw error;
     } finally {
