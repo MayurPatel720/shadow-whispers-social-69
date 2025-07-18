@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, registerUser } from "@/lib/api";
 import { User } from "@/types/user";
@@ -67,17 +66,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
+      
+      // Show login animation first
       setShowLoginAnimation(true);
       
-      // Check if onboarding is needed - show after animation completes
-      if (!data.onboardingComplete) {
-        setTimeout(() => {
-          setShowLoginAnimation(false);
-          setTimeout(() => setShowOnboarding(true), 500); // Small delay after animation ends
-        }, 3000); // Animation duration
-      } else {
-        setTimeout(() => setShowLoginAnimation(false), 3000);
-      }
+      // After animation completes, check if onboarding is needed
+      setTimeout(() => {
+        setShowLoginAnimation(false);
+        // Only show onboarding if user hasn't completed it
+        if (!data.onboardingComplete) {
+          setTimeout(() => {
+            setShowOnboarding(true);
+          }, 300); // Small delay after animation ends
+        }
+      }, 3000); // Animation duration
       
       toast({
         title: "Welcome back!",
@@ -118,6 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
+      
+      // Show login animation first
       setShowLoginAnimation(true);
       
       // Always show onboarding for new users after animation completes
@@ -126,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setTimeout(() => {
           console.log("Showing onboarding modal...");
           setShowOnboarding(true);
-        }, 500); // Small delay after animation ends
+        }, 300); // Small delay after animation ends
       }, 3000); // Animation duration
       
       toast({
@@ -151,6 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("user");
     setUser(null);
     setShowOnboarding(false);
+    setShowLoginAnimation(false);
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
@@ -160,6 +165,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateUser = (userData: User) => {
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    // Close onboarding when user profile is updated with onboardingComplete
+    if (userData.onboardingComplete) {
+      setShowOnboarding(false);
+    }
   };
 
   const updateProfile = async (profileData: Partial<User>) => {
