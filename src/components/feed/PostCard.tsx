@@ -81,7 +81,7 @@ const PostCard: React.FC<PostCardProps> = ({
 	onRefresh,
 	showOptions = false,
 }) => {
-	const { user } = useAuth();
+	const { user, isAuthenticated } = useAuth();
 	const navigate = useNavigate();
 
 	const [likeCount, setLikeCount] = useState(post.likes?.length || 0);
@@ -101,7 +101,6 @@ const PostCard: React.FC<PostCardProps> = ({
 	const [isSharing, setIsSharing] = useState(false);
 	const [showLikeAnimation, setShowLikeAnimation] = useState(false);
 	const [lastTap, setLastTap] = useState(0);
-	const { isAuthenticated } = useAuth();
 	const isOwnPost = post.user === currentUserId;
 
 	const handleAliasClick = (userId: string, alias: string) => {
@@ -258,7 +257,7 @@ const PostCard: React.FC<PostCardProps> = ({
 		}
 		try {
 			setIsSubmitting(true);
-			await addComment(post._id, newComment.trim(), user.anonymousAlias);
+			await addComment(post._id, newComment.trim(), user?.anonymousAlias || "Anonymous");
 
 			setNewComment("");
 			loadComments();
@@ -317,7 +316,7 @@ const PostCard: React.FC<PostCardProps> = ({
 
 	const handleReplyToComment = async (commentId: string, content: string) => {
 		try {
-			await replyToComment(post._id, commentId, content, user.anonymousAlias);
+			await replyToComment(post._id, commentId, content, user?.anonymousAlias || "Anonymous");
 			toast({
 				title: "Reply added",
 				description: "Your reply has been posted successfully!",
@@ -350,11 +349,16 @@ const PostCard: React.FC<PostCardProps> = ({
 		username: post.username || "",
 		email: "",
 		fullName: "",
+		posts: [],
 		friends: [],
 		recognizedUsers: [],
 		identityRecognizers: [],
 		referralCode: "",
+		referralCount: 0,
+		ghostCircles: [],
+		recognitionRevocations: [],
 		bio: "",
+		claimedRewards: [],
 		interests: [],
 		premiumMatchUnlocks: 0,
 		isEmailVerified: false,

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, registerUser } from "@/lib/api";
 import { User } from "@/types/user";
@@ -6,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   showLoginAnimation: boolean;
   setShowLoginAnimation: (show: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
@@ -18,6 +20,8 @@ interface AuthContextType {
   ) => Promise<void>;
   logout: () => void;
   updateUser: (userData: User) => void;
+  updateProfile: (profileData: Partial<User>) => Promise<void>;
+  refreshUser: () => Promise<void>;
   // New onboarding state
   showOnboarding: boolean;
   setShowOnboarding: (show: boolean) => void;
@@ -33,6 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [showLoginAnimation, setShowLoginAnimation] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { toast } = useToast();
+
+  // Computed property for authentication status
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -83,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const data = await loginUser(email, password);
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
       setShowLoginAnimation(true);
       
@@ -124,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         referralCode
       );
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
       setShowLoginAnimation(true);
       
@@ -148,6 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
     setShowOnboarding(false);
     toast({
@@ -158,63 +168,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updateUser = (userData: User) => {
     setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Fetch user data or validate token
-      // For now, just set a default user
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("Error parsing user from localStorage:", error);
-          setUser(null);
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-        }
-      } else {
-        setUser({
-          _id: "default_user_id",
-          username: "DefaultUser",
-          fullName: "Default User",
-          email: "default@example.com",
-          posts: [],
-          anonymousAlias: "Anonymous",
-          avatarEmoji: "🎭",
-          referralCode: "",
-          referralCount: 0,
-          friends: [],
-          ghostCircles: [],
-          recognizedUsers: [],
-          identityRecognizers: [],
-          recognitionAttempts: 0,
-          successfulRecognitions: 0,
-          recognitionRevocations: [],
-          bio: "",
-          claimedRewards: [],
-          interests: [],
-          premiumMatchUnlocks: 0,
-          isEmailVerified: false,
+  const updateProfile = async (profileData: Partial<User>) => {
+    try {
+      // API call to update profile would go here
+      // For now, just update local state
+      if (user) {
+        const updatedUser = { ...user, ...profileData };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        toast({
+          title: "Profile updated",
+          description: "Your profile has been updated successfully.",
         });
       }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+      });
+      throw error;
     }
-  }, []);
+  };
+
+  const refreshUser = async () => {
+    try {
+      // API call to refresh user data would go here
+      // For now, just maintain current state
+      console.log("Refreshing user data...");
+    } catch (error) {
+      console.error("Failed to refresh user:", error);
+    }
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
+        isAuthenticated,
         showLoginAnimation,
         setShowLoginAnimation,
         login,
         register,
         logout,
         updateUser,
+        updateProfile,
+        refreshUser,
         showOnboarding,
         setShowOnboarding,
       }}

@@ -1,3 +1,4 @@
+
 export interface User {
   _id: string;
   username: string;
@@ -54,4 +55,16 @@ export interface Post {
   college?: string;
   area?: string;
   shareCount: number;
+}
+
+export interface Recognition {
+  stats: {
+    totalRecognized: number;
+    totalRecognizers: number;
+    recognitionRate: number;
+    successfulRecognitions: number;
+    recognitionAttempts: number;
+  };
+  recognized: User[];
+  recognizers: User[];
 }

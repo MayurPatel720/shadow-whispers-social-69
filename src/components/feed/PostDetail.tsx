@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -22,7 +23,21 @@ const PostDetail: React.FC = () => {
 <>
 <AppShell>
 <div className="max-w-4xl relative mx-auto mt-4 mb-8 p-4 rounded-lg">
-<PostCard post={{ ...post, user: '', anonymousAlias: '', avatarEmoji: '', comments: [], likes: post.likes.map(userId => ({ user: userId })) }} currentUserId={''} onRefresh={() => {}} showOptions={false} />
+<PostCard 
+  post={{ 
+    ...post, 
+    user: post.user || '', 
+    anonymousAlias: post.anonymousAlias || 'Anonymous', 
+    avatarEmoji: post.avatarEmoji || '🎭', 
+    comments: post.comments || [], 
+    likes: post.likes?.map((userId: string) => ({ user: userId })) || [],
+    createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: post.updatedAt ? new Date(post.updatedAt).toISOString() : new Date().toISOString()
+  }} 
+  currentUserId={''} 
+  onRefresh={() => {}} 
+  showOptions={false} 
+/>
 </div>
 </AppShell>
 </>
