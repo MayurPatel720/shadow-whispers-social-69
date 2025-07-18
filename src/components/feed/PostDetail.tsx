@@ -26,9 +26,10 @@ const PostDetail: React.FC = () => {
 <PostCard 
   post={{ 
     ...post, 
-    user: post.user || '', 
-    anonymousAlias: post.anonymousAlias || 'Anonymous', 
-    avatarEmoji: post.avatarEmoji || '🎭', 
+    user: post.author?._id || post.user || '', 
+    username: post.author?.username || post.username || '',
+    anonymousAlias: post.author?.anonymousAlias || post.anonymousAlias || 'Anonymous', 
+    avatarEmoji: post.author?.avatarEmoji || post.avatarEmoji || '🎭', 
     comments: post.comments || [], 
     likes: post.likes?.map((userId: string) => ({ user: userId })) || [],
     createdAt: post.createdAt ? new Date(post.createdAt).toISOString() : new Date().toISOString(),
