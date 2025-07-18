@@ -1,81 +1,57 @@
-
 export interface User {
   _id: string;
   username: string;
   fullName: string;
   email: string;
+  posts: string[];
   anonymousAlias: string;
   avatarEmoji: string;
+  referralCode?: string;
+  referralCount: number;
+  referredBy?: string;
   friends: string[];
+  ghostCircles: string[];
   recognizedUsers: string[];
-  identityRecognizers?: User[];
-  referralCode: string;
-  oneSignalPlayerId?: string;
+  identityRecognizers: string[];
+  recognitionAttempts: number;
+  successfulRecognitions: number;
+  recognitionRevocations: string[];
   bio: string;
-  gender?: 'male' | 'female' | 'other';
+  claimedRewards: Array<{
+    tierLevel: number;
+    rewardType: "badge" | "cash" | "premium";
+    rewardDescription: string;
+    status: "pending" | "completed";
+    claimedAt: Date;
+    paymentDetails?: string;
+  }>;
+  gender?: "male" | "female" | "other";
   interests: string[];
   premiumMatchUnlocks: number;
   isEmailVerified: boolean;
-  recognitionAttempts?: number;
-  successfulRecognitions?: number;
-  claimedRewards?: {
-    tierLevel: number;
-    rewardType: 'badge' | 'cash' | 'premium';
-    rewardDescription: string;
-    status: 'pending' | 'completed';
-    claimedAt: Date;
-    paymentDetails?: string;
-  }[];
-}
-
-export interface Recognition {
-  stats: {
-    totalRecognized: number;
-    totalRecognizers: number;
-    recognitionRate: number;
-    successfulRecognitions: number;
-    recognitionAttempts: number;
-  };
-  recognized: User[];
-  recognizers: User[];
+  emailVerificationOTP?: string;
+  emailVerificationOTPExpire?: Date;
+  // New onboarding fields
+  college?: string;
+  area?: string;
+  onboardingComplete?: boolean;
 }
 
 export interface Post {
   _id: string;
-  user: string;
   content: string;
+  author: User;
+  likes: string[];
+  comments: string[];
+  createdAt: Date;
+  updatedAt: Date;
+  anonymousAlias: string;
   imageUrl?: string;
   images?: string[];
-  videos?: Array<{
-    url: string;
-    thumbnail?: string;
-    duration?: number;
-  }>;
-  likes: string[];
-  likesCount: number;
-  comments: Comment[];
-  commentsCount: number;
-  ghostCircle?: string;
+  videos?: Array<{ url: string; thumbnail?: string; duration?: number }>;
+  ghostCircleId?: string;
+  feedType?: "global" | "college" | "area";
+  college?: string;
+  area?: string;
   shareCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface Comment {
-  _id: string;
-  user: string;
-  content: string;
-  anonymousAlias: string;
-  createdAt: string;
-  updatedAt: string;
-  replies: Reply[];
-}
-
-export interface Reply {
-  _id: string;
-  user: string;
-  content: string;
-  anonymousAlias: string;
-  createdAt: string;
-  updatedAt: string;
 }

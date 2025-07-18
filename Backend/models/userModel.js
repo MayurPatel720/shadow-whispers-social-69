@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -108,6 +107,18 @@ const userSchema = new mongoose.Schema({
   },
   emailVerificationOTPExpire: {
     type: Date,
+  },
+  college: {
+    type: String,
+    trim: true,
+  },
+  area: {
+    type: String,  
+    trim: true,
+  },
+  onboardingComplete: {
+    type: Boolean,
+    default: false,
   },
 });
 

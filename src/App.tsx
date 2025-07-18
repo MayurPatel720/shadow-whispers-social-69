@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
 	BrowserRouter as Router,
@@ -15,6 +14,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
 import SmoothScrollProvider from "./components/providers/SmoothScrollProvider";
 import LoginSuccessAnimation from "./components/animations/LoginSuccessAnimation";
+import OnboardingModal from "./components/onboarding/OnboardingModal";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 
@@ -42,7 +42,7 @@ import PostDetail from "./components/feed/PostDetail";
 const queryClient = new QueryClient();
 
 function GlobalApp() {
-	const { showLoginAnimation, setShowLoginAnimation } = useAuth();
+	const { showLoginAnimation, setShowLoginAnimation, showOnboarding, setShowOnboarding } = useAuth();
 	const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
 	const navigate = useNavigate();
 
@@ -61,6 +61,13 @@ function GlobalApp() {
 					/>
 				</div>
 			)}
+
+			{/* Onboarding Modal */}
+			<OnboardingModal
+				open={showOnboarding}
+				onOpenChange={setShowOnboarding}
+			/>
+
 			<Routes>
 				{/* Public routes */}
 				<Route path="/post/:id" element={<PostDetail />} />
