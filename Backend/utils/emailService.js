@@ -1,31 +1,31 @@
-
 const nodemailer = require("nodemailer");
 
 // Create transporter
 const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: process.env.EMAIL_FROM || "your-email@gmail.com",
-      pass: process.env.EMAIL_PASSWORD || "your-app-password",
-    },
-  });
+	return nodemailer.createTransport({
+		service: "gmail",
+
+		auth: {
+			user: process.env.SMTP_EMAIL || "your-email@gmail.com",
+			pass: process.env.SMTP_PASSWORD || "your-app-password",
+		},
+	});
 };
 
 // Generate 6-digit OTP
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+	return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 // Send verification email with OTP
 const sendVerificationEmail = async (email, otp) => {
-  const transporter = createTransporter();
+	const transporter = createTransporter();
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || "noreply@example.com",
-    to: email,
-    subject: "UnderKover - Verify Your Email",
-    html: `
+	const mailOptions = {
+		from: process.env.EMAIL_FROM || "noreply@example.com",
+		to: email,
+		subject: "UnderKover - Verify Your Email",
+		html: `
       <!DOCTYPE html>
       <html lang="en">
       <head>
@@ -239,30 +239,32 @@ const sendVerificationEmail = async (email, otp) => {
       </body>
       </html>
     `,
-  };
+	};
 
-  try {
-    const result = await transporter.sendMail(mailOptions);
-    console.log("Verification email sent successfully:", result.messageId);
-    return result;
-  } catch (error) {
-    console.error("Error sending verification email:", error);
-    throw new Error("Failed to send verification email");
-  }
+	try {
+		const result = await transporter.sendMail(mailOptions);
+		console.log("Verification email sent successfully:", result.messageId);
+		return result;
+	} catch (error) {
+		console.error("Error sending verification email:", error);
+		throw new Error("Failed to send verification email");
+	}
 };
 
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken) => {
-  const transporter = createTransporter();
-  
-  // Updated reset URL to match the frontend route
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+	const transporter = createTransporter();
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || "noreply@example.com",
-    to: email,
-    subject: "UnderKover - Reset Your Password",
-    html: `
+	// Updated reset URL to match the frontend route
+	const resetUrl = `${
+		process.env.FRONTEND_URL || "http://localhost:5173"
+	}/reset-password?token=${resetToken}`;
+
+	const mailOptions = {
+		from: process.env.EMAIL_FROM || "noreply@example.com",
+		to: email,
+		subject: "UnderKover - Reset Your Password",
+		html: `
       <!DOCTYPE html>
       <html lang="en">
       <head>
@@ -505,20 +507,20 @@ const sendPasswordResetEmail = async (email, resetToken) => {
       </body>
       </html>
     `,
-  };
+	};
 
-  try {
-    const result = await transporter.sendMail(mailOptions);
-    console.log("Password reset email sent successfully:", result.messageId);
-    return result;
-  } catch (error) {
-    console.error("Error sending password reset email:", error);
-    throw new Error("Failed to send password reset email");
-  }
+	try {
+		const result = await transporter.sendMail(mailOptions);
+		console.log("Password reset email sent successfully:", result.messageId);
+		return result;
+	} catch (error) {
+		console.error("Error sending password reset email:", error);
+		throw new Error("Failed to send password reset email");
+	}
 };
 
 module.exports = {
-  sendVerificationEmail,
-  sendPasswordResetEmail,
-  generateOTP,
+	sendVerificationEmail,
+	sendPasswordResetEmail,
+	generateOTP,
 };

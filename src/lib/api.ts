@@ -222,7 +222,7 @@ export const createPost = async (
 			...(college && { college }),
 			...(area && { area }),
 		};
-		
+
 		console.log("Creating post with data:", postData);
 		const response = await api.post("/api/posts", postData);
 		console.log("Post created successfully:", response.data);
@@ -253,7 +253,7 @@ export const updatePost = async (
 };
 
 export const deletePost = async (postId: string): Promise<void> => {
-	await api.delete(`/api/posts/delete/${postId}`);
+	await api.delete(`/api/posts/${postId}`);
 };
 
 export const getUserPosts = async (userId: string): Promise<Post[]> => {

@@ -27,10 +27,8 @@ const adminMatchRoutes = require("./routes/adminMatchRoutes");
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Redis for caching (optional, falls back gracefully)
 initRedis();
 
-// Initialize OneSignal Client
 if (process.env.ONESIGNAL_APP_ID && process.env.ONESIGNAL_REST_API_KEY) {
 	const OneSignal = require("onesignal-node");
 	global.oneSignalClient = new OneSignal.Client(
@@ -120,17 +118,6 @@ require("./configs/socket")(io);
 // Connect to DB
 ConnectTODB();
 
-// Initialize seed system after DB connection
-setTimeout(async () => {
-	try {
-		const { autoInitializeSeedPosts } = require("./utils/seedPosts");
-		await autoInitializeSeedPosts();
-		console.log("✅ Seed posts system initialized");
-	} catch (error) {
-		console.error("❌ Failed to initialize seed posts:", error);
-	}
-}, 2000);
-
 // Health check route (before other routes for faster response)
 app.get("/healthcheck", (req, res) => {
 	res.status(200).json({
@@ -178,7 +165,6 @@ app.use((err, req, res, next) => {
 	});
 });
 
-// Graceful shutdown
 process.on("SIGTERM", () => {
 	console.log("SIGTERM received, shutting down gracefully");
 	server.close(() => {
