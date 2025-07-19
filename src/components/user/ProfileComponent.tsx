@@ -33,6 +33,7 @@ import ProfileHeader from "./ProfileHeader";
 import ProfileStats from "./ProfileStats";
 import PostsGrid from "./PostsGrid";
 import ProfileSettings from "./ProfileSettings";
+import YourMatchesModal from "../whisper/YourMatchesModal";
 
 interface ProfileComponentProps {
 	userId?: string;
@@ -323,14 +324,11 @@ const ProfileComponent = ({
 				open={editProfileOpen}
 				onOpenChange={setEditProfileOpen}
 			/>
-			{/* Your Matches Modal */}
-			{/* Only import if really used */}
-			{/* If needed: */}
-			{/* <YourMatchesModal */}
-			{/*   open={matchesModalOpen} */}
-			{/*   onOpenChange={setMatchesModalOpen} */}
-			{/*   requireProfileEdit={handleRequireProfileEditForMatches} */}
-			{/* /> */}
+			<YourMatchesModal
+				open={matchesModalOpen}
+				onOpenChange={setMatchesModalOpen}
+				requireProfileEdit={handleRequireProfileEditForMatches}
+			/>
 			<RecognitionModal
 				open={recognitionModalOpen}
 				onOpenChange={setRecognitionModalOpen}

@@ -1,3 +1,4 @@
+
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 
@@ -11,13 +12,20 @@ const getMatches = asyncHandler(async (req, res) => {
 		res.status(404);
 		throw new Error("User not found");
 	}
-	if (
-		!currentUser.gender ||
-		!currentUser.interests ||
-		currentUser.interests.length === 0
-	) {
+
+	// Check what's missing specifically
+	const missingGender = !currentUser.gender;
+	const missingInterests = !currentUser.interests || currentUser.interests.length === 0;
+
+	if (missingGender && missingInterests) {
 		res.status(400);
 		throw new Error("Please complete your profile with gender and interests");
+	} else if (missingGender) {
+		res.status(400);
+		throw new Error("Please select your gender to see matches");
+	} else if (missingInterests) {
+		res.status(400);
+		throw new Error("Please add interests to your profile to see matches");
 	}
 
 	// Determine target gender for matching
