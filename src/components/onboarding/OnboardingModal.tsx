@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { updateUserProfile } from "@/lib/api";
 import OnboardingStep1 from "./OnboardingStep1";
@@ -71,29 +71,44 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
         return;
       }
 
+      // Prepare the complete user data with onboarding flag
       const updatedUserData = {
         ...user,
         ...onboardingData,
         onboardingComplete: true,
       };
       
+      console.log("Updating user with complete data:", updatedUserData);
+      
       // Update via API
-      const updatedUser = await updateUserProfile({
+      const apiResponse = await updateUserProfile({
         ...onboardingData,
         onboardingComplete: true,
       });
       
-      console.log("Onboarding completed successfully, updated user:", updatedUser);
+      console.log("API response:", apiResponse);
       
-      // Update local state
-      updateUser(updatedUser);
+      // Ensure the response includes onboardingComplete
+      const finalUserData = {
+        ...user,
+        ...onboardingData,
+        ...apiResponse,
+        onboardingComplete: true, // Force this to be true
+      };
       
-      // Close modal
+      console.log("Final user data being set:", finalUserData);
+      
+      // Update local state first
+      updateUser(finalUserData);
+      
+      // Close modal immediately
       onOpenChange(false);
 
       // Reset state
       setCurrentStep(1);
       setOnboardingData({});
+      
+      console.log("Onboarding completed successfully - modal closed");
       
     } catch (error) {
       console.error("Failed to complete onboarding:", error);
@@ -154,6 +169,9 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
+        <DialogTitle className="sr-only">Onboarding</DialogTitle>
+        <DialogDescription className="sr-only">Complete your profile setup</DialogDescription>
+        
         <div className="flex flex-col h-full max-h-[95vh]">
           <div className="flex-shrink-0">
             <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />

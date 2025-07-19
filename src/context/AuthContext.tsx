@@ -171,13 +171,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateUser = (userData: User) => {
-    console.log("Updating user data:", userData);
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
+    console.log("Updating user data in AuthContext:", userData);
+    
+    // Ensure the updated user data is properly set
+    const updatedUser = { ...userData };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
     
     // Close onboarding when user profile is updated with onboardingComplete
-    if (userData.onboardingComplete) {
-      console.log("Onboarding completed, closing modal");
+    if (updatedUser.onboardingComplete) {
+      console.log("Onboarding completed, closing modal and updating state");
       setShowOnboarding(false);
     }
   };
