@@ -9,7 +9,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  console.log("ProtectedRoute - isAuthenticated:", isAuthenticated, "isLoading:", isLoading, "user:", user);
 
   if (isLoading) {
     return (
@@ -22,7 +24,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" replace />;
   }
 

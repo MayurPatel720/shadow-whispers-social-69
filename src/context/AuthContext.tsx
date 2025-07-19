@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, registerUser } from "@/lib/api";
 import { User } from "@/types/user";
@@ -43,11 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Fetch user data or validate token
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+          console.log("Loaded user from localStorage:", parsedUser);
           setUser(parsedUser);
         } catch (error) {
           console.error("Error parsing user from localStorage:", error);
@@ -63,6 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setIsLoading(true);
     try {
       const data = await loginUser(email, password);
+      console.log("Login successful, received data:", data);
+      
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
       setUser(data);
@@ -75,9 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setShowLoginAnimation(false);
         // Only show onboarding if user hasn't completed it
         if (!data.onboardingComplete) {
+          console.log("User hasn't completed onboarding, showing modal");
           setTimeout(() => {
             setShowOnboarding(true);
-          }, 300); // Small delay after animation ends
+          }, 300);
+        } else {
+          console.log("User has completed onboarding, skipping modal");
         }
       }, 3000); // Animation duration
       
@@ -86,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         description: "You have successfully logged in.",
       });
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -128,9 +135,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setTimeout(() => {
         setShowLoginAnimation(false);
         setTimeout(() => {
-          console.log("Showing onboarding modal...");
+          console.log("Showing onboarding modal for new user...");
           setShowOnboarding(true);
-        }, 300); // Small delay after animation ends
+        }, 300);
       }, 3000); // Animation duration
       
       toast({
@@ -151,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
+    console.log("Logging out user");
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
@@ -163,18 +171,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateUser = (userData: User) => {
+    console.log("Updating user data:", userData);
     setUser(userData);
     localStorage.setItem("user", JSON.stringify(userData));
+    
     // Close onboarding when user profile is updated with onboardingComplete
     if (userData.onboardingComplete) {
+      console.log("Onboarding completed, closing modal");
       setShowOnboarding(false);
     }
   };
 
   const updateProfile = async (profileData: Partial<User>) => {
     try {
-      // API call to update profile would go here
-      // For now, just update local state
       if (user) {
         const updatedUser = { ...user, ...profileData };
         setUser(updatedUser);
@@ -196,8 +205,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshUser = async () => {
     try {
-      // API call to refresh user data would go here
-      // For now, just maintain current state
       console.log("Refreshing user data...");
     } catch (error) {
       console.error("Failed to refresh user:", error);

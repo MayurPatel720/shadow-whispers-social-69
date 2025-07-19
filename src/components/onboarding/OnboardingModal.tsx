@@ -33,6 +33,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   // Reset to first step when modal opens
   useEffect(() => {
     if (open) {
+      console.log("Onboarding modal opened, resetting state");
       setCurrentStep(1);
       setOnboardingData({});
     }
@@ -65,18 +66,35 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
     try {
       console.log("Completing onboarding with data:", onboardingData);
       
+      if (!user) {
+        console.error("No user found when completing onboarding");
+        return;
+      }
+
+      const updatedUserData = {
+        ...user,
+        ...onboardingData,
+        onboardingComplete: true,
+      };
+      
+      // Update via API
       const updatedUser = await updateUserProfile({
         ...onboardingData,
         onboardingComplete: true,
       });
       
-      console.log("Onboarding completed, updated user:", updatedUser);
+      console.log("Onboarding completed successfully, updated user:", updatedUser);
+      
+      // Update local state
       updateUser(updatedUser);
+      
+      // Close modal
       onOpenChange(false);
 
       // Reset state
       setCurrentStep(1);
       setOnboardingData({});
+      
     } catch (error) {
       console.error("Failed to complete onboarding:", error);
     } finally {
@@ -85,6 +103,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   };
 
   const updateOnboardingData = (data: Partial<OnboardingData>) => {
+    console.log("Updating onboarding data:", data);
     setOnboardingData(prev => ({ ...prev, ...data }));
   };
 
@@ -117,6 +136,12 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
         return <OnboardingStep1 {...stepProps} />;
     }
   };
+
+  // Don't render if user has already completed onboarding
+  if (user?.onboardingComplete) {
+    console.log("User has completed onboarding, not showing modal");
+    return null;
+  }
 
   return (
     <Dialog 
