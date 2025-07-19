@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { updateUserProfile } from "@/lib/api";
 
 interface GenderSelectionModalProps {
   open: boolean;
@@ -22,7 +23,7 @@ const GenderSelectionModal: React.FC<GenderSelectionModalProps> = ({
 }) => {
   const [selectedGender, setSelectedGender] = useState<Gender>("male");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { updateProfile } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const handleSave = async () => {
     if (!selectedGender) {
@@ -36,7 +37,14 @@ const GenderSelectionModal: React.FC<GenderSelectionModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      await updateProfile({ gender: selectedGender });
+      // Make actual API call to save gender to database
+      const updatedUser = await updateUserProfile({ gender: selectedGender });
+      
+      // Update the local user state with the response from the API
+      if (user) {
+        updateUser({ ...user, ...updatedUser });
+      }
+      
       toast({
         title: "Gender saved!",
         description: "You can now see your matches.",
