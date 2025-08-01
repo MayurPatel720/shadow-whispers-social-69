@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -112,11 +113,6 @@ const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <main className="flex-1">
         <div className="container py-10">{children}</div>
       </main>
-      <footer className="bg-secondary py-6 text-center text-muted-foreground">
-        <p>
-          &copy; {new Date().getFullYear()} UnderKover. All rights reserved.
-        </p>
-      </footer>
     </div>
   );
 };

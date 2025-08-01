@@ -1,267 +1,173 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OneSignal from "react-onesignal";
 
-interface OneSignalConfig {
-	appId: string;
-	safariWebId?: string;
+interface NotificationButton {
+	text: string;
+	id: string;
+	icon?: string;
 }
 
 interface NotificationPayload {
 	title: string;
-	message: string;
+	body: string;
 	url?: string;
-	imageUrl?: string;
-	data?: Record<string, any>;
+	buttons?: NotificationButton[];
+	data?: any;
 }
 
-interface TargetOptions {
-	userIds?: string[];
-	segments?: string[];
-	platform?: "web" | "android" | "all";
-}
+export const initializeOneSignal = async (appId: string): Promise<void> => {
+	try {
+		console.log("🚀 Initializing OneSignal with appId:", appId);
+		await OneSignal.init({
+			appId,
+			allowLocalhostAsSecureOrigin: true,
+			welcomeNotification: {
+				title: "Welcome to UnderKover!",
+				message: "Thanks for joining the community.",
+			},
+		});
 
-class OneSignalService {
-	private isInitialized = false;
-	private config: OneSignalConfig;
+		OneSignal.Notifications.addEventListener("permissionChange", (permission) => {
+			console.warn("🔔 OneSignal Permission Change:", permission);
+		});
 
-	constructor(config: OneSignalConfig) {
-		this.config = config;
-		console.log("OneSignal App ID:", this.config.appId);
-		console.log("NODE_ENV:", process.env.NODE_ENV);
+		OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event) => {
+			console.log("🔔 OneSignal Foreground Notification:", event);
+		});
+
+		OneSignal.Notifications.addEventListener("click", (event) => {
+			console.log("🔔 OneSignal Notification Clicked:", event);
+		});
+
+		console.log("✅ OneSignal initialized successfully");
+	} catch (error: any) {
+		console.error("❌ Error initializing OneSignal:", error);
 	}
+};
 
-	async initialize(): Promise<void> {
-		if (this.isInitialized) {
-			console.log("OneSignal already initialized");
-			return;
+export const getOneSignalPlayerId = async (): Promise<string | null> => {
+	try {
+		console.log("🔑 Fetching OneSignal Player ID...");
+		const playerId = await OneSignal.User.PushSubscription.id;
+
+		if (playerId) {
+			console.log("🔑 OneSignal Player ID:", playerId);
+			return playerId;
+		} else {
+			console.warn("⚠️ No OneSignal Player ID found");
+			return null;
+		}
+	} catch (error: any) {
+		console.error("❌ Error fetching OneSignal Player ID:", error);
+		return null;
+	}
+};
+
+export const sendNotification = async (
+	playerIds: string[],
+	payload: NotificationPayload
+): Promise<void> => {
+	try {
+		console.log("✉️ Sending notification to player IDs:", playerIds, "with payload:", payload);
+
+		const notification = {
+			include_player_ids: playerIds,
+			headings: { en: payload.title },
+			contents: { en: payload.body },
+			web_url: payload.url,
+			app_url: payload.url,
+			data: payload.data,
+			buttons: payload.buttons,
+		};
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const response = await OneSignal.push(notification);
+
+		console.log("✅ Notification sent successfully:", response);
+	} catch (error: any) {
+		console.error("❌ Error sending notification:", error);
+	}
+};
+
+export const requestNotificationPermission = async (): Promise<{
+	success: boolean;
+	error?: string;
+	playerId?: string;
+}> => {
+	try {
+		console.log("🔔 Starting notification permission request...");
+
+		// Check if OneSignal is initialized
+		if (!OneSignal.User) {
+			console.error("❌ OneSignal not initialized");
+			return { success: false, error: "OneSignal not initialized" };
 		}
 
-		try {
-			// Clear any existing registrations to prevent conflicts
-			await this.clearExistingRegistrations();
+		// Check current permission status
+		const hasPermission = await OneSignal.Notifications.permission;
+		console.log("🔍 Current permission status:", hasPermission);
 
-			await OneSignal.init({
-				appId: this.config.appId,
-				safari_web_id: this.config.safariWebId,
-				allowLocalhostAsSecureOrigin: process.env.NODE_ENV === "development",
-				autoRegister: false,
-				autoResubscribe: true,
-				persistNotification: true,
-				showCredit: false,
-			});
-
-			this.isInitialized = true;
-			console.log("OneSignal initialized successfully");
-			this.setupEventListeners();
-		} catch (error) {
-			console.error("Failed to initialize OneSignal:", error);
-			throw new Error("OneSignal initialization failed");
+		if (hasPermission) {
+			console.log("✅ Permission already granted");
+			const playerId = OneSignal.User.PushSubscription.id;
+			return { 
+				success: true, 
+				playerId: playerId || undefined 
+			};
 		}
-	}
 
-	private async clearExistingRegistrations(): Promise<void> {
-		try {
-			if ('serviceWorker' in navigator) {
-				const registrations = await navigator.serviceWorker.getRegistrations();
-				for (const registration of registrations) {
-					if (registration.scope.includes('OneSignal') || registration.scope.includes('onesignal')) {
-						console.log('Unregistering existing OneSignal service worker:', registration.scope);
-						await registration.unregister();
-					}
-				}
-			}
-		} catch (error) {
-			console.warn("Could not clear existing registrations:", error);
-		}
-	}
+		// Check if user is subscribed
+		const isOptedIn = OneSignal.User.PushSubscription.optedIn;
+		console.log("🔍 Current opt-in status:", isOptedIn);
 
-	private setupEventListeners(): void {
-		try {
-			OneSignal.User.PushSubscription.addEventListener("change", (event) => {
-				console.log("Subscription changed:", event);
-				this.handleSubscriptionChange(event.current.optedIn);
-			});
-
-			OneSignal.Notifications.addEventListener("click", (event) => {
-				console.log("Notification clicked:", event);
-				this.handleNotificationClick(event);
-			});
-		} catch (error) {
-			console.error("Failed to setup event listeners:", error);
-		}
-	}
-
-	async requestPermissionAndSubscribe(): Promise<{
-		success: boolean;
-		playerId?: string;
-		error?: string;
-	}> {
-		try {
-			if (!this.isInitialized) {
-				await this.initialize();
-			}
-
-			// Check if already subscribed
-			const isSubscribed = OneSignal.User.PushSubscription.optedIn;
-			if (isSubscribed) {
-				const playerId = OneSignal.User.PushSubscription.id;
-				return { success: true, playerId: playerId || undefined };
-			}
-
-			// Request permission first
-			const granted = await OneSignal.Notifications.requestPermission();
-			if (!granted) {
-				return { success: false, error: "Permission denied" };
-			}
-
-			// Subscribe to push notifications - this returns void, so we don't await it
+		if (!isOptedIn) {
+			// Subscribe to push notifications
 			OneSignal.User.PushSubscription.optIn();
 			
 			// Wait a bit for subscription to complete
 			await new Promise(resolve => setTimeout(resolve, 1000));
 			
+			// Get the player ID after subscription
 			const playerId = OneSignal.User.PushSubscription.id;
-
-			if (!playerId) {
-				return { success: false, error: "Failed to get player ID" };
+			console.log("📱 Player ID after opt-in:", playerId);
+			
+			if (playerId) {
+				console.log("✅ Successfully subscribed with player ID:", playerId);
+				return { success: true, playerId };
+			} else {
+				console.log("⚠️ Subscribed but no player ID yet");
+				return { success: true };
 			}
-
-			console.log("Successfully subscribed with player ID:", playerId);
-			return { success: true, playerId };
-		} catch (error) {
-			console.error("Failed to subscribe to notifications:", error);
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
-			};
-		}
-	}
-
-	async unsubscribe(): Promise<{ success: boolean; error?: string }> {
-		try {
-			OneSignal.User.PushSubscription.optOut();
-			console.log("Successfully unsubscribed from notifications");
-			return { success: true };
-		} catch (error) {
-			console.error("Failed to unsubscribe:", error);
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
-			};
-		}
-	}
-
-	async getSubscriptionStatus(): Promise<{
-		isSubscribed: boolean;
-		playerId?: string;
-		permission?: NotificationPermission;
-	}> {
-		try {
-			const isSubscribed = OneSignal.User.PushSubscription.optedIn;
-			const playerId = OneSignal.User.PushSubscription.id;
-
-			let permission: NotificationPermission = "default";
-			try {
-				if (typeof Notification !== 'undefined') {
-					permission = Notification.permission;
-				} else {
-					const permissionStatus = OneSignal.Notifications.permission;
-					if (permissionStatus === true) {
-						permission = "granted";
-					} else if (permissionStatus === false) {
-						permission = "denied";
-					}
-				}
-			} catch (permError) {
-				console.warn("Could not get permission status:", permError);
-				permission = "default";
-			}
-
-			return {
-				isSubscribed: Boolean(isSubscribed),
-				playerId: playerId || undefined,
-				permission,
-			};
-		} catch (error) {
-			console.error("Failed to get subscription status:", error);
-			return { isSubscribed: false, permission: "default" };
-		}
-	}
-
-	isSupported(): boolean {
-		return (
-			typeof window !== "undefined" &&
-			"serviceWorker" in navigator &&
-			"PushManager" in window &&
-			"Notification" in window
-		);
-	}
-
-	async setExternalUserId(
-		userId: string
-	): Promise<{ success: boolean; error?: string }> {
-		try {
-			await OneSignal.login(userId);
-			console.log("External user ID set:", userId);
-			return { success: true };
-		} catch (error) {
-			console.error("Failed to set external user ID:", error);
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
-			};
-		}
-	}
-
-	async addTags(
-		tags: Record<string, string>
-	): Promise<{ success: boolean; error?: string }> {
-		try {
-			OneSignal.User.addTags(tags);
-			console.log("User tags set:", tags);
-			return { success: true };
-		} catch (error) {
-			console.error("Failed to set user tags:", error);
-			return {
-				success: false,
-				error: error instanceof Error ? error.message : "Unknown error",
-			};
-		}
-	}
-
-	private handleSubscriptionChange(isSubscribed: boolean): void {
-		if (isSubscribed) {
-			const playerId = OneSignal.User.PushSubscription.id;
-			console.log("User subscribed with player ID:", playerId);
-			window.dispatchEvent(
-				new CustomEvent("onesignal:subscribed", {
-					detail: { playerId },
-				})
-			);
 		} else {
-			console.log("User unsubscribed");
-			window.dispatchEvent(new CustomEvent("onesignal:unsubscribed"));
+			console.log("✅ Already opted in");
+			const playerId = OneSignal.User.PushSubscription.id;
+			return { 
+				success: true, 
+				playerId: playerId || undefined 
+			};
 		}
+	} catch (error: any) {
+		console.error("❌ Error requesting notification permission:", error);
+		return { success: false, error: error.message || "Unknown error" };
 	}
-
-	private handleNotificationClick(event: any): void {
-		console.log("Notification clicked:", event);
-		if (event.result?.url) {
-			window.open(event.result.url, "_blank");
-		}
-		window.dispatchEvent(
-			new CustomEvent("onesignal:notificationClick", {
-				detail: event,
-			})
-		);
-	}
-}
-
-const oneSignalConfig: OneSignalConfig = {
-	appId: import.meta.env.VITE_ONESIGNAL_APP_ID || "22c5717d-d011-4611-b319-06b8691907d8",
-	safariWebId: "web.onesignal.auto.3cfe9839-ceab-4809-9212-172318dbfb2e",
 };
 
-export const oneSignalService = new OneSignalService(oneSignalConfig);
-export default oneSignalService;
-export type { NotificationPayload, TargetOptions };
+export const setExternalUserId = async (userId: string): Promise<void> => {
+	try {
+		console.log(`🔗 Setting external user ID: ${userId}`);
+		await OneSignal.login(userId);
+		console.log("✅ External user ID set successfully");
+	} catch (error: any) {
+		console.error("❌ Error setting external user ID:", error);
+	}
+};
+
+export const removeExternalUserId = async (): Promise<void> => {
+	try {
+		console.log("🚪 Removing external user ID");
+		await OneSignal.logout();
+		console.log("✅ External user ID removed successfully");
+	} catch (error: any) {
+		console.error("❌ Error removing external user ID:", error);
+	}
+};
