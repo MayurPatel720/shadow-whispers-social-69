@@ -1,4 +1,3 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OneSignal from "react-onesignal";
 
@@ -115,7 +114,7 @@ class OneSignalService {
 				return { success: false, error: "Permission denied" };
 			}
 
-			// Subscribe to push notifications - this returns void, so we don't check its return value
+			// Subscribe to push notifications - this returns void, so we don't await it
 			OneSignal.User.PushSubscription.optIn();
 			
 			// Wait a bit for subscription to complete
