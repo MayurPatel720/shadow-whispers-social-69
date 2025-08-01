@@ -19,7 +19,6 @@ import LoginSuccessAnimation from "./components/animations/LoginSuccessAnimation
 import OnboardingModal from "./components/onboarding/OnboardingModal";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
-import { ThemeProvider } from "./context/ThemeProvider";
 
 // Pages
 import Login from "./pages/Login";
@@ -211,13 +210,11 @@ function App() {
 						future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
 					>
 						<AuthProvider>
-							<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-								<NotificationProvider>
-									<div className="App">
-										<GlobalApp />
-									</div>
-								</NotificationProvider>
-							</ThemeProvider>
+							<NotificationProvider>
+								<div className="App">
+									<GlobalApp />
+								</div>
+							</NotificationProvider>
 						</AuthProvider>
 					</Router>
 				</AdminProvider>

@@ -21,38 +21,21 @@ export const useOneSignalIntegration = () => {
         // Initialize OneSignal
         await oneSignalService.initialize();
 
-        // Check if user is already subscribed
-        const status = await oneSignalService.getSubscriptionStatus();
-        
-        if (status.isSubscribed && status.playerId) {
-          // Set external user ID and tags for existing subscribers
-          await oneSignalService.setExternalUserId(user._id);
-          await oneSignalService.addTags({
-            username: user.username,
-            college: user.college || "unknown",
-            area: user.area || "unknown",
-          });
+        // Set external user ID
+        await oneSignalService.setExternalUserId(user._id);
 
-          // Update backend with player ID if not already done
-          try {
-            await updateOneSignalPlayerId(status.playerId);
-            console.log("OneSignal player ID updated in backend:", status.playerId);
-          } catch (error) {
-            console.error("Failed to update player ID in backend:", error);
-          }
-        }
+        // Add user tags for better targeting
+        await oneSignalService.addTags({
+          username: user.username,
+          college: user.college || "unknown",
+          area: user.area || "unknown",
+        });
 
         // Listen for subscription changes
         const handleSubscriptionChange = async (event: CustomEvent) => {
           const { playerId } = event.detail;
           if (playerId) {
             try {
-              await oneSignalService.setExternalUserId(user._id);
-              await oneSignalService.addTags({
-                username: user.username,
-                college: user.college || "unknown",
-                area: user.area || "unknown",
-              });
               await updateOneSignalPlayerId(playerId);
               console.log("OneSignal player ID updated in backend:", playerId);
             } catch (error) {
@@ -64,8 +47,10 @@ export const useOneSignalIntegration = () => {
         // Listen for notification clicks
         const handleNotificationClick = (event: CustomEvent) => {
           console.log("Push notification clicked:", event.detail);
+          // Handle navigation based on notification data
           const { data } = event.detail.result || {};
           if (data?.type && data?.notificationId) {
+            // Navigate to appropriate page based on notification type
             switch (data.type) {
               case 'whisper':
                 window.location.href = '/whispers';
@@ -94,11 +79,6 @@ export const useOneSignalIntegration = () => {
       }
     };
 
-    // Add a small delay to ensure other components are ready
-    const timeoutId = setTimeout(() => {
-      initializeOneSignal();
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
+    initializeOneSignal();
   }, [isAuthenticated, user]);
 };
