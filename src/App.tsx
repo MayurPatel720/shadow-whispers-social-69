@@ -55,6 +55,9 @@ function GlobalApp() {
 	const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
 	const navigate = useNavigate();
 
+	// Initialize OneSignal integration here where AuthProvider is available
+	useOneSignalIntegration();
+
 	return (
 		<>
 			{/* Render animation overlay if login/registration success */}
@@ -199,9 +202,6 @@ function GlobalApp() {
 }
 
 function App() {
-  // Initialize OneSignal integration
-  useOneSignalIntegration();
-
   return (
 		<QueryClientProvider client={queryClient}>
 			<SmoothScrollProvider>
