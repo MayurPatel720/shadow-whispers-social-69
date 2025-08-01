@@ -1,4 +1,3 @@
-
 export interface User {
   _id: string;
   username: string;
@@ -36,6 +35,7 @@ export interface User {
   college?: string;
   area?: string;
   onboardingComplete?: boolean;
+  oneSignalPlayerId?: string;
 }
 
 export interface Post {

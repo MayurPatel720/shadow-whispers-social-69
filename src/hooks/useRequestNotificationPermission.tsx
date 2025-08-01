@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import oneSignalService from "@/components/oneSignalService";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { updateOneSignalPlayerId } from "@/lib/api";
 import NotificationPermissionDialog from "@/components/notifications/NotificationPermissionDialog";
 
 export function useRequestNotificationPermission() {
@@ -55,13 +56,18 @@ export function useRequestNotificationPermission() {
 
 	const handleEnableNotifications = async () => {
 		try {
-			await oneSignalService.requestPermissionAndSubscribe();
+			const result = await oneSignalService.requestPermissionAndSubscribe();
+			if (result.success && result.playerId) {
+				// Update the player ID in the backend
+				await updateOneSignalPlayerId(result.playerId);
+			}
 			setShowDialog(false);
 			toast({
 				title: "Notifications enabled!",
 				description: "You're all set to receive updates.",
 			});
 		} catch (error) {
+			console.error("Error enabling notifications:", error);
 			toast({
 				title: "Permission denied",
 				description: "You can enable notifications from your browser settings anytime.",

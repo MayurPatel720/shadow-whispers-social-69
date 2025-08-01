@@ -198,7 +198,10 @@ function GlobalApp() {
 }
 
 function App() {
-	return (
+  // Initialize OneSignal integration
+  useOneSignalIntegration();
+
+  return (
 		<QueryClientProvider client={queryClient}>
 			<SmoothScrollProvider>
 				<AdminProvider>

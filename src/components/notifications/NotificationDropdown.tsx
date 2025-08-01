@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import { useNotification } from "@/context/NotificationContext";
 import { 
   getNotifications, 
   getUnreadCount, 
@@ -20,21 +22,18 @@ import { useNavigate } from "react-router-dom";
 
 const NotificationDropdown: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { unreadCount, setUnreadCount } = useNotification();
 
-  // Fetch notifications and unread count
+  // Fetch notifications and sync unread count
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const [notifData, countData] = await Promise.all([
-        getNotifications({ limit: 20 }),
-        getUnreadCount()
-      ]);
+      const notifData = await getNotifications({ limit: 20 });
       setNotifications(notifData.notifications);
-      setUnreadCount(countData.unreadCount);
+      setUnreadCount(notifData.unreadCount);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -47,21 +46,12 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
-  // Fetch unread count periodically
+  // Fetch notifications when dropdown opens
   useEffect(() => {
-    fetchNotifications();
-    
-    const interval = setInterval(async () => {
-      try {
-        const countData = await getUnreadCount();
-        setUnreadCount(countData.unreadCount);
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    }, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
 
   // Handle notification click
   const handleNotificationClick = async (notification: Notification) => {
@@ -131,7 +121,11 @@ const NotificationDropdown: React.FC = () => {
     e.stopPropagation();
     try {
       await deleteNotification(notificationId);
+      const wasUnread = notifications.find(n => n._id === notificationId && !n.read);
       setNotifications(prev => prev.filter(n => n._id !== notificationId));
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
       toast({
         title: "Success",
         description: "Notification deleted"
@@ -172,7 +166,7 @@ const NotificationDropdown: React.FC = () => {
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-medium"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -180,17 +174,22 @@ const NotificationDropdown: React.FC = () => {
         </Button>
       </PopoverTrigger>
       
-      <PopoverContent className="w-80 p-0" align="end">
-        <Card className="border-0 shadow-none">
-          <CardHeader className="pb-3">
+      <PopoverContent 
+        className="w-80 sm:w-96 p-0 mr-4 sm:mr-0" 
+        align="end"
+        side="bottom"
+        sideOffset={8}
+      >
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="pb-3 px-4 pt-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Notifications</CardTitle>
+              <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleMarkAllAsRead}
-                  className="text-xs h-8 px-2"
+                  className="text-xs h-8 px-2 hover:bg-muted"
                 >
                   <CheckCheck className="h-3 w-3 mr-1" />
                   Mark all read
@@ -200,23 +199,24 @@ const NotificationDropdown: React.FC = () => {
           </CardHeader>
           
           <CardContent className="p-0">
-            <ScrollArea className="h-80">
+            <ScrollArea className="h-80 sm:h-96">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <Bell className="h-8 w-8 mb-2" />
+                  <Bell className="h-8 w-8 mb-2 opacity-50" />
                   <p className="text-sm">No notifications yet</p>
+                  <p className="text-xs opacity-75">You'll see updates here when they arrive</p>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-0">
                   {notifications.map((notification, index) => (
-                    <div key={notification._id}>
+                    <div key={notification._id} className="group">
                       <div
-                        className={`p-3 cursor-pointer transition-colors hover:bg-muted/50 ${
-                          !notification.read ? 'bg-primary/5' : ''
+                        className={`p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 active:bg-muted/70 ${
+                          !notification.read ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                         }`}
                         onClick={() => handleNotificationClick(notification)}
                       >
@@ -225,30 +225,30 @@ const NotificationDropdown: React.FC = () => {
                             {getNotificationIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium text-foreground truncate">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-sm font-medium text-foreground truncate pr-2">
                                 {notification.title}
-                              </p>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground"
-                                onClick={(e) => handleDeleteNotification(e, notification._id)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
+                              </h4>
+                              <div className="flex items-center space-x-1">
+                                {!notification.read && (
+                                  <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0"></div>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-opacity flex-shrink-0"
+                                  onClick={(e) => handleDeleteNotification(e, notification._id)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                               {notification.message}
                             </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <p className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                              </p>
-                              {!notification.read && (
-                                <div className="h-2 w-2 bg-primary rounded-full"></div>
-                              )}
-                            </div>
+                            <p className="text-xs text-muted-foreground/75 mt-2">
+                              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            </p>
                           </div>
                         </div>
                       </div>

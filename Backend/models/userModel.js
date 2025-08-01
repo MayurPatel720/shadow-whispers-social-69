@@ -124,6 +124,10 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  oneSignalPlayerId: {
+    type: String,
+    default: null,
+  },
 });
 
 // Generate unique anonymous alias
