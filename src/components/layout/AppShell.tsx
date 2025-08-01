@@ -386,14 +386,7 @@ const AppShell = ({ children }: AppShellProps) => {
 					</h1>
 					<div className="flex items-center space-x-2">
 						{isAuthenticated && <NotificationDropdown />}
-						<Button
-							variant="ghost"
-							size="icon"
-							className="text-purple-500"
-							onClick={openWhisperModal}
-						>
-							<MessageSquare size={20} />
-						</Button>
+
 						<Button
 							variant="ghost"
 							size="icon"
