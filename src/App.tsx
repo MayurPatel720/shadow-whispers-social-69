@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
 import { NotificationProvider } from "./context/NotificationContext";
+import { useOneSignalIntegration } from "./hooks/useOneSignalIntegration";
 import { Toaster } from "./components/ui/toaster";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
