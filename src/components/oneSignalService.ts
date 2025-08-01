@@ -115,8 +115,8 @@ class OneSignalService {
 				return { success: false, error: "Permission denied" };
 			}
 
-			// Subscribe to push notifications
-			await OneSignal.User.PushSubscription.optIn();
+			// Subscribe to push notifications - this returns void, so we don't check its return value
+			OneSignal.User.PushSubscription.optIn();
 			
 			// Wait a bit for subscription to complete
 			await new Promise(resolve => setTimeout(resolve, 1000));
