@@ -4,10 +4,10 @@ import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
 // Create axios instance with base URL
-// const API_URL = "http://localhost:8900";
+const API_URL = "http://localhost:8900";
 // const API_URL = "https://backend-whisperer-fix-5ztr.vercel.app/";
 // const API_URL = "https://code-inspect-buddy-bot-production.up.railway.app/";
-const API_URL = "https://undercover-service.onrender.com";
+// const API_URL = "https://undercover-service.onrender.com";
 
 export const api = axios.create({
 	baseURL: API_URL,
@@ -197,7 +197,7 @@ export const inviteToGhostCircle = async (
 export const getGhostCirclePosts = async (
 	circleId: string
 ): Promise<Post[]> => {
-	const response = await api.get(`/api/posts/circle/${circleId}`);
+	const response = await api.get(`/api/ghost-circles/circle/${circleId}`);
 	return response.data;
 };
 

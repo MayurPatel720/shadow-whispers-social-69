@@ -120,6 +120,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  lastLikeNotification: {
+    type: Date,
+    default: null,
+  },
 });
 
 // Generate unique anonymous alias

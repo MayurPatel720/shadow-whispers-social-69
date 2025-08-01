@@ -10,18 +10,21 @@ export const getPaginatedPosts = async ({
   feedType = "global",
   college = null,
   area = null,
+  tag = null,
 }: { 
   limit?: number; 
   after?: string | null;
   feedType?: "global" | "college" | "area";
   college?: string | null;
   area?: string | null;
+  tag?: string | null;
 } = {}): Promise<{ posts: Post[]; hasMore: boolean }> => {
   const params = [];
   if (limit) params.push(`limit=${limit}`);
   if (after) params.push(`after=${after}`);
   if (feedType === "college" && college) params.push(`college=${encodeURIComponent(college)}`);
   if (feedType === "area" && area) params.push(`area=${encodeURIComponent(area)}`);
+  if (tag) params.push(`tag=${encodeURIComponent(tag)}`);
   
   const query = params.length ? `?${params.join('&')}` : '';
   
@@ -44,6 +47,7 @@ export const createPost = async (postData: {
   feedType?: "global" | "college" | "area";
   college?: string;
   area?: string;
+  tags?: string[];
   ghostCircleId?: string;
 }): Promise<Post> => {
   console.log("Creating post with data:", postData);

@@ -55,6 +55,8 @@ export interface Post {
   college?: string;
   area?: string;
   shareCount: number;
+  tags?: string[];
+  hashtags?: string[];
 }
 
 export interface Recognition {

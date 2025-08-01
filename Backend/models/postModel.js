@@ -126,10 +126,26 @@ const postSchema = mongoose.Schema(
       type: String,
       enum: ['confession', 'secret', 'loneliness', 'love', 'relationship', 'work', 'career', 'family', 'existential', 'philosophy', 'funny', 'quirky', 'regret', 'struggle'],
     },
+    // Add tags field
+    tags: [{
+      type: String,
+      lowercase: true,
+      trim: true
+    }],
+    // Track hashtags separately for auto-detection
+    hashtags: [{
+      type: String,
+      lowercase: true,
+      trim: true
+    }]
   },
   {
     timestamps: true,
   }
 );
+
+// Index for tag queries
+postSchema.index({ tags: 1 });
+postSchema.index({ hashtags: 1 });
 
 module.exports = mongoose.model('Post', postSchema);

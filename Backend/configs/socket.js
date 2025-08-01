@@ -19,18 +19,22 @@ module.exports = (io) => {
 				return;
 			}
 			socket.join(userId);
-			console.log(`User ${userId} joined individual room ${userId}`);
+			socket.join(`user_${userId}`);
+			console.log(`User ${userId} joined individual room ${userId} and user_${userId}`);
 		});
 
 		// Automatically join user to their own room
 		socket.join(socket.user._id.toString());
+		socket.join(`user_${socket.user._id.toString()}`);
 		console.log(`User ${socket.user._id} auto-joined their room`);
 
 		// Join conversation room for whispers
 		socket.on("joinConversation", (partnerId) => {
 			const room = [socket.user._id.toString(), partnerId].sort().join(":");
+			const conversationRoom = `conversation_${[socket.user._id.toString(), partnerId].sort().join('_')}`;
 			socket.join(room);
-			console.log(`User ${socket.user._id} joined conversation room ${room}`);
+			socket.join(conversationRoom);
+			console.log(`User ${socket.user._id} joined conversation room ${room} and ${conversationRoom}`);
 		});
 
 		// Handle sending whispers

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { createPost } from "@/lib/api-posts";
 import { useAuth } from "@/context/AuthContext";
 import UnifiedMediaUpload from "@/components/ui/unified-media-upload";
+import TagSelector from "@/components/tags/TagSelector";
 
 interface CreatePostModalProps {
   open: boolean;
@@ -26,6 +26,7 @@ const CreatePostModal = ({
   currentFeedType = "global"
 }: CreatePostModalProps) => {
   const [content, setContent] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaFiles, setMediaFiles] = useState<Array<{ type: 'image' | 'video', url: string, file?: File }>>([]);
   const { toast } = useToast();
@@ -78,6 +79,7 @@ const CreatePostModal = ({
         images: string[];
         videos: Array<{ url: string; thumbnail: string; duration: number; size: number; }>;
         feedType: "global" | "college" | "area";
+        tags: string[];
         ghostCircleId?: string;
         college?: string;
         area?: string;
@@ -86,6 +88,7 @@ const CreatePostModal = ({
         images: imageUrls,
         videos: videoData,
         feedType: currentFeedType,
+        tags: selectedTags,
         ...(ghostCircleId && { ghostCircleId })
       };
 
@@ -112,6 +115,7 @@ const CreatePostModal = ({
       });
       
       setContent("");
+      setSelectedTags([]);
       setMediaFiles([]);
       onOpenChange(false);
       onSuccess?.();
@@ -189,6 +193,12 @@ const CreatePostModal = ({
             placeholder="What's on your mind? Share your thoughts anonymously..."
             className="min-h-[120px] resize-none bg-background border-border focus:border-purple-500"
             disabled={isSubmitting}
+          />
+
+          <TagSelector
+            selectedTags={selectedTags}
+            onTagsChange={setSelectedTags}
+            maxTags={3}
           />
 
           <UnifiedMediaUpload

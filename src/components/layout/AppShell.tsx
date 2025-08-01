@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import WhisperModal from "../whisper/WhisperModal";
+import NotificationDropdown from "../notifications/NotificationDropdown";
 import { useAuth } from "@/context/AuthContext";
 import AvatarGenerator from "../user/AvatarGenerator";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -209,6 +210,9 @@ const AppShell = ({ children }: AppShellProps) => {
 				</div>
 
 				<div className="p-4">
+					<div className="flex items-center justify-between mb-4">
+						{isAuthenticated && <NotificationDropdown />}
+					</div>
 					{isAuthenticated ? (
 						<Button
 							onClick={handleLogout}
@@ -381,6 +385,7 @@ const AppShell = ({ children }: AppShellProps) => {
 						UnderKover
 					</h1>
 					<div className="flex items-center space-x-2">
+						{isAuthenticated && <NotificationDropdown />}
 						<Button
 							variant="ghost"
 							size="icon"

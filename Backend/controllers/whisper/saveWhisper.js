@@ -1,5 +1,6 @@
 const User = require("../../models/userModel");
 const Whisper = require("../../models/whisperModel");
+const { sendWhisperNotification } = require('../../utils/notificationService');
 
 const saveWhisper = async ({
 	senderId,
@@ -34,32 +35,28 @@ const saveWhisper = async ({
 			visibilityLevel,
 		});
 
-		// Push notification, socket events
-		if (receiver.oneSignalPlayerId && global.oneSignalClient) {
-			try {
-				await global.oneSignalClient.createNotification({
-					include_player_ids: [receiver.oneSignalPlayerId],
-					headings: { en: "New Whisper" },
-					contents: { en: `${senderAlias}: ${content}` },
-					data: {
-						type: "whisper",
-						senderId: senderId.toString(),
-						senderAlias,
-						conversationId: receiverId.toString()
-					},
-					url: `${process.env.FRONTEND_URL || 'http://localhost:8080'}/whispers`
-				});
-				console.log(`Push notification sent to ${receiver.oneSignalPlayerId}`);
-			} catch (notificationError) {
-				console.error("Failed to send push notification:", notificationError);
-			}
+		// Send comprehensive notification (database + push + socket)
+		try {
+			await sendWhisperNotification({
+				senderId,
+				receiverId,
+				content,
+				senderAlias,
+				io: global.io
+			});
+			console.log(`✅ Whisper notification sent from ${senderId} to ${receiverId}`);
+		} catch (notificationError) {
+			console.error('❌ Failed to send whisper notification:', notificationError);
 		}
 
+		// Emit socket events for real-time updates
 		if (global.io) {
-			const room = [senderId.toString(), receiverId.toString()].sort().join(":");
-			global.io.to(receiverId.toString()).emit("receiveWhisper", whisper);
-			global.io.to(room).emit("receiveWhisper", whisper);
-			console.log(`Whisper emitted to ${receiverId} and room ${room}`);
+			// Emit to the receiver
+			global.io.to(`user_${receiverId}`).emit('receiveWhisper', whisper);
+			
+			// Emit to the conversation room for both users
+			const conversationRoom = `conversation_${[senderId, receiverId].sort().join('_')}`;
+			global.io.to(conversationRoom).emit('receiveWhisper', whisper);
 		}
 
 		return whisper;

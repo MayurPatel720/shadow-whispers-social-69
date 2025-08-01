@@ -5,6 +5,7 @@ const GhostCircle = require("../models/ghostCircleModel");
 const mongoose = require("mongoose");
 const { getRedisClient } = require("../utils/redisClient");
 const cloudinary = require("cloudinary").v2;
+const { sendCommentNotification, sendReplyNotification } = require("../utils/notificationService");
 
 // Cache keys
 const CACHE_KEYS = {
@@ -55,6 +56,8 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	const redis = getRedisClient();
 	const limit = Math.min(Number(req.query.limit) || 20, 50);
 	const after = req.query.after;
+	const tag = req.query.tag;
+	const tags = req.query.tags ? req.query.tags.split(',') : null;
 
 	// Global feed should only show posts without college or area fields
 	const query = {
@@ -63,13 +66,25 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 		college: { $exists: false },
 		area: { $exists: false }
 	};
+
+	if (tag) {
+		query.$or = [
+			{ tags: { $in: [tag] } },
+			{ hashtags: { $in: [tag] } }
+		];
+	} else if (tags && tags.length > 0) {
+		query.$or = [
+			{ tags: { $in: tags } },
+			{ hashtags: { $in: tags } }
+		];
+	}
 	
 	if (after) {
 		query._id = { $lt: after };
 	}
 
-	// Try to get from cache when no pagination
-	if (!after && limit === 20 && redis.isAvailable()) {
+	// Try to get from cache when no pagination and no tag filter
+	if (!after && limit === 20 && !tag && !tags && redis.isAvailable()) {
 		try {
 			const cachedPosts = await redis.get(CACHE_KEYS.GLOBAL_FEED);
 			if (cachedPosts) {
@@ -120,8 +135,8 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 			posts = [...regularPosts, ...seedPosts];
 		}
 
-		// Only cache first/default page
-		if (!after && limit === 20 && redis.isAvailable()) {
+		// Only cache first/default page when no tag filter
+		if (!after && limit === 20 && !tag && !tags && redis.isAvailable()) {
 			try {
 				await redis.del(CACHE_KEYS.GLOBAL_FEED);
 				await redis.setex(
@@ -138,6 +153,8 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 		console.log("Global feed response:", {
 			postsCount: posts.length,
 			hasMore,
+			tag: tag || "none",
+			tags: tags || [],
 		});
 		res.status(200).json({ posts, hasMore });
 	} catch (error) {
@@ -159,6 +176,8 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 	const limit = Math.min(Number(req.query.limit) || 20, 50);
 	const after = req.query.after;
 	const college = req.query.college;
+	const tag = req.query.tag;
+	const tags = req.query.tags ? req.query.tags.split(',') : null;
 
 	if (!college) {
 		return res.status(400).json({ message: "College parameter is required" });
@@ -170,6 +189,18 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 		expiresAt: { $gt: new Date() },
 		college: college
 	};
+
+	if (tag) {
+		query.$or = [
+			{ tags: { $in: [tag] } },
+			{ hashtags: { $in: [tag] } }
+		];
+	} else if (tags && tags.length > 0) {
+		query.$or = [
+			{ tags: { $in: tags } },
+			{ hashtags: { $in: tags } }
+		];
+	}
 
 	if (after) {
 		query._id = { $lt: after };
@@ -183,6 +214,8 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 			college,
 			postsCount: posts.length,
 			hasMore,
+			tag: tag || "none",
+			tags: tags || [],
 		});
 		
 		res.status(200).json({ posts, hasMore });
@@ -202,6 +235,8 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 	const limit = Math.min(Number(req.query.limit) || 20, 50);
 	const after = req.query.after;
 	const area = req.query.area;
+	const tag = req.query.tag;
+	const tags = req.query.tags ? req.query.tags.split(',') : null;
 
 	if (!area) {
 		return res.status(400).json({ message: "Area parameter is required" });
@@ -213,6 +248,18 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 		expiresAt: { $gt: new Date() },
 		area: area
 	};
+
+	if (tag) {
+		query.$or = [
+			{ tags: { $in: [tag] } },
+			{ hashtags: { $in: [tag] } }
+		];
+	} else if (tags && tags.length > 0) {
+		query.$or = [
+			{ tags: { $in: tags } },
+			{ hashtags: { $in: tags } }
+		];
+	}
 
 	if (after) {
 		query._id = { $lt: after };
@@ -226,6 +273,8 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 			area,
 			postsCount: posts.length,
 			hasMore,
+			tag: tag || "none",
+			tags: tags || [],
 		});
 		
 		res.status(200).json({ posts, hasMore });
@@ -242,7 +291,7 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 // @route   POST /api/posts
 // @access  Private
 const createPost = asyncHandler(async (req, res) => {
-	const { content, ghostCircleId, imageUrl, images, videos, expiresIn, feedType, college, area } = req.body;
+	const { content, ghostCircleId, imageUrl, images, videos, expiresIn, feedType, college, area, tags } = req.body;
 
 	// Check if content, image, or video is provided
 	if (
@@ -266,6 +315,7 @@ const createPost = asyncHandler(async (req, res) => {
 		imageUrl: imageUrl || "",
 		images: images || [],
 		videos: videos || [],
+		tags: tags || [],
 		anonymousAlias: req.user.anonymousAlias,
 		avatarEmoji: req.user.avatarEmoji,
 		expiresAt: expiryTime,
@@ -335,6 +385,32 @@ const createPost = asyncHandler(async (req, res) => {
 				{ $push: { posts: post._id } },
 				{ session }
 			);
+		}
+
+		// Update tag post counts outside transaction
+		if (tags && tags.length > 0) {
+			setImmediate(async () => {
+				try {
+					const Tag = require("../models/tagModel");
+					for (const tagName of tags) {
+						await Tag.findOneAndUpdate(
+							{ name: tagName.toLowerCase() },
+							{
+								$inc: { postCount: 1 },
+								$set: { 
+									displayName: tagName,
+									isActive: true,
+									lastUpdated: new Date()
+								}
+							},
+							{ upsert: true, new: true }
+						);
+					}
+					console.log(`Updated tag counts for: ${tags.join(', ')}`);
+				} catch (tagError) {
+					console.error("Error updating tag counts:", tagError);
+				}
+			});
 		}
 
 		await session.commitTransaction();
@@ -566,6 +642,23 @@ const addComment = asyncHandler(async (req, res) => {
 			return res.status(404).json({ message: "Post not found" });
 		}
 
+		// Send notification to post author (if not commenting on own post)
+		if (post.user.toString() !== req.user._id.toString()) {
+			try {
+				await sendCommentNotification({
+					postId: req.params.id,
+					postAuthorId: post.user,
+					commenterId: req.user._id,
+					commenterAlias: anonymousAlias,
+					content,
+					io: req.app.get('socketio') // Socket.IO instance
+				});
+				console.log(`✅ Comment notification sent for post ${req.params.id}`);
+			} catch (notificationError) {
+				console.error('❌ Failed to send comment notification:', notificationError);
+			}
+		}
+
 		// Invalidate related caches
 		await invalidatePostCaches(req.params.id, post.ghostCircle);
 
@@ -686,7 +779,22 @@ const replyToComment = asyncHandler(async (req, res) => {
 			createdAt: new Date(),
 		};
 
-		const post = await Post.findOneAndUpdate(
+		// First find the post to make sure it exists
+		const post = await Post.findById(req.params.id);
+		if (!post) {
+			res.status(404);
+			throw new Error("Post not found");
+		}
+
+		// Check if comment exists
+		const comment = post.comments.find(c => c._id.toString() === req.params.commentId);
+		if (!comment) {
+			res.status(404);
+			throw new Error("Comment not found");
+		}
+
+		// Add reply to the comment
+		const updatedPost = await Post.findOneAndUpdate(
 			{
 				_id: req.params.id,
 				"comments._id": req.params.commentId,
@@ -697,9 +805,26 @@ const replyToComment = asyncHandler(async (req, res) => {
 			{ new: true }
 		);
 
-		if (!post) {
+		if (!updatedPost) {
 			res.status(404);
-			throw new Error("Post or comment not found");
+			throw new Error("Failed to add reply");
+		}
+
+		// Send notification to comment author (if not replying to own comment)
+		if (comment.user.toString() !== req.user._id.toString()) {
+			try {
+				await sendReplyNotification({
+					postId: req.params.id,
+					commentAuthorId: comment.user,
+					replierId: req.user._id,
+					replierAlias: anonymousAlias,
+					content,
+					io: req.app.get('socketio') // Socket.IO instance
+				});
+				console.log(`✅ Reply notification sent for comment ${req.params.commentId}`);
+			} catch (notificationError) {
+				console.error('❌ Failed to send reply notification:', notificationError);
+			}
 		}
 
 		// Invalidate related caches

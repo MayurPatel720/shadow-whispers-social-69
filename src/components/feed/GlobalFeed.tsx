@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,13 @@ import EmptyFeedMessage from "./EmptyFeedMessage";
 import FeedSwitcher from "./FeedSwitcher";
 import CollegeSelectionDialog from "./CollegeSelectionDialog";
 import AreaSelectionDialog from "./AreaSelectionDialog";
-import { getGlobalFeed, getCollegeFeed, getAreaFeed, updateUserProfile } from "@/lib/api-feed";
+import TrendingTags from "@/components/tags/TrendingTags";
+import {
+	getGlobalFeed,
+	getCollegeFeed,
+	getAreaFeed,
+	updateUserProfile,
+} from "@/lib/api-feed";
 import WeeklyPromptBanner from "./WeeklyPrompt";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -26,26 +31,61 @@ const GlobalFeed = () => {
 	const [userArea, setUserArea] = useState<string>("");
 	const [showCollegeDialog, setShowCollegeDialog] = useState(false);
 	const [showAreaDialog, setShowAreaDialog] = useState(false);
+	const [selectedTags, setSelectedTags] = useState<string[]>([]);
 	const queryClient = useQueryClient();
 	const loadMoreRef = useRef<HTMLDivElement>(null);
 	const { isAuthenticated, user } = useAuth();
 	const navigate = useNavigate();
 
-	// Load user's college and area from localStorage on mount
+	// Load user's college and area from user profile and localStorage on mount
 	useEffect(() => {
+		// Priority: user profile > localStorage
+		const profileCollege = user?.college;
+		const profileArea = user?.area;
 		const savedCollege = localStorage.getItem("userCollege");
 		const savedArea = localStorage.getItem("userArea");
 		const savedFeedType = localStorage.getItem("feedType") as FeedType;
-		
-		if (savedCollege) setUserCollege(savedCollege);
-		if (savedArea) setUserArea(savedArea);
+
+		// Set college from profile first, then fallback to localStorage
+		if (profileCollege) {
+			setUserCollege(profileCollege);
+			localStorage.setItem("userCollege", profileCollege);
+		} else if (savedCollege) {
+			setUserCollege(savedCollege);
+		}
+
+		// Set area from profile first, then fallback to localStorage
+		if (profileArea) {
+			setUserArea(profileArea);
+			localStorage.setItem("userArea", profileArea);
+		} else if (savedArea) {
+			setUserArea(savedArea);
+		}
+
+		// Set feed type
 		if (savedFeedType) setFeedType(savedFeedType);
+	}, [user]);
+
+	// Listen for tag clicks from PostCard components
+	useEffect(() => {
+		const handleTagClickEvent = (event: any) => {
+			const tagName = event.detail;
+			setSelectedTags(prev => 
+				prev.includes(tagName) 
+					? prev.filter(tag => tag !== tagName)
+					: [...prev, tagName]
+			);
+		};
+		
+		window.addEventListener('tagClick', handleTagClickEvent);
+		return () => window.removeEventListener('tagClick', handleTagClickEvent);
 	}, []);
 
 	const getFeedData = async ({ pageParam = null }) => {
 		const filters = {
 			limit: PAGE_SIZE,
 			after: pageParam as string | null,
+			tags: selectedTags.length > 0 ? selectedTags : undefined,
 		};
 
 		switch (feedType) {
@@ -67,7 +107,7 @@ const GlobalFeed = () => {
 		error,
 		refetch,
 	} = useInfiniteQuery({
-		queryKey: ["posts", "feed", feedType, userCollege, userArea],
+		queryKey: ["posts", "feed", feedType, userCollege, userArea, selectedTags],
 		queryFn: getFeedData,
 		getNextPageParam: (lastPage) => {
 			if (!lastPage || !lastPage.hasMore) return undefined;
@@ -77,7 +117,10 @@ const GlobalFeed = () => {
 		},
 		initialPageParam: null,
 		refetchInterval: 30000,
-		enabled: feedType === "global" || (feedType === "college" && !!userCollege) || (feedType === "area" && !!userArea),
+		enabled:
+			feedType === "global" ||
+			(feedType === "college" && !!userCollege) ||
+			(feedType === "area" && !!userArea),
 	});
 
 	const allPosts = data
@@ -108,15 +151,18 @@ const GlobalFeed = () => {
 	};
 
 	const handleFeedTypeChange = (newFeedType: FeedType) => {
+		// If user is trying to switch to college feed and doesn't have a college set
 		if (newFeedType === "college" && !userCollege) {
 			setShowCollegeDialog(true);
 			return;
 		}
+		// If user is trying to switch to area feed and doesn't have an area set
 		if (newFeedType === "area" && !userArea) {
 			setShowAreaDialog(true);
 			return;
 		}
-		
+
+		// If user already has the required info, just switch the feed
 		setFeedType(newFeedType);
 		localStorage.setItem("feedType", newFeedType);
 	};
@@ -126,7 +172,7 @@ const GlobalFeed = () => {
 		localStorage.setItem("userCollege", college);
 		setFeedType("college");
 		localStorage.setItem("feedType", "college");
-		
+
 		// Update user profile
 		try {
 			await updateUserProfile({ college });
@@ -140,7 +186,7 @@ const GlobalFeed = () => {
 		localStorage.setItem("userArea", area);
 		setFeedType("area");
 		localStorage.setItem("feedType", "area");
-		
+
 		// Update user profile
 		try {
 			await updateUserProfile({ area });
@@ -149,10 +195,27 @@ const GlobalFeed = () => {
 		}
 	};
 
+	const handleEditCollege = () => {
+		setShowCollegeDialog(true);
+	};
+
+	const handleEditArea = () => {
+		setShowAreaDialog(true);
+	};
+
 	const shouldShowEmptyState = () => {
 		return (
 			(feedType === "college" && !userCollege) ||
 			(feedType === "area" && !userArea)
+		);
+	};
+
+	const handleTagClick = (tagName: string) => {
+		// Add/remove tag from selected tags array
+		setSelectedTags(prev => 
+			prev.includes(tagName) 
+				? prev.filter(tag => tag !== tagName)
+				: [...prev, tagName]
 		);
 	};
 
@@ -193,6 +256,10 @@ const GlobalFeed = () => {
 						<FeedSwitcher
 							currentFilter={feedType}
 							onFilterChange={handleFeedTypeChange}
+							userCollege={userCollege}
+							userArea={userArea}
+							onEditCollege={handleEditCollege}
+							onEditArea={handleEditArea}
 						/>
 					</div>
 					<Button
@@ -206,6 +273,35 @@ const GlobalFeed = () => {
 			</div>
 
 			<div className="max-w-2xl mx-auto px-4 py-6 pb-24 sm:pb-6">
+				<div className="mb-6 ">
+					<TrendingTags
+						limit={5}
+						onTagClick={handleTagClick}
+						className="w-full"
+					/>
+					{selectedTags.length > 0 && (
+						<div className="mt-4 flex flex-wrap items-center gap-2">
+							{selectedTags.map(tag => (
+								<div key={tag} className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/20 rounded-full">
+									<span className="text-sm text-primary">#{tag}</span>
+									<button
+										onClick={() => setSelectedTags(prev => prev.filter(t => t !== tag))}
+										className="text-primary hover:text-primary/80 text-sm"
+									>
+										✕
+									</button>
+								</div>
+							))}
+							<button
+								onClick={() => setSelectedTags([])}
+								className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded"
+							>
+								Clear all
+							</button>
+						</div>
+					)}
+				</div>
+
 				<WeeklyPromptBanner />
 
 				{shouldShowEmptyState() ? (

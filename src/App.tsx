@@ -9,6 +9,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AdminProvider } from "./context/AdminContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import { Toaster } from "./components/ui/toaster";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ProtectedAdminRoute from "./components/admin/ProtectedAdminRoute";
@@ -38,11 +39,18 @@ import NotFound from "./pages/NotFound";
 // Layout
 import AppShell from "./components/layout/AppShell";
 import PostDetail from "./components/feed/PostDetail";
+import TagPostsPage from "./pages/TagPostsPage";
+import TrendingTagsPage from "./pages/TrendingTagsPage";
 
 const queryClient = new QueryClient();
 
 function GlobalApp() {
-	const { showLoginAnimation, setShowLoginAnimation, showOnboarding, setShowOnboarding } = useAuth();
+	const {
+		showLoginAnimation,
+		setShowLoginAnimation,
+		showOnboarding,
+		setShowOnboarding,
+	} = useAuth();
 	const [loginAnimNavPending, setLoginAnimNavPending] = useState(false);
 	const navigate = useNavigate();
 
@@ -63,10 +71,7 @@ function GlobalApp() {
 			)}
 
 			{/* Onboarding Modal */}
-			<OnboardingModal
-				open={showOnboarding}
-				onOpenChange={setShowOnboarding}
-			/>
+			<OnboardingModal open={showOnboarding} onOpenChange={setShowOnboarding} />
 
 			<Routes>
 				{/* Public routes */}
@@ -138,6 +143,8 @@ function GlobalApp() {
 							</ProtectedRoute>
 						}
 					/>
+					<Route path="tags/:tagName" element={<TagPostsPage />} />
+					<Route path="trending-tags" element={<TrendingTagsPage />} />
 					<Route
 						path="recognitions"
 						element={
@@ -199,9 +206,11 @@ function App() {
 						future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
 					>
 						<AuthProvider>
-							<div className="App">
-								<GlobalApp />
-							</div>
+							<NotificationProvider>
+								<div className="App">
+									<GlobalApp />
+								</div>
+							</NotificationProvider>
 						</AuthProvider>
 					</Router>
 				</AdminProvider>

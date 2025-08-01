@@ -39,6 +39,14 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
     }
   }, [open]);
 
+  // Don't render if user has already completed onboarding
+  useEffect(() => {
+    if (user?.onboardingComplete === true) {
+      console.log("User has completed onboarding, closing modal");
+      onOpenChange(false);
+    }
+  }, [user?.onboardingComplete, onOpenChange]);
+
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
@@ -71,16 +79,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
         return;
       }
 
-      // Prepare the complete user data with onboarding flag
-      const updatedUserData = {
-        ...user,
-        ...onboardingData,
-        onboardingComplete: true,
-      };
-      
-      console.log("Updating user with complete data:", updatedUserData);
-      
-      // Update via API
+      // Update via API first
       const apiResponse = await updateUserProfile({
         ...onboardingData,
         onboardingComplete: true,
@@ -88,20 +87,20 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
       
       console.log("API response:", apiResponse);
       
-      // Ensure the response includes onboardingComplete
-      const finalUserData = {
+      // Prepare the complete user data with onboarding flag set to true
+      const updatedUserData = {
         ...user,
         ...onboardingData,
         ...apiResponse,
-        onboardingComplete: true, // Force this to be true
+        onboardingComplete: true, // Explicitly set to true
       };
       
-      console.log("Final user data being set:", finalUserData);
+      console.log("Final user data being set:", updatedUserData);
       
-      // Update local state first
-      updateUser(finalUserData);
+      // Update local state
+      updateUser(updatedUserData);
       
-      // Close modal immediately
+      // Close modal
       onOpenChange(false);
 
       // Reset state
@@ -153,7 +152,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ open, onOpenChange })
   };
 
   // Don't render if user has already completed onboarding
-  if (user?.onboardingComplete) {
+  if (user?.onboardingComplete === true) {
     console.log("User has completed onboarding, not showing modal");
     return null;
   }

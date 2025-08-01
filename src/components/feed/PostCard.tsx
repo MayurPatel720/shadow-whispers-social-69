@@ -66,6 +66,8 @@ interface Post {
 	createdAt: string;
 	updatedAt: string;
 	shareCount?: number;
+	tags?: string[];
+	hashtags?: string[];
 }
 
 interface PostCardProps {
@@ -446,6 +448,24 @@ const PostCard: React.FC<PostCardProps> = ({
 				{post.content && (
 					<div className="px-4 pb-3">
 						<p className="text-gray-200 leading-relaxed">{post.content}</p>
+						{/* Tags */}
+						{post.tags && post.tags.length > 0 && (
+							<div className="flex flex-wrap gap-2 mt-3">
+								{post.tags.map((tag, index) => (
+									<span
+										key={index}
+										className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer"
+										onClick={(e) => {
+											e.stopPropagation();
+											// Use a custom event to communicate with parent
+											window.dispatchEvent(new CustomEvent('tagClick', { detail: tag }));
+										}}
+									>
+										#{tag}
+									</span>
+								))}
+							</div>
+						)}
 					</div>
 				)}
 

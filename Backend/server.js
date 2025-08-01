@@ -21,8 +21,10 @@ const adminRoutes = require("./routes/adminRoutes");
 const promptEventRoutes = require("./routes/promptEventRoutes");
 const whisperMatchRoutes = require("./routes/whisperMatchRoutes");
 const amaRoutes = require("./routes/amaRoutes");
+const TagRoutes = require("./routes/tagRoutes");
 const matchRoutes = require("./routes/matchRoutes");
 const adminMatchRoutes = require("./routes/adminMatchRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -111,9 +113,14 @@ if (process.env.NODE_ENV !== "production") {
 
 // Make io globally available
 global.io = io;
+app.set('socketio', io);
 
 // Apply Socket.IO configuration
 require("./configs/socket")(io);
+
+// Initialize like notification job
+const { initializeLikeNotificationJob } = require('./jobs/likeNotifications');
+initializeLikeNotificationJob(io);
 
 // Connect to DB
 ConnectTODB();
@@ -137,6 +144,8 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/prompts", promptEventRoutes);
 app.use("/api/whisper-match", whisperMatchRoutes);
 app.use("/api/ama", amaRoutes);
+app.use("/api/tags", TagRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ----- NEW ROUTES FOR MATCH FEATURES AND ADMIN -----
 app.use("/api/match", matchRoutes);
