@@ -1,8 +1,10 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OneSignal from "react-onesignal";
 
 interface OneSignalConfig {
 	appId: string;
+	safariWebId?: string;
 }
 
 interface NotificationPayload {
@@ -36,8 +38,12 @@ class OneSignalService {
 		}
 
 		try {
+			// Clear any existing registrations to prevent conflicts
+			await this.clearExistingRegistrations();
+
 			await OneSignal.init({
 				appId: this.config.appId,
+				safari_web_id: this.config.safariWebId,
 				allowLocalhostAsSecureOrigin: process.env.NODE_ENV === "development",
 				autoRegister: false,
 				autoResubscribe: true,
@@ -51,6 +57,22 @@ class OneSignalService {
 		} catch (error) {
 			console.error("Failed to initialize OneSignal:", error);
 			throw new Error("OneSignal initialization failed");
+		}
+	}
+
+	private async clearExistingRegistrations(): Promise<void> {
+		try {
+			if ('serviceWorker' in navigator) {
+				const registrations = await navigator.serviceWorker.getRegistrations();
+				for (const registration of registrations) {
+					if (registration.scope.includes('OneSignal') || registration.scope.includes('onesignal')) {
+						console.log('Unregistering existing OneSignal service worker:', registration.scope);
+						await registration.unregister();
+					}
+				}
+			}
+		} catch (error) {
+			console.warn("Could not clear existing registrations:", error);
 		}
 	}
 
@@ -80,19 +102,25 @@ class OneSignalService {
 				await this.initialize();
 			}
 
+			// Check if already subscribed
 			const isSubscribed = OneSignal.User.PushSubscription.optedIn;
 			if (isSubscribed) {
 				const playerId = OneSignal.User.PushSubscription.id;
 				return { success: true, playerId: playerId || undefined };
 			}
 
-			await OneSignal.Notifications.requestPermission();
-			const permissionGranted = OneSignal.Notifications.permission;
-			if (!permissionGranted) {
+			// Request permission first
+			const granted = await OneSignal.Notifications.requestPermission();
+			if (!granted) {
 				return { success: false, error: "Permission denied" };
 			}
 
-			OneSignal.User.PushSubscription.optIn();
+			// Subscribe to push notifications
+			await OneSignal.User.PushSubscription.optIn();
+			
+			// Wait a bit for subscription to complete
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			
 			const playerId = OneSignal.User.PushSubscription.id;
 
 			if (!playerId) {
@@ -135,13 +163,15 @@ class OneSignalService {
 
 			let permission: NotificationPermission = "default";
 			try {
-				const permissionStatus = OneSignal.Notifications.permission;
-				if (permissionStatus === true) {
-					permission = "granted";
-				} else if (permissionStatus === false) {
-					permission = "denied";
+				if (typeof Notification !== 'undefined') {
+					permission = Notification.permission;
 				} else {
-					permission = "default";
+					const permissionStatus = OneSignal.Notifications.permission;
+					if (permissionStatus === true) {
+						permission = "granted";
+					} else if (permissionStatus === false) {
+						permission = "denied";
+					}
 				}
 			} catch (permError) {
 				console.warn("Could not get permission status:", permError);
@@ -163,7 +193,8 @@ class OneSignalService {
 		return (
 			typeof window !== "undefined" &&
 			"serviceWorker" in navigator &&
-			"PushManager" in window
+			"PushManager" in window &&
+			"Notification" in window
 		);
 	}
 
@@ -228,9 +259,8 @@ class OneSignalService {
 }
 
 const oneSignalConfig: OneSignalConfig = {
-	appId:
-		import.meta.env.VITE_ONESIGNAL_APP_ID ||
-		"6c404389-4e1b-4fde-b2e0-6c95c9483f00",
+	appId: import.meta.env.VITE_ONESIGNAL_APP_ID || "22c5717d-d011-4611-b319-06b8691907d8",
+	safariWebId: "web.onesignal.auto.3cfe9839-ceab-4809-9212-172318dbfb2e",
 };
 
 export const oneSignalService = new OneSignalService(oneSignalConfig);
