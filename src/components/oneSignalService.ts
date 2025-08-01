@@ -230,7 +230,7 @@ class OneSignalService {
 		}
 	}
 
-	private async handleSubscriptionChange(isSubscribed: boolean): Promise<void> {
+	private handleSubscriptionChange(isSubscribed: boolean): void {
 		if (isSubscribed) {
 			const playerId = OneSignal.User.PushSubscription.id;
 			console.log("User subscribed with player ID:", playerId);
