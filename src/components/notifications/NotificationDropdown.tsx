@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle } from "lucide-react";
+import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,7 @@ const NotificationDropdown: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { unreadCount, setUnreadCount } = useNotification();
+  const { unreadCount, setUnreadCount, refreshUnreadCount } = useNotification();
 
   // Fetch notifications and sync unread count
   const fetchNotifications = async () => {
@@ -43,19 +43,30 @@ const NotificationDropdown: React.FC = () => {
         const count = notifData.unreadCount || 0;
         
         console.log("📋 Notifications list:", notificationsList);
-        console.log("🔢 Unread count:", count);
+        console.log("🔢 Unread count from API:", count);
+        console.log("🔢 Current local count:", unreadCount);
         
         setNotifications(notificationsList);
-        setUnreadCount(count);
         
-        // If there's a mismatch, log it for debugging
+        // If there's a significant mismatch, sync the count
+        if (Math.abs(count - unreadCount) > 1) {
+          console.log("⚠️ Count mismatch detected, syncing:", count, "vs", unreadCount);
+          setUnreadCount(count);
+        }
+        
+        // Debug: If count > 0 but no notifications, investigate
         if (count > 0 && notificationsList.length === 0) {
           console.warn("⚠️ Count mismatch: unread count is", count, "but no notifications returned");
-          // Try to fetch unread count separately
+          console.log("🔍 Attempting separate unread count fetch...");
+          
           try {
             const countData = await getUnreadCount();
-            console.log("🔍 Separate unread count fetch:", countData);
-            setUnreadCount(countData.unreadCount || 0);
+            console.log("🔍 Separate unread count fetch result:", countData);
+            
+            if (countData.unreadCount !== count) {
+              console.log("🔄 Updating count from separate fetch:", countData.unreadCount);
+              setUnreadCount(countData.unreadCount);
+            }
           } catch (countError) {
             console.error("❌ Error fetching separate unread count:", countError);
           }
@@ -173,6 +184,13 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+  // Force refresh notifications and count
+  const handleForceRefresh = async () => {
+    console.log("🔄 Force refreshing notifications...");
+    await refreshUnreadCount();
+    await fetchNotifications();
+  };
+
   // Get notification icon
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -217,17 +235,28 @@ const NotificationDropdown: React.FC = () => {
           <CardHeader className="pb-3 px-4 pt-4 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
-              {unreadCount > 0 && (
+              <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleMarkAllAsRead}
-                  className="text-xs h-8 px-3 hover:bg-muted rounded-md"
+                  onClick={handleForceRefresh}
+                  className="h-8 w-8 p-0 hover:bg-muted rounded-md"
+                  title="Refresh notifications"
                 >
-                  <CheckCheck className="h-3 w-3 mr-1" />
-                  Mark all read
+                  <RefreshCw className="h-3 w-3" />
                 </Button>
-              )}
+                {unreadCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleMarkAllAsRead}
+                    className="text-xs h-8 px-3 hover:bg-muted rounded-md"
+                  >
+                    <CheckCheck className="h-3 w-3 mr-1" />
+                    Mark all read
+                  </Button>
+                )}
+              </div>
             </div>
           </CardHeader>
           
@@ -258,9 +287,23 @@ const NotificationDropdown: React.FC = () => {
                   <p className="text-sm font-medium mb-1">No notifications yet</p>
                   <p className="text-xs opacity-75 text-center">You'll see updates here when they arrive</p>
                   {unreadCount > 0 && (
-                    <p className="text-xs text-orange-500 mt-2">
-                      (Unread count: {unreadCount} - there might be a sync issue)
-                    </p>
+                    <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-center">
+                      <p className="text-xs text-orange-600 font-medium">
+                        Debug: Unread count is {unreadCount} but no notifications found
+                      </p>
+                      <p className="text-xs text-orange-500 mt-1">
+                        This might be a sync issue between real-time updates and database
+                      </p>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleForceRefresh}
+                        className="mt-2 text-xs"
+                      >
+                        <RefreshCw className="h-3 w-3 mr-1" />
+                        Force Refresh
+                      </Button>
+                    </div>
                   )}
                 </div>
               ) : (

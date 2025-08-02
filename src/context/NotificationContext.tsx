@@ -18,6 +18,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [processedMessageIds, setProcessedMessageIds] = useState<Set<string>>(new Set());
   const { isAuthenticated, user } = useAuth();
 
   // Function to refresh unread count from server
@@ -42,6 +43,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const socketInstance = initSocket();
         setSocket(socketInstance);
 
+        // Clear processed messages when reconnecting
+        setProcessedMessageIds(new Set());
+
         // Join user's notification room
         socketInstance.emit("join", user._id);
         console.log("👤 Joined user room:", user._id);
@@ -52,6 +56,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Listen for new notifications
         socketInstance.on("newNotification", (notification) => {
           console.log("🔔 New notification received:", notification);
+          
+          // Check for duplicates using notification ID
+          const notificationId = notification.id || notification._id || `${notification.type}-${Date.now()}`;
+          if (processedMessageIds.has(notificationId)) {
+            console.log("🔄 Skipping duplicate notification:", notificationId);
+            return;
+          }
+          
+          setProcessedMessageIds(prev => new Set([...prev, notificationId]));
           
           // Show toast notification
           toast({
@@ -77,6 +90,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Only show notification if this whisper is TO me (not from me)
           if (whisper.receiver === user._id && whisper.sender !== user._id) {
+            // Check for duplicates using whisper message ID
+            const whisperId = whisper._id || `${whisper.sender}-${whisper.createdAt}`;
+            if (processedMessageIds.has(whisperId)) {
+              console.log("🔄 Skipping duplicate whisper notification:", whisperId);
+              return;
+            }
+            
+            setProcessedMessageIds(prev => new Set([...prev, whisperId]));
+            
             console.log("✅ Showing whisper notification for incoming message");
             
             // Show toast for whisper
@@ -103,6 +125,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         socketInstance.on("newComment", (data) => {
           console.log("💬 New comment notification:", data);
           
+          // Check for duplicates
+          const commentId = data.id || `comment-${data.commenterId}-${Date.now()}`;
+          if (processedMessageIds.has(commentId)) {
+            console.log("🔄 Skipping duplicate comment notification:", commentId);
+            return;
+          }
+          
+          setProcessedMessageIds(prev => new Set([...prev, commentId]));
+          
           toast({
             title: "New Comment",
             description: `${data.commenterAlias} commented on your post`,
@@ -120,6 +151,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         socketInstance.on("newReply", (data) => {
           console.log("↩️ New reply notification:", data);
           
+          // Check for duplicates
+          const replyId = data.id || `reply-${data.replierId}-${Date.now()}`;
+          if (processedMessageIds.has(replyId)) {
+            console.log("🔄 Skipping duplicate reply notification:", replyId);
+            return;
+          }
+          
+          setProcessedMessageIds(prev => new Set([...prev, replyId]));
+          
           toast({
             title: "New Reply",
             description: `${data.replierAlias} replied to your comment`,
@@ -136,6 +176,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Listen for like summary notifications
         socketInstance.on("likesSummary", (data) => {
           console.log("❤️ Likes summary notification:", data);
+          
+          // Check for duplicates
+          const likesId = data.id || `likes-${data.likeCount}-${Date.now()}`;
+          if (processedMessageIds.has(likesId)) {
+            console.log("🔄 Skipping duplicate likes notification:", likesId);
+            return;
+          }
+          
+          setProcessedMessageIds(prev => new Set([...prev, likesId]));
           
           const likeText = data.likeCount === 1 ? 'like' : 'likes';
           const postText = data.postCount === 1 ? 'post' : 'posts';
@@ -158,6 +207,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return () => {
           console.log("🔌 Disconnecting socket...");
           socketInstance.disconnect();
+          setProcessedMessageIds(new Set());
         };
       } catch (error) {
         console.error("❌ Socket initialization error:", error);
@@ -169,6 +219,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         socket.disconnect();
         setSocket(null);
         setUnreadCount(0);
+        setProcessedMessageIds(new Set());
       }
     }
   }, [isAuthenticated, user]);
