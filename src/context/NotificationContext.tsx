@@ -24,10 +24,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const refreshUnreadCount = async () => {
     if (isAuthenticated && user) {
       try {
+        console.log("🔄 Refreshing unread count...");
         const countData = await getUnreadCount();
+        console.log("📊 Received unread count:", countData);
         setUnreadCount(countData.unreadCount);
       } catch (error) {
-        console.error('Error fetching unread count:', error);
+        console.error('❌ Error fetching unread count:', error);
       }
     }
   };
@@ -42,6 +44,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // Join user's notification room
         socketInstance.emit("join", user._id);
+        console.log("👤 Joined user room:", user._id);
 
         // Fetch initial unread count
         refreshUnreadCount();
@@ -58,7 +61,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           });
 
           // Update unread count
-          setUnreadCount(prev => prev + 1);
+          setUnreadCount(prev => {
+            const newCount = prev + 1;
+            console.log("📈 Updated unread count from", prev, "to", newCount);
+            return newCount;
+          });
         });
 
         // Listen for whisper notifications (only for messages from others)
@@ -66,6 +73,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           console.log("💬 New whisper received:", whisper);
           console.log("Current user:", user._id);
           console.log("Whisper sender:", whisper.sender);
+          console.log("Whisper receiver:", whisper.receiver);
           
           // Only show notification if this whisper is TO me (not from me)
           if (whisper.receiver === user._id && whisper.sender !== user._id) {
@@ -81,7 +89,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             });
 
             // Update unread count
-            setUnreadCount(prev => prev + 1);
+            setUnreadCount(prev => {
+              const newCount = prev + 1;
+              console.log("📈 Updated unread count from", prev, "to", newCount, "(whisper)");
+              return newCount;
+            });
           } else {
             console.log("🔕 Skipping notification for own message or irrelevant whisper");
           }
@@ -97,7 +109,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             duration: 4000,
           });
 
-          setUnreadCount(prev => prev + 1);
+          setUnreadCount(prev => {
+            const newCount = prev + 1;
+            console.log("📈 Updated unread count from", prev, "to", newCount, "(comment)");
+            return newCount;
+          });
         });
 
         // Listen for reply notifications
@@ -110,7 +126,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             duration: 4000,
           });
 
-          setUnreadCount(prev => prev + 1);
+          setUnreadCount(prev => {
+            const newCount = prev + 1;
+            console.log("📈 Updated unread count from", prev, "to", newCount, "(reply)");
+            return newCount;
+          });
         });
 
         // Listen for like summary notifications
@@ -126,10 +146,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             duration: 5000,
           });
 
-          setUnreadCount(prev => prev + 1);
+          setUnreadCount(prev => {
+            const newCount = prev + 1;
+            console.log("📈 Updated unread count from", prev, "to", newCount, "(likes)");
+            return newCount;
+          });
         });
 
-        console.log("✅ Socket connection initialized");
+        console.log("✅ Socket connection initialized with all listeners");
 
         return () => {
           console.log("🔌 Disconnecting socket...");

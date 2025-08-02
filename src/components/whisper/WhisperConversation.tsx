@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Send, Loader, MoreVertical } from "lucide-react";
@@ -59,13 +60,18 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
   });
 
   useEffect(() => {
-    if (conversationData) {
-      setAllMessages(conversationData.messages || []);
+    if (conversationData && isFirstLoad) {
+      // Store messages in chronological order (oldest first)
+      const sortedMessages = [...(conversationData.messages || [])].sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      setAllMessages(sortedMessages);
       setPartner(conversationData.partner);
       setHasRecognized(conversationData.hasRecognized);
       setHasMore(conversationData.hasMore);
+      setIsFirstLoad(false);
     }
-  }, [conversationData]);
+  }, [conversationData, isFirstLoad]);
 
   useEffect(() => {
     if (socket && user) {
@@ -79,36 +85,37 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
     }
   }, [socket, partnerId]);
 
+  // Socket listeners for real-time messages with deduplication
   useEffect(() => {
-    if (conversationData && isFirstLoad) {
-      setAllMessages(conversationData.messages || []);
-      setPartner(conversationData.partner);
-      setHasRecognized(conversationData.hasRecognized);
-      setHasMore(conversationData.hasMore);
-      setIsFirstLoad(false);
-    }
-  }, [conversationData, isFirstLoad]);
-
-  // Socket listeners for real-time messages
-  useEffect(() => {
-    if (!socket || !partnerId) return;
-
-    const conversationRoom = `conversation_${[user?._id, partnerId].sort().join('_')}`;
-    socket.emit("joinConversation", partnerId);
+    if (!socket || !partnerId || !user) return;
 
     const handleReceiveWhisper = (whisper: any) => {
       console.log("🔔 Received whisper in conversation:", whisper);
-      console.log("Current user ID:", user?._id);
+      console.log("Current user ID:", user._id);
       console.log("Partner ID:", partnerId);
       console.log("Whisper sender:", whisper.sender);
       console.log("Whisper receiver:", whisper.receiver);
       
       // Check if this whisper belongs to current conversation
-      const isMyConversation = (whisper.sender === partnerId && whisper.receiver === user?._id) ||
-                              (whisper.sender === user?._id && whisper.receiver === partnerId);
+      const isMyConversation = (whisper.sender === partnerId && whisper.receiver === user._id) ||
+                              (whisper.sender === user._id && whisper.receiver === partnerId);
       
       if (isMyConversation) {
-        setAllMessages(prev => [whisper, ...prev]);
+        // Deduplicate messages by checking if message already exists
+        setAllMessages(prev => {
+          const messageExists = prev.some(msg => msg._id === whisper._id);
+          if (messageExists) {
+            console.log("Message already exists, skipping duplicate:", whisper._id);
+            return prev;
+          }
+          
+          // Add new message at the end (newest messages at bottom)
+          const newMessages = [...prev, whisper].sort((a, b) => 
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          console.log("Added new message, total messages:", newMessages.length);
+          return newMessages;
+        });
         
         // Mark as read immediately if it's from the partner (not from me)
         if (whisper.sender === partnerId) {
@@ -139,14 +146,21 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
     
     setIsLoadingMore(true);
     try {
-      const oldestMessage = allMessages[allMessages.length - 1];
+      // Get the oldest message for pagination
+      const oldestMessage = allMessages[0];
       const data = await getWhisperConversationPaginated({
         userId: partnerId,
         limit: 20,
         before: oldestMessage?._id
       });
       
-      setAllMessages(prev => [...prev, ...data.messages]);
+      // Add older messages at the beginning, maintain chronological order
+      setAllMessages(prev => {
+        const newMessages = [...data.messages, ...prev].sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+        return newMessages;
+      });
       setHasMore(data.hasMore);
     } catch (error) {
       console.error("Failed to load more messages:", error);
@@ -165,8 +179,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
     onSuccess: (data) => {
       setNewMessage("");
       queryClient.invalidateQueries({ queryKey: ["whispers"] });
-      // Don't emit socket event here - the backend will handle it
-      // The message will come back through the socket listener
+      // Don't add the message here - let the socket handle it to prevent duplication
     },
     onError: (error: any) => {
       console.error("Send whisper error:", error);

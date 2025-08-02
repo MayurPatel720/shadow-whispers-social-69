@@ -24,6 +24,7 @@ const NotificationDropdown: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { unreadCount, setUnreadCount } = useNotification();
 
@@ -31,20 +32,49 @@ const NotificationDropdown: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      console.log("Fetching notifications...");
+      setError(null);
+      console.log("📡 Fetching notifications...");
+      
       const notifData = await getNotifications({ limit: 20 });
-      console.log("Received notifications:", notifData);
-      setNotifications(notifData.notifications || []);
-      setUnreadCount(notifData.unreadCount || 0);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
+      console.log("📨 Received notifications response:", notifData);
+      
+      if (notifData && typeof notifData === 'object') {
+        const notificationsList = notifData.notifications || [];
+        const count = notifData.unreadCount || 0;
+        
+        console.log("📋 Notifications list:", notificationsList);
+        console.log("🔢 Unread count:", count);
+        
+        setNotifications(notificationsList);
+        setUnreadCount(count);
+        
+        // If there's a mismatch, log it for debugging
+        if (count > 0 && notificationsList.length === 0) {
+          console.warn("⚠️ Count mismatch: unread count is", count, "but no notifications returned");
+          // Try to fetch unread count separately
+          try {
+            const countData = await getUnreadCount();
+            console.log("🔍 Separate unread count fetch:", countData);
+            setUnreadCount(countData.unreadCount || 0);
+          } catch (countError) {
+            console.error("❌ Error fetching separate unread count:", countError);
+          }
+        }
+      } else {
+        console.warn("⚠️ Invalid response format:", notifData);
+        setNotifications([]);
+        setError("Invalid response format");
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching notifications:', error);
+      setError(error.message || "Failed to load notifications");
+      setNotifications([]);
+      
       toast({
         title: "Error",
-        description: "Failed to load notifications",
+        description: "Failed to load notifications. Please try again.",
         variant: "destructive"
       });
-      // Set empty array on error to show proper empty state
-      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -73,7 +103,7 @@ const NotificationDropdown: React.FC = () => {
       switch (notification.type) {
         case 'whisper':
           if (notification.data?.senderId) {
-            navigate(`/whispers?conversation=${notification.data.senderId}`);
+            navigate(`/whispers?userId=${notification.data.senderId}`);
           } else {
             navigate('/whispers');
           }
@@ -206,12 +236,32 @@ const NotificationDropdown: React.FC = () => {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-8 px-4 text-muted-foreground">
+                  <AlertCircle className="h-8 w-8 mb-2 opacity-50" />
+                  <p className="text-sm font-medium mb-1">Error loading notifications</p>
+                  <p className="text-xs opacity-75 text-center">{error}</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => fetchNotifications()}
+                    className="mt-2"
+                  >
+                    Try again
+                  </Button>
                 </div>
               ) : !notifications || notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-muted-foreground">
                   <Bell className="h-12 w-12 mb-3 opacity-50" />
                   <p className="text-sm font-medium mb-1">No notifications yet</p>
                   <p className="text-xs opacity-75 text-center">You'll see updates here when they arrive</p>
+                  {unreadCount > 0 && (
+                    <p className="text-xs text-orange-500 mt-2">
+                      (Unread count: {unreadCount} - there might be a sync issue)
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-0">
