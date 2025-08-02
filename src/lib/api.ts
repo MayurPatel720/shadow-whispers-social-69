@@ -3,6 +3,8 @@ import axios from "axios";
 import { io, Socket } from "socket.io-client";
 import { User, Post } from "@/types/user";
 
+console.log("NODE_ENV:", import.meta.env.NODE_ENV || "development");
+
 // Create axios instance with base URL
 const API_URL = "http://localhost:8900";
 // const API_URL = "https://backend-whisperer-fix-5ztr.vercel.app/";
@@ -550,12 +552,17 @@ export const updateOneSignalPlayerId = async (
 	playerId: string
 ): Promise<any> => {
 	try {
+		console.log("🔄 Updating OneSignal player ID in backend:", playerId);
 		const response = await api.post("/api/users/onesignal-player-id", {
 			playerId,
 		});
+		console.log("✅ OneSignal player ID update response:", response.data);
 		return response.data;
 	} catch (error: any) {
-		console.error("Error updating OneSignal player ID:", error);
+		console.error(
+			"❌ Error updating OneSignal player ID:",
+			error?.response?.data || error
+		);
 		throw error?.response?.data || error;
 	}
 };

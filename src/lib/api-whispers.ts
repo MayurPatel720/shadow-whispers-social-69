@@ -38,4 +38,10 @@ export async function deleteWhisperMessage(messageId: string) {
   return res.data;
 }
 
+// Add function to mark messages as read when conversation is opened
+export const markMessagesAsRead = async (partnerId: string): Promise<any> => {
+  const response = await api.put(`/api/whispers/conversation/${partnerId}/read`);
+  return response.data;
+};
+
 // ... add more whisper-related functions as needed

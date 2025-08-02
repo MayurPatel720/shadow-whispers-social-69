@@ -44,6 +44,14 @@ async function sendNotification({
       try {
         const user = await User.findById(userId);
         if (user && user.oneSignalPlayerId) {
+          console.log(`🔔 Sending push notification to user ${userId} with player ID: ${user.oneSignalPlayerId}`);
+          
+          // Validate OneSignal configuration
+          if (!process.env.ONESIGNAL_APP_ID || !process.env.ONESIGNAL_REST_API_KEY) {
+            console.error('❌ OneSignal configuration missing: APP_ID or REST_API_KEY not found');
+            return;
+          }
+          
           const pushNotification = {
             contents: { en: message },
             headings: { en: title },
@@ -55,11 +63,23 @@ async function sendNotification({
             }
           };
           
-          await client.createNotification(pushNotification);
-          console.log(`✅ Push notification sent to user ${userId}`);
+          const result = await client.createNotification(pushNotification);
+          console.log(`✅ Push notification sent successfully to user ${userId}:`, result.id);
+        } else {
+          console.log(`⚠️ User ${userId} has no OneSignal player ID, skipping push notification`);
         }
       } catch (pushError) {
-        console.error('❌ Push notification error:', pushError);
+        console.error('❌ Push notification error:', pushError.message || pushError);
+        // Log detailed error for debugging
+        if (pushError.response) {
+          console.error('❌ OneSignal API response:', pushError.response.data);
+        }
+        // Log specific OneSignal errors
+        if (pushError.statusCode === 400) {
+          console.error('❌ OneSignal 400 error - Invalid player ID or request format');
+        } else if (pushError.statusCode === 429) {
+          console.error('❌ OneSignal 429 error - Rate limit exceeded');
+        }
       }
     }
 

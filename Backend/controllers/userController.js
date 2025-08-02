@@ -494,30 +494,48 @@ const getUserById = asyncHandler(async (req, res) => {
 // @access  Private
 const updateOneSignalPlayerId = asyncHandler(async (req, res) => {
 	const { playerId } = req.body;
+	
+	console.log(`🔔 Updating OneSignal Player ID for user ${req.user._id}: ${playerId}`);
 
-	if (!playerId) {
+	if (!playerId || playerId.trim() === '') {
+		console.log(`❌ Invalid player ID provided: ${playerId}`);
 		res.status(400);
-		throw new Error("Player ID is required");
+		throw new Error("Valid Player ID is required");
 	}
 
 	try {
+		// Validate player ID format (OneSignal player IDs are typically UUIDs)
+		const trimmedPlayerId = playerId.trim();
+		const playerIdRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		
+		// Allow both UUID format and dev mock IDs for development
+		if (!playerIdRegex.test(trimmedPlayerId) && !trimmedPlayerId.includes('dev-mock')) {
+			console.log(`❌ Invalid player ID format: ${trimmedPlayerId}`);
+			res.status(400);
+			throw new Error("Player ID must be a valid UUID format");
+		}
+
 		const user = await User.findById(req.user._id);
 		if (!user) {
 			res.status(404);
 			throw new Error("User not found");
 		}
 
-		user.oneSignalPlayerId = playerId;
-		await user.save();
-
-		console.log(`OneSignal player ID updated for user ${user._id}: ${playerId}`);
+		// Only update if the player ID has actually changed
+		if (user.oneSignalPlayerId !== trimmedPlayerId) {
+			user.oneSignalPlayerId = trimmedPlayerId;
+			await user.save();
+			console.log(`✅ OneSignal player ID updated for user ${user._id}: ${trimmedPlayerId}`);
+		} else {
+			console.log(`ℹ️ OneSignal player ID unchanged for user ${user._id}: ${trimmedPlayerId}`);
+		}
 
 		res.json({
 			message: "OneSignal player ID updated successfully",
 			playerId: user.oneSignalPlayerId,
 		});
 	} catch (error) {
-		console.error("Error updating OneSignal player ID:", error);
+		console.error("❌ Error updating OneSignal player ID:", error);
 		res.status(500);
 		throw new Error("Failed to update OneSignal player ID");
 	}

@@ -31,9 +31,11 @@ const NotificationDropdown: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
+      console.log("Fetching notifications...");
       const notifData = await getNotifications({ limit: 20 });
-      setNotifications(notifData.notifications);
-      setUnreadCount(notifData.unreadCount);
+      console.log("Received notifications:", notifData);
+      setNotifications(notifData.notifications || []);
+      setUnreadCount(notifData.unreadCount || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast({
@@ -41,6 +43,8 @@ const NotificationDropdown: React.FC = () => {
         description: "Failed to load notifications",
         variant: "destructive"
       });
+      // Set empty array on error to show proper empty state
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -116,7 +120,6 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
-  // Delete notification
   const handleDeleteNotification = async (e: React.MouseEvent, notificationId: string) => {
     e.stopPropagation();
     try {
@@ -144,9 +147,9 @@ const NotificationDropdown: React.FC = () => {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'whisper':
-        return <MessageCircle className="h-4 w-4 text-primary" />;
-      case 'comment':
         return <MessageCircle className="h-4 w-4 text-blue-500" />;
+      case 'comment':
+        return <MessageCircle className="h-4 w-4 text-green-500" />;
       case 'like':
         return <Heart className="h-4 w-4 text-red-500" />;
       default:
@@ -166,7 +169,7 @@ const NotificationDropdown: React.FC = () => {
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-medium"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs font-medium min-w-[1.25rem]"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </Badge>
@@ -175,13 +178,13 @@ const NotificationDropdown: React.FC = () => {
       </PopoverTrigger>
       
       <PopoverContent 
-        className="w-80 sm:w-96 p-0 mr-4 sm:mr-0" 
+        className="w-80 max-w-[calc(100vw-1rem)] p-0 mx-2 sm:mx-0 bg-background border shadow-lg z-50" 
         align="end"
         side="bottom"
         sideOffset={8}
       >
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-3 px-4 pt-4">
+        <Card className="border-0 shadow-none">
+          <CardHeader className="pb-3 px-4 pt-4 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
               {unreadCount > 0 && (
@@ -189,7 +192,7 @@ const NotificationDropdown: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleMarkAllAsRead}
-                  className="text-xs h-8 px-2 hover:bg-muted"
+                  className="text-xs h-8 px-3 hover:bg-muted rounded-md"
                 >
                   <CheckCheck className="h-3 w-3 mr-1" />
                   Mark all read
@@ -199,44 +202,44 @@ const NotificationDropdown: React.FC = () => {
           </CardHeader>
           
           <CardContent className="p-0">
-            <ScrollArea className="h-80 sm:h-96">
+            <ScrollArea className="h-80 max-h-[60vh]">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                 </div>
-              ) : notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                  <Bell className="h-8 w-8 mb-2 opacity-50" />
-                  <p className="text-sm">No notifications yet</p>
-                  <p className="text-xs opacity-75">You'll see updates here when they arrive</p>
+              ) : !notifications || notifications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-muted-foreground">
+                  <Bell className="h-12 w-12 mb-3 opacity-50" />
+                  <p className="text-sm font-medium mb-1">No notifications yet</p>
+                  <p className="text-xs opacity-75 text-center">You'll see updates here when they arrive</p>
                 </div>
               ) : (
                 <div className="space-y-0">
                   {notifications.map((notification, index) => (
                     <div key={notification._id} className="group">
                       <div
-                        className={`p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 active:bg-muted/70 ${
+                        className={`p-4 cursor-pointer transition-all duration-200 hover:bg-muted/50 active:bg-muted/70 relative ${
                           !notification.read ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                         }`}
                         onClick={() => handleNotificationClick(notification)}
                       >
                         <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 mt-1">
+                          <div className="flex-shrink-0 mt-0.5">
                             {getNotificationIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className="text-sm font-medium text-foreground truncate pr-2">
+                              <h4 className="text-sm font-medium text-foreground line-clamp-2 leading-5">
                                 {notification.title}
                               </h4>
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center space-x-1 flex-shrink-0">
                                 {!notification.read && (
-                                  <div className="h-2 w-2 bg-primary rounded-full flex-shrink-0"></div>
+                                  <div className="h-2 w-2 bg-primary rounded-full"></div>
                                 )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-opacity flex-shrink-0"
+                                  className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive hover:text-destructive-foreground transition-opacity"
                                   onClick={(e) => handleDeleteNotification(e, notification._id)}
                                 >
                                   <X className="h-3 w-3" />

@@ -1,3 +1,4 @@
+
 const asyncHandler = require("express-async-handler");
 const Whisper = require("../../models/whisperModel");
 const User = require("../../models/userModel");
@@ -73,6 +74,18 @@ const getMyWhispers = asyncHandler(async (req, res) => {
 				$sort: { "lastMessage.createdAt": -1 },
 			},
 		]);
+
+		// Log for debugging
+		conversations.forEach(convo => {
+			console.log(`Conversation with ${convo.partner.anonymousAlias}: ${convo.unreadCount} unread messages`);
+			console.log(`Messages breakdown:`, convo.messages?.map(msg => ({
+				sender: msg.sender,
+				receiver: msg.receiver,
+				read: msg.read,
+				isForCurrentUser: msg.receiver.toString() === req.user._id.toString()
+			})));
+		});
+
 		res.json(conversations);
 	} catch (error) {
 		console.error(

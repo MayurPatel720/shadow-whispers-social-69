@@ -146,6 +146,7 @@ app.use("/api/whisper-match", whisperMatchRoutes);
 app.use("/api/ama", amaRoutes);
 app.use("/api/tags", TagRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/test", require("./routes/testRoutes"));
 
 // ----- NEW ROUTES FOR MATCH FEATURES AND ADMIN -----
 app.use("/api/match", matchRoutes);

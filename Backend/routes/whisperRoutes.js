@@ -15,6 +15,9 @@ router.get("/:userId", protect, whisperController.getWhisperConversation); // Ge
 
 router.put("/:whisperId/read", protect, whisperController.markWhisperAsRead); // Mark a whisper as read
 
+// New route to mark all messages in a conversation as read
+router.put("/conversation/:userId/read", protect, whisperController.markConversationAsRead);
+
 router.delete("/conversation/:userId", protect, whisperController.deleteConversation); // Delete conversation with a user
 
 // New routes for editing and deleting a single whisper message:

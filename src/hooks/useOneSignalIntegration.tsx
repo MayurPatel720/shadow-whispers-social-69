@@ -34,13 +34,26 @@ export const useOneSignalIntegration = () => {
         // Listen for subscription changes
         const handleSubscriptionChange = async (event: CustomEvent) => {
           const { playerId } = event.detail;
-          if (playerId) {
+          console.log("🔄 Subscription change detected, player ID:", playerId);
+          if (playerId && playerId.trim().length > 0) {
             try {
-              await updateOneSignalPlayerId(playerId);
-              console.log("OneSignal player ID updated in backend:", playerId);
+              console.log("📤 Updating OneSignal player ID in backend...");
+              await updateOneSignalPlayerId(playerId.trim());
+              console.log("✅ OneSignal player ID updated in backend:", playerId);
+              
+              // Verify the update by checking current subscription status
+              const status = await oneSignalService.getSubscriptionStatus();
+              console.log("📊 Current subscription status after update:", status);
             } catch (error) {
-              console.error("Failed to update player ID in backend:", error);
+              console.error("❌ Failed to update player ID in backend:", error);
+              toast({
+                title: "Notification setup incomplete",
+                description: "There was an issue setting up notifications. Please try again.",
+                variant: "destructive",
+              });
             }
+          } else {
+            console.warn("⚠️ Empty or invalid player ID received");
           }
         };
 

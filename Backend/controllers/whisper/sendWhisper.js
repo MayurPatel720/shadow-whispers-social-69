@@ -23,7 +23,16 @@ const sendWhisper = asyncHandler(async (req, res) => {
 	// Emit whisper to conversation room for real-time update
 	if (global.io) {
 		const room = [req.user._id.toString(), receiverId].sort().join(":");
+		const conversationRoom = `conversation_${[req.user._id.toString(), receiverId].sort().join('_')}`;
+		
+		// Emit to conversation room
 		global.io.to(room).emit("receiveWhisper", whisper);
+		global.io.to(conversationRoom).emit("receiveWhisper", whisper);
+		
+		// Emit to receiver's individual room for notifications
+		global.io.to(`user_${receiverId}`).emit("receiveWhisper", whisper);
+		
+		console.log(`✅ Whisper emitted to rooms: ${room}, ${conversationRoom}, user_${receiverId}`);
 	}
 
 	res.status(201).json(whisper);

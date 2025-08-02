@@ -61,21 +61,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           setUnreadCount(prev => prev + 1);
         });
 
-        // Listen for whisper notifications
+        // Listen for whisper notifications (only for messages from others)
         socketInstance.on("receiveWhisper", (whisper) => {
           console.log("💬 New whisper received:", whisper);
+          console.log("Current user:", user._id);
+          console.log("Whisper sender:", whisper.sender);
           
-          // Show toast for whisper
-          toast({
-            title: `New message from ${whisper.senderAlias}`,
-            description: whisper.content.length > 50 
-              ? `${whisper.content.substring(0, 47)}...` 
-              : whisper.content,
-            duration: 4000,
-          });
+          // Only show notification if this whisper is TO me (not from me)
+          if (whisper.receiver === user._id && whisper.sender !== user._id) {
+            console.log("✅ Showing whisper notification for incoming message");
+            
+            // Show toast for whisper
+            toast({
+              title: `New message from ${whisper.senderAlias}`,
+              description: whisper.content.length > 50 
+                ? `${whisper.content.substring(0, 47)}...` 
+                : whisper.content,
+              duration: 4000,
+            });
 
-          // Update unread count
-          setUnreadCount(prev => prev + 1);
+            // Update unread count
+            setUnreadCount(prev => prev + 1);
+          } else {
+            console.log("🔕 Skipping notification for own message or irrelevant whisper");
+          }
         });
 
         // Listen for comment notifications
@@ -108,9 +117,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         socketInstance.on("likesSummary", (data) => {
           console.log("❤️ Likes summary notification:", data);
           
+          const likeText = data.likeCount === 1 ? 'like' : 'likes';
+          const postText = data.postCount === 1 ? 'post' : 'posts';
+          
           toast({
             title: "Your posts got new likes!",
-            description: `You received ${data.likeCount} new ${data.likeCount === 1 ? 'like' : 'likes'}`,
+            description: `You received ${data.likeCount} new ${likeText} on ${data.postCount} ${postText}`,
             duration: 5000,
           });
 

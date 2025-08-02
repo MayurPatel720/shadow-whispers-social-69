@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -15,31 +16,37 @@ export const usePWAInstall = () => {
     const checkIfInstalled = () => {
       console.log('🔍 Checking if PWA is installed...');
       
-      // Check for standalone mode (iOS Safari)
-      if (window.navigator.standalone) {
-        console.log('✅ PWA detected: iOS Safari standalone mode');
-        setIsInstalled(true);
-        return;
+      try {
+        // Check for standalone mode (iOS Safari)
+        if (window.navigator.standalone) {
+          console.log('✅ PWA detected: iOS Safari standalone mode');
+          setIsInstalled(true);
+          return;
+        }
+        
+        // Check for display-mode: standalone (Android Chrome)
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          console.log('✅ PWA detected: Android Chrome standalone mode');
+          setIsInstalled(true);
+          return;
+        }
+        
+        // Only check getInstalledRelatedApps if we're in a top-level browsing context
+        if ('getInstalledRelatedApps' in navigator && window.parent === window) {
+          (navigator as any).getInstalledRelatedApps().then((relatedApps: any[]) => {
+            if (relatedApps.length > 0) {
+              console.log('✅ PWA detected: Related apps found');
+              setIsInstalled(true);
+            }
+          }).catch((error: any) => {
+            console.warn('Could not check related apps:', error);
+          });
+        }
+        
+        console.log('ℹ️ PWA not detected as installed');
+      } catch (error) {
+        console.warn('Error checking PWA installation status:', error);
       }
-      
-      // Check for display-mode: standalone (Android Chrome)
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('✅ PWA detected: Android Chrome standalone mode');
-        setIsInstalled(true);
-        return;
-      }
-      
-      // Check for related applications (if available)
-      if ('getInstalledRelatedApps' in navigator) {
-        (navigator as any).getInstalledRelatedApps().then((relatedApps: any[]) => {
-          if (relatedApps.length > 0) {
-            console.log('✅ PWA detected: Related apps found');
-            setIsInstalled(true);
-          }
-        });
-      }
-      
-      console.log('ℹ️ PWA not detected as installed');
     };
 
     checkIfInstalled();
@@ -68,14 +75,23 @@ export const usePWAInstall = () => {
   }, []);
 
   const installApp = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      console.warn('No deferred prompt available for installation');
+      return;
+    }
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setIsInstallable(false);
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      console.log('Install prompt outcome:', outcome);
+      
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+      }
+    } catch (error) {
+      console.error('Error during app installation:', error);
     }
   };
 

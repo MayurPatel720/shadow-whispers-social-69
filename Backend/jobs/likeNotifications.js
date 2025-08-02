@@ -18,7 +18,7 @@ function initializeLikeNotificationJob(io) {
       const recentLikes = await Post.aggregate([
         {
           $match: {
-            'likes.likedAt': { $gte: twoHoursAgo }
+            'likes.createdAt': { $gte: twoHoursAgo }
           }
         },
         {
@@ -26,12 +26,12 @@ function initializeLikeNotificationJob(io) {
         },
         {
           $match: {
-            'likes.likedAt': { $gte: twoHoursAgo }
+            'likes.createdAt': { $gte: twoHoursAgo }
           }
         },
         {
           $group: {
-            _id: '$author',
+            _id: '$user',
             likeCount: { $sum: 1 },
             postCount: { $addToSet: '$_id' }
           }

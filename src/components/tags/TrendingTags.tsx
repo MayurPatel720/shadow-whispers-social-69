@@ -103,7 +103,7 @@ const TrendingTags: React.FC<TrendingTagsProps> = ({
 			<div className={cn("w-full", className)}>
 				{/* Mobile: Compact single row */}
 				<div className="flex items-center gap-1 px-2 py-1">
-					<TrendingUp className="h-4 w-4 text-purple-500 flex-shrink-0" />
+					{/* <TrendingUp className="h-4 w-4 text-purple-500 flex-shrink-0" /> */}
 
 					{/* Show first 2-3 tags as compact chips */}
 					{visibleTags.map((tag) => (
@@ -136,8 +136,6 @@ const TrendingTags: React.FC<TrendingTagsProps> = ({
 	return (
 		<div className={cn("w-full", className)}>
 			<div className="flex items-center gap-1 px-2 py-1 overflow-x-auto scrollbar-hide">
-				<TrendingUp className="h-4 w-4 text-purple-500 flex-shrink-0" />
-
 				{tags.map((tag) => (
 					<button
 						key={tag._id}
