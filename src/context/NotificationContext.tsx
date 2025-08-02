@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { initSocket } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -20,6 +20,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState(0);
   const [processedMessageIds, setProcessedMessageIds] = useState<Set<string>>(new Set());
   const { isAuthenticated, user } = useAuth();
+  
+  // Use ref to track processed messages across re-renders
+  const processedMessagesRef = useRef<Set<string>>(new Set());
 
   // Function to refresh unread count from server
   const refreshUnreadCount = async () => {
@@ -28,7 +31,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         console.log("🔄 Refreshing unread count...");
         const countData = await getUnreadCount();
         console.log("📊 Received unread count:", countData);
-        setUnreadCount(countData.unreadCount);
+        const serverCount = countData.unreadCount || 0;
+        
+        // Only update if there's a significant difference
+        setUnreadCount(prev => {
+          if (prev !== serverCount) {
+            console.log(`🔄 Syncing count: ${prev} → ${serverCount}`);
+            return serverCount;
+          }
+          return prev;
+        });
       } catch (error) {
         console.error('❌ Error fetching unread count:', error);
       }
@@ -45,6 +57,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // Clear processed messages when reconnecting
         setProcessedMessageIds(new Set());
+        processedMessagesRef.current = new Set();
 
         // Join user's notification room
         socketInstance.emit("join", user._id);
@@ -53,17 +66,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Fetch initial unread count
         refreshUnreadCount();
 
-        // Listen for new notifications
+        // Listen for new notifications (database notifications)
         socketInstance.on("newNotification", (notification) => {
           console.log("🔔 New notification received:", notification);
           
           // Check for duplicates using notification ID
-          const notificationId = notification.id || notification._id || `${notification.type}-${Date.now()}`;
-          if (processedMessageIds.has(notificationId)) {
+          const notificationId = notification.id || notification._id || `notification-${Date.now()}`;
+          
+          if (processedMessagesRef.current.has(notificationId)) {
             console.log("🔄 Skipping duplicate notification:", notificationId);
             return;
           }
           
+          processedMessagesRef.current.add(notificationId);
           setProcessedMessageIds(prev => new Set([...prev, notificationId]));
           
           // Show toast notification
@@ -76,12 +91,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           // Update unread count
           setUnreadCount(prev => {
             const newCount = prev + 1;
-            console.log("📈 Updated unread count from", prev, "to", newCount);
+            console.log("📈 Updated unread count from", prev, "to", newCount, "(notification)");
             return newCount;
           });
         });
 
-        // Listen for whisper notifications (only for messages from others)
+        // Listen for whisper notifications (real-time chat updates)
         socketInstance.on("receiveWhisper", (whisper) => {
           console.log("💬 New whisper received:", whisper);
           console.log("Current user:", user._id);
@@ -90,16 +105,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Only show notification if this whisper is TO me (not from me)
           if (whisper.receiver === user._id && whisper.sender !== user._id) {
-            // Check for duplicates using whisper message ID
-            const whisperId = whisper._id || `${whisper.sender}-${whisper.createdAt}`;
-            if (processedMessageIds.has(whisperId)) {
+            // Use whisper _id for deduplication
+            const whisperId = whisper._id || `whisper-${whisper.sender}-${whisper.createdAt}`;
+            
+            if (processedMessagesRef.current.has(whisperId)) {
               console.log("🔄 Skipping duplicate whisper notification:", whisperId);
               return;
             }
             
+            processedMessagesRef.current.add(whisperId);
             setProcessedMessageIds(prev => new Set([...prev, whisperId]));
             
             console.log("✅ Showing whisper notification for incoming message");
+            console.log("🗂️ Total processed messages:", processedMessagesRef.current.size);
             
             // Show toast for whisper
             toast({
@@ -110,12 +128,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               duration: 4000,
             });
 
-            // Update unread count
-            setUnreadCount(prev => {
-              const newCount = prev + 1;
-              console.log("📈 Updated unread count from", prev, "to", newCount, "(whisper)");
-              return newCount;
-            });
+            // Don't increment count for whispers - they should be handled by database notifications
+            console.log("ℹ️ Whisper toast shown, but not incrementing count (handled by database notification)");
           } else {
             console.log("🔕 Skipping notification for own message or irrelevant whisper");
           }
@@ -127,11 +141,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Check for duplicates
           const commentId = data.id || `comment-${data.commenterId}-${Date.now()}`;
-          if (processedMessageIds.has(commentId)) {
+          if (processedMessagesRef.current.has(commentId)) {
             console.log("🔄 Skipping duplicate comment notification:", commentId);
             return;
           }
           
+          processedMessagesRef.current.add(commentId);
           setProcessedMessageIds(prev => new Set([...prev, commentId]));
           
           toast({
@@ -153,11 +168,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Check for duplicates
           const replyId = data.id || `reply-${data.replierId}-${Date.now()}`;
-          if (processedMessageIds.has(replyId)) {
+          if (processedMessagesRef.current.has(replyId)) {
             console.log("🔄 Skipping duplicate reply notification:", replyId);
             return;
           }
           
+          processedMessagesRef.current.add(replyId);
           setProcessedMessageIds(prev => new Set([...prev, replyId]));
           
           toast({
@@ -179,11 +195,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           
           // Check for duplicates
           const likesId = data.id || `likes-${data.likeCount}-${Date.now()}`;
-          if (processedMessageIds.has(likesId)) {
+          if (processedMessagesRef.current.has(likesId)) {
             console.log("🔄 Skipping duplicate likes notification:", likesId);
             return;
           }
           
+          processedMessagesRef.current.add(likesId);
           setProcessedMessageIds(prev => new Set([...prev, likesId]));
           
           const likeText = data.likeCount === 1 ? 'like' : 'likes';
@@ -208,6 +225,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           console.log("🔌 Disconnecting socket...");
           socketInstance.disconnect();
           setProcessedMessageIds(new Set());
+          processedMessagesRef.current = new Set();
         };
       } catch (error) {
         console.error("❌ Socket initialization error:", error);
@@ -220,6 +238,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setSocket(null);
         setUnreadCount(0);
         setProcessedMessageIds(new Set());
+        processedMessagesRef.current = new Set();
       }
     }
   }, [isAuthenticated, user]);

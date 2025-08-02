@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle, RefreshCw } from "lucide-react";
+import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle, RefreshCw, Database, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,39 +40,46 @@ const NotificationDropdown: React.FC = () => {
       
       if (notifData && typeof notifData === 'object') {
         const notificationsList = notifData.notifications || [];
-        const count = notifData.unreadCount || 0;
+        const apiUnreadCount = notifData.unreadCount || 0;
         
         console.log("📋 Notifications list:", notificationsList);
-        console.log("🔢 Unread count from API:", count);
-        console.log("🔢 Current local count:", unreadCount);
+        console.log("🔢 API unread count:", apiUnreadCount);
+        console.log("🔢 Socket unread count:", unreadCount);
         
         setNotifications(notificationsList);
         
-        // If there's a significant mismatch, sync the count
-        if (Math.abs(count - unreadCount) > 1) {
-          console.log("⚠️ Count mismatch detected, syncing:", count, "vs", unreadCount);
-          setUnreadCount(count);
+        // Show detailed debug info if there's a mismatch
+        if (apiUnreadCount !== unreadCount) {
+          console.warn(`⚠️ COUNT MISMATCH DETECTED:`);
+          console.warn(`   Socket count: ${unreadCount} (real-time)`);
+          console.warn(`   API count: ${apiUnreadCount} (database)`);
+          console.warn(`   Notifications returned: ${notificationsList.length}`);
+          console.warn(`   Unread notifications: ${notificationsList.filter(n => !n.read).length}`);
+          
+          // If API has 0 but socket has >0, this suggests database save issue
+          if (apiUnreadCount === 0 && unreadCount > 0) {
+            console.error(`❌ BACKEND ISSUE: Socket notifications not being saved to database!`);
+            console.error(`   This means notifications are being sent via socket but not persisted.`);
+            console.error(`   Check backend notification service and database writes.`);
+          }
+          
+          // Sync to API count since it's the source of truth for persisted notifications
+          setUnreadCount(apiUnreadCount);
         }
         
-        // Debug: If count > 0 but no notifications, investigate
-        if (count > 0 && notificationsList.length === 0) {
-          console.warn("⚠️ Count mismatch: unread count is", count, "but no notifications returned");
-          console.log("🔍 Attempting separate unread count fetch...");
-          
+        // Additional debugging for empty notifications with positive count
+        if (apiUnreadCount > 0 && notificationsList.length === 0) {
+          console.warn("🔍 Fetching separate unread count to verify database state...");
           try {
             const countData = await getUnreadCount();
-            console.log("🔍 Separate unread count fetch result:", countData);
-            
-            if (countData.unreadCount !== count) {
-              console.log("🔄 Updating count from separate fetch:", countData.unreadCount);
-              setUnreadCount(countData.unreadCount);
-            }
+            console.log("🔍 Direct count API result:", countData);
           } catch (countError) {
-            console.error("❌ Error fetching separate unread count:", countError);
+            console.error("❌ Error fetching direct count:", countError);
           }
         }
+        
       } else {
-        console.warn("⚠️ Invalid response format:", notifData);
+        console.warn("⚠️ Invalid API response format:", notifData);
         setNotifications([]);
         setError("Invalid response format");
       }
@@ -205,6 +212,9 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+  // Check if there's a significant database/socket mismatch
+  const hasCountMismatch = unreadCount > 0 && notifications.length === 0;
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -258,6 +268,27 @@ const NotificationDropdown: React.FC = () => {
                 )}
               </div>
             </div>
+            
+            {/* Debug info for count mismatch */}
+            {hasCountMismatch && (
+              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs">
+                <div className="flex items-center gap-2 text-orange-700 font-medium">
+                  <AlertCircle className="h-3 w-3" />
+                  Database Sync Issue Detected
+                </div>
+                <div className="text-orange-600 mt-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-3 w-3" />
+                    Socket notifications: {unreadCount}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Database className="h-3 w-3" />
+                    Database notifications: {notifications.length}
+                  </div>
+                  <p className="text-xs">Notifications are being received but not saved to database.</p>
+                </div>
+              </div>
+            )}
           </CardHeader>
           
           <CardContent className="p-0">
@@ -286,25 +317,6 @@ const NotificationDropdown: React.FC = () => {
                   <Bell className="h-12 w-12 mb-3 opacity-50" />
                   <p className="text-sm font-medium mb-1">No notifications yet</p>
                   <p className="text-xs opacity-75 text-center">You'll see updates here when they arrive</p>
-                  {unreadCount > 0 && (
-                    <div className="mt-3 p-2 bg-orange-50 border border-orange-200 rounded text-center">
-                      <p className="text-xs text-orange-600 font-medium">
-                        Debug: Unread count is {unreadCount} but no notifications found
-                      </p>
-                      <p className="text-xs text-orange-500 mt-1">
-                        This might be a sync issue between real-time updates and database
-                      </p>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={handleForceRefresh}
-                        className="mt-2 text-xs"
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Force Refresh
-                      </Button>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="space-y-0">
