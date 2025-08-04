@@ -42,6 +42,7 @@ import AppShell from "./components/layout/AppShell";
 import PostDetail from "./components/feed/PostDetail";
 import TagPostsPage from "./pages/TagPostsPage";
 import TrendingTagsPage from "./pages/TrendingTagsPage";
+import OneSignalDebugger from "./components/notifications/OneSignalDebugger";
 
 const queryClient = new QueryClient();
 
@@ -149,6 +150,7 @@ function GlobalApp() {
 					/>
 					<Route path="tags/:tagName" element={<TagPostsPage />} />
 					<Route path="trending-tags" element={<TrendingTagsPage />} />
+					<Route path="debug-notifications" element={<OneSignalDebugger />} />
 					<Route
 						path="recognitions"
 						element={
@@ -202,7 +204,7 @@ function GlobalApp() {
 }
 
 function App() {
-  return (
+	return (
 		<QueryClientProvider client={queryClient}>
 			<SmoothScrollProvider>
 				<AdminProvider>
