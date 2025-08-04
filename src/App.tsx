@@ -87,6 +87,8 @@ function GlobalApp() {
 				<Route path="/privacy-policy" element={<PrivacyPolicy />} />
 				<Route path="/terms-and-conditions" element={<TermsAndConditions />} />
 				<Route path="/admin/login" element={<AdminLogin />} />
+				{/* Invite route - handle query parameters */}
+				<Route path="/invite" element={<InvitePage />} />
 
 				{/* Combined root route with public and protected sub-routes */}
 				<Route
@@ -98,8 +100,6 @@ function GlobalApp() {
 					}
 				>
 					<Route index element={<Index />} /> {/* Public */}
-					<Route path="invite/:circleId" element={<InvitePage />} />{" "}
-					{/* Public */}
 					<Route
 						path="profile"
 						element={
