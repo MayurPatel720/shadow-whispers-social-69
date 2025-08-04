@@ -1,3 +1,4 @@
+
 const express = require("express");
 const router = express.Router();
 const {
@@ -6,6 +7,7 @@ const {
 	inviteToGhostCircle,
 	getGhostCircleById,
 	searchUsers,
+	joinGhostCircle,
 } = require("../controllers/ghostCircleController");
 const { protect } = require("../middleware/authMiddleware");
 const { getGhostCirclePosts } = require("../controllers/postController");
@@ -17,7 +19,7 @@ router
 	.get(protect, getMyGhostCircles);
 
 router.route("/:id").get(protect, getGhostCircleById);
-
+router.route("/:id/join").post(protect, joinGhostCircle);
 router.route("/:id/invite").post(protect, inviteToGhostCircle);
 router.route("/circle/:id").get(protect, getGhostCirclePosts);
 
