@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Search, Filter } from "lucide-react";
 import { INDIAN_CITIES, getPopularCities, searchCities, getCitiesByState, INDIAN_STATES, City } from "@/data/cities";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AreaSelectionDialogProps {
   open: boolean;
@@ -73,32 +74,33 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl h-[90vh] max-h-[600px] flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-2 flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
             <MapPin className="h-5 w-5" />
             Select Your Area
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm sm:text-base">
             Enter your area to see posts from your local community
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4 overflow-y-auto flex-1">
+        <div className="flex-1 flex flex-col min-h-0 px-4 sm:px-6">
           {/* Manual Input */}
-          <div className="space-y-2">
-            <Label htmlFor="area-input">Area/Location</Label>
+          <div className="space-y-2 mb-4 flex-shrink-0">
+            <Label htmlFor="area-input" className="text-sm font-medium">Area/Location</Label>
             <Input
               id="area-input"
               placeholder="Enter or select your city/area"
               value={area}
               onChange={(e) => setArea(e.target.value)}
+              className="h-10 sm:h-11"
             />
           </div>
 
           {/* Search Input */}
-          <div className="space-y-2">
-            <Label htmlFor="city-search">Search Cities</Label>
+          <div className="space-y-2 mb-4 flex-shrink-0">
+            <Label htmlFor="city-search" className="text-sm font-medium">Search Cities</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -106,20 +108,20 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
                 placeholder="Search for your city..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-10 sm:h-11"
               />
             </div>
           </div>
 
           {/* State Filter */}
-          <div className="space-y-2">
-            <Label>Filter by State</Label>
+          <div className="space-y-2 mb-4 flex-shrink-0">
+            <Label className="text-sm font-medium">Filter by State</Label>
             <Select value={selectedState} onValueChange={setSelectedState}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10 sm:h-11">
                 <Filter className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
-              <SelectContent className="max-h-48 overflow-y-auto">
+              <SelectContent className="max-h-48">
                 <SelectItem value="all">All States</SelectItem>
                 {INDIAN_STATES.map((state) => (
                   <SelectItem key={state} value={state}>
@@ -130,70 +132,75 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
             </Select>
           </div>
 
-          {/* Cities Grid */}
-          <div className="space-y-2">
-            <Label>Popular Cities</Label>
-            <div className="max-h-64 overflow-y-auto border rounded-md p-2">
-              {!searchTerm.trim() && selectedState === "all" && (
-                <div className="mb-2">
-                  <p className="text-xs text-muted-foreground font-medium">Popular Cities:</p>
+          {/* Cities Grid - Scrollable */}
+          <div className="flex-1 min-h-0 mb-4">
+            <Label className="text-sm font-medium mb-2 block">
+              {!searchTerm.trim() && selectedState === "all" ? "Popular Cities" : "Cities"}
+            </Label>
+            <ScrollArea className="h-full border rounded-md">
+              <div className="p-3">
+                {!searchTerm.trim() && selectedState === "all" && (
+                  <div className="mb-3">
+                    <p className="text-xs text-muted-foreground font-medium">Popular Cities:</p>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {filteredCities.map((city) => (
+                    <button
+                      key={city.id}
+                      onClick={() => handleCitySelect(city)}
+                      className={`p-3 text-sm rounded border transition-all text-left w-full ${
+                        area === city.name
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium truncate">{city.name}</span>
+                        <span className="text-xs text-muted-foreground truncate">{city.state}</span>
+                        {(city.isMetro || city.isCapital) && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {city.isMetro && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">
+                                Metro
+                              </span>
+                            )}
+                            {city.isCapital && (
+                              <span className="text-xs bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded">
+                                Capital
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-2">
-                {filteredCities.map((city) => (
-                  <button
-                    key={city.id}
-                    onClick={() => handleCitySelect(city)}
-                    className={`p-2 text-sm rounded border transition-all text-left ${
-                      area === city.name
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "hover:bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{city.name}</span>
-                      <span className="text-xs text-muted-foreground">{city.state}</span>
-                      {(city.isMetro || city.isCapital) && (
-                        <div className="flex gap-1 mt-1">
-                          {city.isMetro && (
-                            <span className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded">
-                              Metro
-                            </span>
-                          )}
-                          {city.isCapital && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-1 py-0.5 rounded">
-                              Capital
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
 
-              {filteredCities.length === 0 && searchTerm.trim() && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm mb-2">No cities found for "{searchTerm}"</p>
-                  <p className="text-xs">Try entering the city name in the input above</p>
-                </div>
-              )}
-            </div>
+                {filteredCities.length === 0 && searchTerm.trim() && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-sm mb-2">No cities found for "{searchTerm}"</p>
+                    <p className="text-xs">Try entering the city name in the input above</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
 
-          <div className="flex gap-2 pt-4">
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 pt-2 pb-4 sm:pb-6 flex-shrink-0">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1"
+              className="flex-1 h-10 sm:h-11"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!area.trim()}
-              className="flex-1"
+              className="flex-1 h-10 sm:h-11"
             >
               Select Area
             </Button>
