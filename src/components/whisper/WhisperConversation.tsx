@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Send, Loader, MoreVertical } from "lucide-react";
@@ -124,10 +123,30 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
       }
     };
 
+    const handleWhisperMessageEdited = (editedMessage: any) => {
+      console.log("✏️ Message edited:", editedMessage);
+      setAllMessages(prev => 
+        prev.map(msg => 
+          msg._id === editedMessage._id ? editedMessage : msg
+        )
+      );
+    };
+
+    const handleWhisperMessageDeleted = (deletedData: { _id: string }) => {
+      console.log("🗑️ Message deleted:", deletedData._id);
+      setAllMessages(prev => 
+        prev.filter(msg => msg._id !== deletedData._id)
+      );
+    };
+
     socket.on("receiveWhisper", handleReceiveWhisper);
+    socket.on("whisperMessageEdited", handleWhisperMessageEdited);
+    socket.on("whisperMessageDeleted", handleWhisperMessageDeleted);
 
     return () => {
       socket.off("receiveWhisper", handleReceiveWhisper);
+      socket.off("whisperMessageEdited", handleWhisperMessageEdited);
+      socket.off("whisperMessageDeleted", handleWhisperMessageDeleted);
     };
   }, [socket, partnerId, user, markAsReadMutation]);
 

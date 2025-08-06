@@ -57,3 +57,9 @@ export const markAllNotificationsAsRead = async (): Promise<void> => {
 export const deleteNotification = async (notificationId: string): Promise<void> => {
   await api.delete(`/api/notifications/${notificationId}`);
 };
+
+// Delete all notifications - Fix the endpoint
+export const deleteAllNotifications = async (): Promise<{ deletedCount: number }> => {
+  const response = await api.delete('/api/notifications/delete-all');
+  return response.data;
+};

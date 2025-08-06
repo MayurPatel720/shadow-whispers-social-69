@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -25,8 +24,6 @@ const InvitePage = () => {
 		const id = params.get("circleId");
 		const name = params.get("name");
 		const code = params.get("code");
-
-		console.log("Invite page params:", { id, name, code });
 
 		if (id) {
 			setCircleId(id);
@@ -60,19 +57,17 @@ const InvitePage = () => {
 
 		setLoading(true);
 		try {
-			console.log("Attempting to join circle:", circleId);
 			await joinGhostCircle(circleId);
 			toast({
 				title: "Success!",
 				description: `You've joined the Ghost Circle: ${circleName}`,
 			});
 			navigate("/ghost-circles");
-		} catch (error: any) {
+		} catch (error) {
 			console.error("Error joining circle:", error);
-			const errorMessage = error?.response?.data?.message || error?.message || "Something went wrong";
 			toast({
 				title: "Failed to join circle",
-				description: errorMessage,
+				description: "Something went wrong",
 				variant: "destructive",
 			});
 		} finally {

@@ -1,3 +1,4 @@
+
 const Notification = require('../models/notificationModel');
 const User = require('../models/userModel');
 const OneSignal = require('onesignal-node');
@@ -27,7 +28,10 @@ async function sendNotification({
   io = null
 }) {
   try {
-    // 1. Save notification to database
+    console.log(`📝 Attempting to save notification to database for user ${userId}`);
+    console.log(`📝 Notification details:`, { type, title, message, data });
+    
+    // 1. Save notification to database - THIS IS THE CRITICAL PART
     const notification = new Notification({
       userId,
       type,
@@ -37,7 +41,20 @@ async function sendNotification({
       read: false
     });
     
-    await notification.save();
+    const savedNotification = await notification.save();
+    console.log(`✅ Notification saved to database with ID: ${savedNotification._id}`);
+    console.log(`✅ Saved notification details:`, {
+      id: savedNotification._id,
+      userId: savedNotification.userId,
+      type: savedNotification.type,
+      title: savedNotification.title,
+      read: savedNotification.read,
+      createdAt: savedNotification.createdAt
+    });
+
+    // Verify the save by immediately querying
+    const verifyCount = await Notification.countDocuments({ userId, read: false });
+    console.log(`🔍 Current unread count for user ${userId}: ${verifyCount}`);
 
     // 2. Send push notification via OneSignal
     if (sendPush && process.env.ONESIGNAL_APP_ID) {
@@ -49,22 +66,21 @@ async function sendNotification({
           // Validate OneSignal configuration
           if (!process.env.ONESIGNAL_APP_ID || !process.env.ONESIGNAL_REST_API_KEY) {
             console.error('❌ OneSignal configuration missing: APP_ID or REST_API_KEY not found');
-            return;
+          } else {
+            const pushNotification = {
+              contents: { en: message },
+              headings: { en: title },
+              include_player_ids: [user.oneSignalPlayerId],
+              data: {
+                type,
+                notificationId: savedNotification._id,
+                ...data
+              }
+            };
+            
+            const result = await client.createNotification(pushNotification);
+            console.log(`✅ Push notification sent successfully to user ${userId}:`, result.id);
           }
-          
-          const pushNotification = {
-            contents: { en: message },
-            headings: { en: title },
-            include_player_ids: [user.oneSignalPlayerId],
-            data: {
-              type,
-              notificationId: notification._id,
-              ...data
-            }
-          };
-          
-          const result = await client.createNotification(pushNotification);
-          console.log(`✅ Push notification sent successfully to user ${userId}:`, result.id);
         } else {
           console.log(`⚠️ User ${userId} has no OneSignal player ID, skipping push notification`);
         }
@@ -74,32 +90,37 @@ async function sendNotification({
         if (pushError.response) {
           console.error('❌ OneSignal API response:', pushError.response.data);
         }
-        // Log specific OneSignal errors
-        if (pushError.statusCode === 400) {
-          console.error('❌ OneSignal 400 error - Invalid player ID or request format');
-        } else if (pushError.statusCode === 429) {
-          console.error('❌ OneSignal 429 error - Rate limit exceeded');
-        }
       }
     }
 
     // 3. Send real-time socket notification
     if (sendSocket && io) {
-      io.to(`user_${userId}`).emit('newNotification', {
-        id: notification._id,
+      const socketData = {
+        id: savedNotification._id,
         type,
         title,
         message,
         data,
         read: false,
-        createdAt: notification.createdAt
-      });
-      console.log(`✅ Socket notification sent to user ${userId}`);
+        createdAt: savedNotification.createdAt
+      };
+      
+      io.to(`user_${userId}`).emit('newNotification', socketData);
+      console.log(`✅ Socket notification sent to user ${userId}`, socketData);
     }
 
-    return notification;
+    return savedNotification;
   } catch (error) {
     console.error('❌ Notification service error:', error);
+    console.error('❌ Full error stack:', error.stack);
+    
+    // Log specific database errors
+    if (error.name === 'ValidationError') {
+      console.error('❌ Database validation error:', error.errors);
+    } else if (error.name === 'MongoError' || error.name === 'MongooseError') {
+      console.error('❌ Database connection/operation error:', error.message);
+    }
+    
     throw error;
   }
 }
@@ -108,6 +129,8 @@ async function sendNotification({
  * Send whisper message notification
  */
 async function sendWhisperNotification({ senderId, receiverId, content, senderAlias, io }) {
+  console.log(`💬 Preparing whisper notification from ${senderId} to ${receiverId}`);
+  
   const title = `New message from ${senderAlias}`;
   const message = content.length > 50 ? `${content.substring(0, 47)}...` : content;
   

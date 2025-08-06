@@ -1,25 +1,15 @@
 
-import React, { RefObject } from "react";
-import AvatarGenerator from "@/components/user/AvatarGenerator";
-import { format } from "date-fns";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import React, { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Check, X } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-
-type Message = {
-  _id: string;
-  sender: string;
-  content: string;
-  createdAt: string;
-  edited?: boolean;
-};
+import { Loader } from "lucide-react";
+import WhisperMessage from "./WhisperMessage";
+import { editWhisper, deleteWhisperMessage } from "@/lib/api-whispers";
+import { toast } from "@/hooks/use-toast";
 
 interface WhisperMessageListProps {
-  messages: Message[];
+  messages: any[];
   currentUserId: string;
-  onLoadMore: () => Promise<void>;
+  onLoadMore: () => void;
   isLoadingMore: boolean;
   hasMore: boolean;
 }
@@ -31,65 +21,82 @@ const WhisperMessageList: React.FC<WhisperMessageListProps> = ({
   isLoadingMore,
   hasMore,
 }) => {
-  const formatMessageTime = (timestamp: string) => format(new Date(timestamp), "h:mm a");
-  
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const handleEditMessage = async (messageId: string, content: string) => {
+    try {
+      await editWhisper(messageId, content);
+      // The message will be updated via socket event
+      toast({
+        title: "Message edited",
+        description: "Your message has been updated."
+      });
+    } catch (error) {
+      console.error("Error editing message:", error);
+      toast({
+        variant: "destructive",
+        title: "Edit failed",
+        description: "Could not edit your message. Please try again."
+      });
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      await deleteWhisperMessage(messageId);
+      // The message will be removed via socket event
+      toast({
+        title: "Message deleted",
+        description: "Your message has been removed."
+      });
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast({
+        variant: "destructive",
+        title: "Delete failed", 
+        description: "Could not delete your message. Please try again."
+      });
+    }
+  };
+
   return (
-    <div className="flex-1 overflow-y-auto p-4">
+    <div className="flex-1 overflow-auto" ref={scrollRef}>
+      {/* Load more button at top */}
       {hasMore && (
-        <div className="text-center pb-4">
+        <div className="p-4 text-center">
           <Button
             variant="ghost"
             size="sm"
             onClick={onLoadMore}
             disabled={isLoadingMore}
-            className="text-sm text-muted-foreground"
+            className="text-xs"
           >
-            {isLoadingMore ? "Loading..." : "Load more messages"}
+            {isLoadingMore ? (
+              <>
+                <Loader className="h-3 w-3 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Load older messages"
+            )}
           </Button>
         </div>
       )}
-      <div className="flex flex-col space-y-2">
-        {messages.map((message) => {
-          const isOwnMessage = message.sender === currentUserId;
-          return (
-            <div
-              key={message._id}
-              className={cn(
-                "flex",
-                isOwnMessage ? "justify-end" : "justify-start"
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[75%] rounded-lg px-3 py-2",
-                  isOwnMessage
-                    ? "bg-purple-600 text-white"
-                    : "bg-muted text-foreground"
-                )}
-              >
-                <p className="break-words">{message.content}</p>
-                <div
-                  className={cn(
-                    "text-xs mt-1",
-                    isOwnMessage
-                      ? "text-white/70"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  <span>
-                    {formatMessageTime(message.createdAt)}
-                    {message.edited && (
-                      <span className="ml-1">(edited)</span>
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+
+      {/* Messages */}
+      <div className="p-4 space-y-2">
+        {messages.map((message) => (
+          <WhisperMessage
+            key={message._id}
+            message={message}
+            isOwn={message.sender === currentUserId}
+            onEdit={handleEditMessage}
+            onDelete={handleDeleteMessage}
+          />
+        ))}
       </div>
     </div>
-  );  
+  );
 };
 
 export default WhisperMessageList;

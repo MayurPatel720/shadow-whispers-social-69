@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle, RefreshCw, Database, Zap } from "lucide-react";
+import { Bell, BellDot, Check, CheckCheck, X, MessageCircle, Heart, User, AlertCircle, RefreshCw, Database, Zap, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import {
   markNotificationAsRead, 
   markAllNotificationsAsRead, 
   deleteNotification,
+  deleteAllNotifications,
   type Notification 
 } from "@/lib/api-notifications";
 import { formatDistanceToNow } from "date-fns";
@@ -191,6 +191,25 @@ const NotificationDropdown: React.FC = () => {
     }
   };
 
+  const handleDeleteAllNotifications = async () => {
+    try {
+      const result = await deleteAllNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
+      toast({
+        title: "Success",
+        description: `Deleted ${result.deletedCount} notifications`
+      });
+    } catch (error) {
+      console.error('Error deleting all notifications:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete all notifications",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Force refresh notifications and count
   const handleForceRefresh = async () => {
     console.log("🔄 Force refreshing notifications...");
@@ -245,7 +264,7 @@ const NotificationDropdown: React.FC = () => {
           <CardHeader className="pb-3 px-4 pt-4 border-b">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -255,6 +274,17 @@ const NotificationDropdown: React.FC = () => {
                 >
                   <RefreshCw className="h-3 w-3" />
                 </Button>
+                {notifications.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeleteAllNotifications}
+                    className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground rounded-md"
+                    title="Delete all notifications"
+                  >
+                    <Trash className="h-3 w-3" />
+                  </Button>
+                )}
                 {unreadCount > 0 && (
                   <Button
                     variant="ghost"
