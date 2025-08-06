@@ -74,9 +74,9 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-lg mx-auto h-[85vh] max-h-[600px] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0 border-b">
-          <DialogTitle className="flex items-center gap-2 text-xl">
+      <DialogContent className="w-[95vw] max-w-md mx-auto max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-lg">
             <MapPin className="h-5 w-5" />
             Select Your Area
           </DialogTitle>
@@ -85,23 +85,22 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden flex flex-col px-6">
-          {/* Manual Input */}
-          <div className="py-4 border-b flex-shrink-0">
-            <Label htmlFor="area-input" className="text-sm font-medium mb-2 block">
-              Area/Location
-            </Label>
-            <Input
-              id="area-input"
-              placeholder="Enter or select your city/area"
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              className="h-11"
-            />
-          </div>
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-4 pb-4">
+            {/* Manual Input */}
+            <div className="space-y-2">
+              <Label htmlFor="area-input" className="text-sm font-medium">
+                Area/Location
+              </Label>
+              <Input
+                id="area-input"
+                placeholder="Enter or select your city/area"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                className="h-10"
+              />
+            </div>
 
-          {/* Search and Filter */}
-          <div className="py-4 space-y-4 border-b flex-shrink-0">
             {/* Search Input */}
             <div className="space-y-2">
               <Label htmlFor="city-search" className="text-sm font-medium">
@@ -114,7 +113,7 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
                   placeholder="Search for your city..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-11"
+                  className="pl-10 h-10"
                 />
               </div>
             </div>
@@ -123,7 +122,7 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
             <div className="space-y-2">
               <Label className="text-sm font-medium">Filter by State</Label>
               <Select value={selectedState} onValueChange={setSelectedState}>
-                <SelectTrigger className="h-11">
+                <SelectTrigger className="h-10">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="All States" />
                 </SelectTrigger>
@@ -137,20 +136,18 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Cities List */}
-          <div className="flex-1 py-4 overflow-hidden">
-            <Label className="text-sm font-medium mb-3 block">
-              {!searchTerm.trim() && selectedState === "all" ? "Popular Cities" : "Cities"}
-            </Label>
-            
-            <ScrollArea className="h-full pr-4">
+            {/* Cities List */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                {!searchTerm.trim() && selectedState === "all" ? "Popular Cities" : "Cities"}
+              </Label>
+              
               <div className="space-y-2">
                 {filteredCities.length > 0 ? (
                   <>
                     {!searchTerm.trim() && selectedState === "all" && (
-                      <p className="text-xs text-muted-foreground mb-3 px-1">
+                      <p className="text-xs text-muted-foreground mb-2">
                         Popular cities are shown first:
                       </p>
                     )}
@@ -201,9 +198,9 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
-        </div>
+        </ScrollArea>
 
         {/* Action Buttons */}
         <div className="px-6 py-4 border-t flex-shrink-0">
@@ -211,14 +208,14 @@ const AreaSelectionDialog: React.FC<AreaSelectionDialogProps> = ({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="flex-1 h-11"
+              className="flex-1 h-10"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
               disabled={!area.trim()}
-              className="flex-1 h-11"
+              className="flex-1 h-10"
             >
               Select Area
             </Button>

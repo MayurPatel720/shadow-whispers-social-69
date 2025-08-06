@@ -62,7 +62,6 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	// Global feed should only show posts without college or area fields
 	const query = {
 		ghostCircle: { $exists: false },
-		expiresAt: { $gt: new Date() },
 		college: { $exists: false },
 		area: { $exists: false }
 	};
@@ -186,7 +185,6 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 	// College feed should only show posts with the specific college field
 	const query = {
 		ghostCircle: { $exists: false },
-		expiresAt: { $gt: new Date() },
 		college: college
 	};
 
@@ -245,7 +243,6 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 	// Area feed should only show posts with the specific area field
 	const query = {
 		ghostCircle: { $exists: false },
-		expiresAt: { $gt: new Date() },
 		area: area
 	};
 
@@ -304,10 +301,6 @@ const createPost = asyncHandler(async (req, res) => {
 		throw new Error("Please add content, image, or video to your post");
 	}
 
-	// Calculate expiry time (default 24 hours)
-	const expiryTime = new Date();
-	expiryTime.setHours(expiryTime.getHours() + (expiresIn || 24));
-
 	// Prepare the post data
 	const postData = {
 		user: req.user._id,
@@ -318,7 +311,6 @@ const createPost = asyncHandler(async (req, res) => {
 		tags: tags || [],
 		anonymousAlias: req.user.anonymousAlias,
 		avatarEmoji: req.user.avatarEmoji,
-		expiresAt: expiryTime,
 	};
 
 	// Add college/area based on feedType and values from request
@@ -435,7 +427,7 @@ const getPosts = asyncHandler(async (req, res) => {
 
 	// Build query
 	const query = {
-		expiresAt: { $gt: new Date() },
+		// expiresAt: { $gt: new Date() },
 	};
 
 	if (ghostCircleId) {
@@ -890,7 +882,6 @@ const getGhostCirclePosts = asyncHandler(async (req, res) => {
 
 	const posts = await Post.find({
 		ghostCircle: req.params.id,
-		expiresAt: { $gt: new Date() },
 	})
 		.sort({ createdAt: -1 })
 		.lean();
@@ -934,7 +925,7 @@ const likePost = asyncHandler(async (req, res) => {
 		// Remove like
 		updateOperation = { $pull: { likes: { user: userId } } };
 	} else {
-		// Add like and extend post life
+		// Add like
 		updateOperation = {
 			$push: {
 				likes: {
@@ -943,13 +934,6 @@ const likePost = asyncHandler(async (req, res) => {
 				},
 			},
 		};
-
-		// Extend post life by 1 hour if not expired
-		if (post.expiresAt > new Date()) {
-			updateOperation.$set = {
-				expiresAt: new Date(post.expiresAt.getTime() + 60 * 60 * 1000),
-			};
-		}
 	}
 
 	const updatedPost = await Post.findByIdAndUpdate(
@@ -963,7 +947,6 @@ const likePost = asyncHandler(async (req, res) => {
 
 	res.json({
 		likes: updatedPost.likes.length,
-		expiresAt: updatedPost.expiresAt,
 	});
 });
 
