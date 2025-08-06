@@ -1,9 +1,17 @@
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, ArrowLeft, GraduationCap, Search } from "lucide-react";
+import { ArrowRight, ArrowLeft, GraduationCap, Search, Filter } from "lucide-react";
 import { OnboardingData } from "./OnboardingModal";
+import { INDIAN_COLLEGES, getPopularColleges, searchColleges, getCollegesByType, COLLEGE_TYPES, College } from "@/data/colleges";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface StepProps {
   onNext: () => void;
@@ -12,11 +20,6 @@ interface StepProps {
   onboardingData: OnboardingData;
   updateOnboardingData: (data: Partial<OnboardingData>) => void;
 }
-
-const POPULAR_COLLEGES = [
-  "BVM", "ADIT", "GCET", "L.D. College of Engineering", "NIT Surat", 
-  "Gujarat University", "Nirma University", "Parul University", "Ganpat University"
-];
 
 const OnboardingStep2: React.FC<StepProps> = ({ 
   onNext, 
@@ -28,10 +31,30 @@ const OnboardingStep2: React.FC<StepProps> = ({
   const [selectedCollege, setSelectedCollege] = useState(onboardingData.college || "");
   const [customCollege, setCustomCollege] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("all");
 
-  const filteredColleges = POPULAR_COLLEGES.filter(college =>
-    college.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredColleges = useMemo(() => {
+    let colleges = INDIAN_COLLEGES;
+
+    // Filter by search term
+    if (searchTerm.trim()) {
+      colleges = searchColleges(searchTerm);
+    }
+
+    // Filter by type
+    if (selectedType !== "all") {
+      colleges = colleges.filter(college => college.type === selectedType);
+    }
+
+    // Show popular colleges first if no filters applied
+    if (!searchTerm.trim() && selectedType === "all") {
+      const popular = getPopularColleges();
+      const others = colleges.filter(c => !popular.find(p => p.id === c.id));
+      return [...popular, ...others].slice(0, 50);
+    }
+
+    return colleges.slice(0, 50);
+  }, [searchTerm, selectedType]);
 
   const handleNext = () => {
     const college = selectedCollege === "custom" ? customCollege : selectedCollege;
@@ -43,6 +66,14 @@ const OnboardingStep2: React.FC<StepProps> = ({
 
   const handleSkip = () => {
     onSkip();
+  };
+
+  const handleCollegeSelect = (college: College | "custom") => {
+    if (college === "custom") {
+      setSelectedCollege("custom");
+    } else if (typeof college === "object") {
+      setSelectedCollege(college.name);
+    }
   };
 
   return (
@@ -61,6 +92,7 @@ const OnboardingStep2: React.FC<StepProps> = ({
 
         <div className="max-w-md mx-auto w-full px-4 sm:px-0">
           <div className="mb-6">
+            {/* Search Input */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
               <Input
@@ -71,32 +103,79 @@ const OnboardingStep2: React.FC<StepProps> = ({
               />
             </div>
 
+            {/* Type Filter */}
+            <div className="mb-4">
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="bg-gray-900/60 border-purple-800/50 text-white h-12">
+                  <Filter className="w-4 h-4 mr-2 text-purple-400" />
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-purple-800/50">
+                  <SelectItem value="all" className="text-white">All Types</SelectItem>
+                  {COLLEGE_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value} className="text-white">
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* College List */}
             <div className="space-y-2 max-h-64 overflow-y-auto">
+              {!searchTerm.trim() && selectedType === "all" && (
+                <div className="mb-3">
+                  <p className="text-xs text-purple-300 mb-2 font-medium">Popular Colleges:</p>
+                </div>
+              )}
+              
               {filteredColleges.map((college) => (
                 <button
-                  key={college}
-                  onClick={() => setSelectedCollege(college)}
+                  key={college.id}
+                  onClick={() => handleCollegeSelect(college)}
                   className={`w-full p-3 text-left rounded-lg border transition-all text-sm sm:text-base ${
-                    selectedCollege === college
+                    selectedCollege === college.name
                       ? "bg-purple-600/30 border-purple-500 text-white"
                       : "bg-gray-900/30 border-gray-700 text-gray-300 hover:bg-gray-800/50"
                   }`}
                 >
-                  {college}
+                  <div className="flex flex-col">
+                    <span className="font-medium">{college.name}</span>
+                    <span className="text-xs text-gray-400">
+                      {college.fullName} • {college.city}, {college.state}
+                    </span>
+                    <span className="text-xs text-purple-400 capitalize">
+                      {college.type} • {college.category}
+                    </span>
+                  </div>
                 </button>
               ))}
+              
               <button
-                onClick={() => setSelectedCollege("custom")}
+                onClick={() => handleCollegeSelect("custom")}
                 className={`w-full p-3 text-left rounded-lg border transition-all text-sm sm:text-base ${
                   selectedCollege === "custom"
                     ? "bg-purple-600/30 border-purple-500 text-white"
                     : "bg-gray-900/30 border-gray-700 text-gray-300 hover:bg-gray-800/50"
                 }`}
               >
-                Other (Custom)
+                <div className="flex flex-col">
+                  <span className="font-medium">Other (Custom)</span>
+                  <span className="text-xs text-gray-400">
+                    Enter your college name manually
+                  </span>
+                </div>
               </button>
+
+              {filteredColleges.length === 0 && searchTerm.trim() && (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="text-sm mb-2">No colleges found for "{searchTerm}"</p>
+                  <p className="text-xs">Try searching with a different term or select "Other (Custom)"</p>
+                </div>
+              )}
             </div>
 
+            {/* Custom College Input */}
             {selectedCollege === "custom" && (
               <div className="mt-4">
                 <Input

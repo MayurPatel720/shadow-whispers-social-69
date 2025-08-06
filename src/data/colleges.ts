@@ -1,0 +1,152 @@
+
+export interface College {
+  id: string;
+  name: string;
+  fullName: string;
+  state: string;
+  city: string;
+  type: 'engineering' | 'medical' | 'university' | 'arts' | 'management' | 'law' | 'commerce';
+  category: 'government' | 'private' | 'deemed';
+  established?: number;
+  aliases?: string[];
+}
+
+export const INDIAN_COLLEGES: College[] = [
+  // IITs
+  { id: "iit_bombay", name: "IIT Bombay", fullName: "Indian Institute of Technology Bombay", state: "Maharashtra", city: "Mumbai", type: "engineering", category: "government", established: 1958 },
+  { id: "iit_delhi", name: "IIT Delhi", fullName: "Indian Institute of Technology Delhi", state: "Delhi", city: "Delhi", type: "engineering", category: "government", established: 1961 },
+  { id: "iit_madras", name: "IIT Madras", fullName: "Indian Institute of Technology Madras", state: "Tamil Nadu", city: "Chennai", type: "engineering", category: "government", established: 1959 },
+  { id: "iit_kanpur", name: "IIT Kanpur", fullName: "Indian Institute of Technology Kanpur", state: "Uttar Pradesh", city: "Kanpur", type: "engineering", category: "government", established: 1959 },
+  { id: "iit_kharagpur", name: "IIT Kharagpur", fullName: "Indian Institute of Technology Kharagpur", state: "West Bengal", city: "Kharagpur", type: "engineering", category: "government", established: 1951 },
+  { id: "iit_roorkee", name: "IIT Roorkee", fullName: "Indian Institute of Technology Roorkee", state: "Uttarakhand", city: "Roorkee", type: "engineering", category: "government", established: 1847 },
+  { id: "iit_guwahati", name: "IIT Guwahati", fullName: "Indian Institute of Technology Guwahati", state: "Assam", city: "Guwahati", type: "engineering", category: "government", established: 1994 },
+  { id: "iit_hyderabad", name: "IIT Hyderabad", fullName: "Indian Institute of Technology Hyderabad", state: "Telangana", city: "Hyderabad", type: "engineering", category: "government", established: 2008 },
+  { id: "iit_gandhinagar", name: "IIT Gandhinagar", fullName: "Indian Institute of Technology Gandhinagar", state: "Gujarat", city: "Gandhinagar", type: "engineering", category: "government", established: 2008 },
+
+  // NITs
+  { id: "nit_trichy", name: "NIT Trichy", fullName: "National Institute of Technology Tiruchirappalli", state: "Tamil Nadu", city: "Tiruchirappalli", type: "engineering", category: "government", established: 1964, aliases: ["NIT Tiruchirappalli"] },
+  { id: "nit_warangal", name: "NIT Warangal", fullName: "National Institute of Technology Warangal", state: "Telangana", city: "Warangal", type: "engineering", category: "government", established: 1959 },
+  { id: "nit_surathkal", name: "NIT Surathkal", fullName: "National Institute of Technology Karnataka", state: "Karnataka", city: "Surathkal", type: "engineering", category: "government", established: 1960 },
+  { id: "nit_rourkela", name: "NIT Rourkela", fullName: "National Institute of Technology Rourkela", state: "Odisha", city: "Rourkela", type: "engineering", category: "government", established: 1961 },
+  { id: "nit_kurukshetra", name: "NIT Kurukshetra", fullName: "National Institute of Technology Kurukshetra", state: "Haryana", city: "Kurukshetra", type: "engineering", category: "government", established: 1963 },
+  { id: "nit_calicut", name: "NIT Calicut", fullName: "National Institute of Technology Calicut", state: "Kerala", city: "Kozhikode", type: "engineering", category: "government", established: 1961 },
+  { id: "nit_durgapur", name: "NIT Durgapur", fullName: "National Institute of Technology Durgapur", state: "West Bengal", city: "Durgapur", type: "engineering", category: "government", established: 1960 },
+  { id: "nit_jamshedpur", name: "NIT Jamshedpur", fullName: "National Institute of Technology Jamshedpur", state: "Jharkhand", city: "Jamshedpur", type: "engineering", category: "government", established: 1960 },
+  { id: "nit_bhopal", name: "NIT Bhopal", fullName: "National Institute of Technology Bhopal", state: "Madhya Pradesh", city: "Bhopal", type: "engineering", category: "government", established: 1960 },
+  { id: "nit_allahabad", name: "NIT Allahabad", fullName: "Motilal Nehru National Institute of Technology Allahabad", state: "Uttar Pradesh", city: "Allahabad", type: "engineering", category: "government", established: 1961, aliases: ["MNNIT Allahabad"] },
+  { id: "nit_surat", name: "NIT Surat", fullName: "Sardar Vallabhbhai National Institute of Technology", state: "Gujarat", city: "Surat", type: "engineering", category: "government", established: 1961, aliases: ["SVNIT"] },
+
+  // IIMs
+  { id: "iim_ahmedabad", name: "IIM Ahmedabad", fullName: "Indian Institute of Management Ahmedabad", state: "Gujarat", city: "Ahmedabad", type: "management", category: "government", established: 1961 },
+  { id: "iim_calcutta", name: "IIM Calcutta", fullName: "Indian Institute of Management Calcutta", state: "West Bengal", city: "Kolkata", type: "management", category: "government", established: 1961 },
+  { id: "iim_bangalore", name: "IIM Bangalore", fullName: "Indian Institute of Management Bangalore", state: "Karnataka", city: "Bengaluru", type: "management", category: "government", established: 1973 },
+  { id: "iim_lucknow", name: "IIM Lucknow", fullName: "Indian Institute of Management Lucknow", state: "Uttar Pradesh", city: "Lucknow", type: "management", category: "government", established: 1984 },
+
+  // AIIMS
+  { id: "aiims_delhi", name: "AIIMS Delhi", fullName: "All India Institute of Medical Sciences Delhi", state: "Delhi", city: "Delhi", type: "medical", category: "government", established: 1956 },
+  { id: "aiims_mumbai", name: "AIIMS Mumbai", fullName: "All India Institute of Medical Sciences Mumbai", state: "Maharashtra", city: "Mumbai", type: "medical", category: "government", established: 2019 },
+  { id: "aiims_bhubaneswar", name: "AIIMS Bhubaneswar", fullName: "All India Institute of Medical Sciences Bhubaneswar", state: "Odisha", city: "Bhubaneswar", type: "medical", category: "government", established: 2012 },
+
+  // Gujarat Engineering Colleges
+  { id: "bvm", name: "BVM", fullName: "Birla Vishvakarma Mahavidyalaya", state: "Gujarat", city: "Anand", type: "engineering", category: "government", established: 1948 },
+  { id: "adit", name: "ADIT", fullName: "AD Patel Institute of Technology", state: "Gujarat", city: "Anand", type: "engineering", category: "private", established: 2000, aliases: ["AD Patel Institute of Technology"] },
+  { id: "gcet", name: "GCET", fullName: "Government College of Engineering and Technology", state: "Gujarat", city: "Anand", type: "engineering", category: "government", established: 2010 },
+  { id: "ldrp", name: "LDRP-ITR", fullName: "L.D.R.P Institute of Technology and Research", state: "Gujarat", city: "Gandhinagar", type: "engineering", category: "private", established: 2004, aliases: ["LDRP"] },
+  { id: "charusat", name: "CHARUSAT", fullName: "Charotar University of Science and Technology", state: "Gujarat", city: "Anand", type: "university", category: "private", established: 2009 },
+  { id: "nirma", name: "Nirma University", fullName: "Institute of Technology, Nirma University", state: "Gujarat", city: "Ahmedabad", type: "university", category: "private", established: 1995 },
+  { id: "ddit", name: "DDIT", fullName: "Dharmsinh Desai Institute of Technology", state: "Gujarat", city: "Nadiad", type: "engineering", category: "private", established: 1968 },
+  { id: "pdpu", name: "PDPU", fullName: "Pandit Deendayal Petroleum University", state: "Gujarat", city: "Gandhinagar", type: "university", category: "private", established: 2007 },
+  { id: "msub", name: "MSU Baroda", fullName: "Maharaja Sayajirao University of Baroda", state: "Gujarat", city: "Vadodara", type: "university", category: "government", established: 1949 },
+  { id: "gtu", name: "GTU", fullName: "Gujarat Technological University", state: "Gujarat", city: "Ahmedabad", type: "university", category: "government", established: 2007 },
+
+  // Central Universities
+  { id: "du", name: "Delhi University", fullName: "University of Delhi", state: "Delhi", city: "Delhi", type: "university", category: "government", established: 1922 },
+  { id: "jnu", name: "JNU", fullName: "Jawaharlal Nehru University", state: "Delhi", city: "Delhi", type: "university", category: "government", established: 1969 },
+  { id: "bhu", name: "BHU", fullName: "Banaras Hindu University", state: "Uttar Pradesh", city: "Varanasi", type: "university", category: "government", established: 1916 },
+  { id: "amu", name: "AMU", fullName: "Aligarh Muslim University", state: "Uttar Pradesh", city: "Aligarh", type: "university", category: "government", established: 1875 },
+  { id: "ju", name: "Jadavpur University", fullName: "Jadavpur University", state: "West Bengal", city: "Kolkata", type: "university", category: "government", established: 1955 },
+
+  // Private Universities
+  { id: "manipal", name: "Manipal University", fullName: "Manipal Academy of Higher Education", state: "Karnataka", city: "Manipal", type: "university", category: "private", established: 1953 },
+  { id: "vit", name: "VIT", fullName: "Vellore Institute of Technology", state: "Tamil Nadu", city: "Vellore", type: "university", category: "private", established: 1984 },
+  { id: "srm", name: "SRM University", fullName: "SRM Institute of Science and Technology", state: "Tamil Nadu", city: "Chennai", type: "university", category: "private", established: 1985 },
+  { id: "amity", name: "Amity University", fullName: "Amity University Noida", state: "Uttar Pradesh", city: "Noida", type: "university", category: "private", established: 2005 },
+  { id: "lovely", name: "LPU", fullName: "Lovely Professional University", state: "Punjab", city: "Phagwara", type: "university", category: "private", established: 2005 },
+
+  // State Engineering Colleges
+  { id: "coep", name: "COEP", fullName: "College of Engineering Pune", state: "Maharashtra", city: "Pune", type: "engineering", category: "government", established: 1854 },
+  { id: "vjti", name: "VJTI", fullName: "Veermata Jijabai Technological Institute", state: "Maharashtra", city: "Mumbai", type: "engineering", category: "government", established: 1887 },
+  { id: "psg", name: "PSG Tech", fullName: "PSG College of Technology", state: "Tamil Nadu", city: "Coimbatore", type: "engineering", category: "private", established: 1951 },
+  { id: "anna_university", name: "Anna University", fullName: "Anna University", state: "Tamil Nadu", city: "Chennai", type: "university", category: "government", established: 1978 },
+  { id: "rv_college", name: "RV College of Engineering", fullName: "R.V. College of Engineering", state: "Karnataka", city: "Bengaluru", type: "engineering", category: "private", established: 1963, aliases: ["RVCE"] },
+  { id: "pes", name: "PES University", fullName: "PES University", state: "Karnataka", city: "Bengaluru", type: "university", category: "private", established: 1972 },
+  { id: "bits_pilani", name: "BITS Pilani", fullName: "Birla Institute of Technology and Science", state: "Rajasthan", city: "Pilani", type: "university", category: "private", established: 1964 },
+  { id: "dtu", name: "DTU", fullName: "Delhi Technological University", state: "Delhi", city: "Delhi", type: "university", category: "government", established: 1941, aliases: ["Delhi Technological University"] },
+  { id: "nsit", name: "NSUT", fullName: "Netaji Subhas University of Technology", state: "Delhi", city: "Delhi", type: "university", category: "government", established: 1983, aliases: ["NSIT"] },
+  { id: "iiit_hyderabad", name: "IIIT Hyderabad", fullName: "International Institute of Information Technology Hyderabad", state: "Telangana", city: "Hyderabad", type: "engineering", category: "private", established: 1998 },
+  { id: "iiit_bangalore", name: "IIIT Bangalore", fullName: "International Institute of Information Technology Bangalore", state: "Karnataka", city: "Bengaluru", type: "engineering", category: "private", established: 1999 },
+
+  // Medical Colleges
+  { id: "kmc_manipal", name: "KMC Manipal", fullName: "Kasturba Medical College Manipal", state: "Karnataka", city: "Manipal", type: "medical", category: "private", established: 1953 },
+  { id: "cmc_vellore", name: "CMC Vellore", fullName: "Christian Medical College Vellore", state: "Tamil Nadu", city: "Vellore", type: "medical", category: "private", established: 1900 },
+  { id: "kgmu", name: "KGMU", fullName: "King George's Medical University", state: "Uttar Pradesh", city: "Lucknow", type: "medical", category: "government", established: 1905 },
+  { id: "bmc_bangalore", name: "Bangalore Medical College", fullName: "Bangalore Medical College and Research Institute", state: "Karnataka", city: "Bengaluru", type: "medical", category: "government", established: 1955 },
+
+  // Arts & Commerce Colleges
+  { id: "st_stephens", name: "St. Stephen's College", fullName: "St. Stephen's College Delhi", state: "Delhi", city: "Delhi", type: "arts", category: "private", established: 1881 },
+  { id: "hindu_college", name: "Hindu College", fullName: "Hindu College Delhi", state: "Delhi", city: "Delhi", type: "arts", category: "government", established: 1899 },
+  { id: "presidency_calcutta", name: "Presidency University", fullName: "Presidency University Kolkata", state: "West Bengal", city: "Kolkata", type: "university", category: "government", established: 1817 },
+  { id: "loyola_chennai", name: "Loyola College", fullName: "Loyola College Chennai", state: "Tamil Nadu", city: "Chennai", type: "arts", category: "private", established: 1925 },
+  { id: "st_xaviers_mumbai", name: "St. Xavier's College Mumbai", fullName: "St. Xavier's College Mumbai", state: "Maharashtra", city: "Mumbai", type: "arts", category: "private", established: 1869 },
+
+  // Law Colleges
+  { id: "nlu_delhi", name: "NLU Delhi", fullName: "National Law University Delhi", state: "Delhi", city: "Delhi", type: "law", category: "government", established: 2008 },
+  { id: "nalsar", name: "NALSAR", fullName: "NALSAR University of Law", state: "Telangana", city: "Hyderabad", type: "law", category: "government", established: 1998 },
+  { id: "nlsiu", name: "NLSIU", fullName: "National Law School of India University", state: "Karnataka", city: "Bengaluru", type: "law", category: "government", established: 1986 },
+
+  // Commerce Colleges
+  { id: "srcc", name: "SRCC", fullName: "Shri Ram College of Commerce", state: "Delhi", city: "Delhi", type: "commerce", category: "government", established: 1926 },
+  { id: "lsr", name: "LSR", fullName: "Lady Shri Ram College for Women", state: "Delhi", city: "Delhi", type: "arts", category: "government", established: 1956 },
+  { id: "hansraj", name: "Hansraj College", fullName: "Hansraj College Delhi", state: "Delhi", city: "Delhi", type: "arts", category: "government", established: 1948 },
+];
+
+export const getCollegesByType = (type: College['type']): College[] => {
+  return INDIAN_COLLEGES.filter(college => college.type === type);
+};
+
+export const getCollegesByState = (state: string): College[] => {
+  return INDIAN_COLLEGES.filter(college => college.state === state);
+};
+
+export const searchColleges = (query: string): College[] => {
+  const searchTerm = query.toLowerCase();
+  return INDIAN_COLLEGES.filter(college => 
+    college.name.toLowerCase().includes(searchTerm) ||
+    college.fullName.toLowerCase().includes(searchTerm) ||
+    college.city.toLowerCase().includes(searchTerm) ||
+    college.state.toLowerCase().includes(searchTerm) ||
+    (college.aliases && college.aliases.some(alias => alias.toLowerCase().includes(searchTerm)))
+  );
+};
+
+export const getPopularColleges = (): College[] => {
+  return INDIAN_COLLEGES
+    .filter(college => 
+      college.name.startsWith('IIT') || 
+      college.name.startsWith('NIT') || 
+      college.name.startsWith('IIM') || 
+      college.name.startsWith('AIIMS') ||
+      ['BVM', 'ADIT', 'GCET', 'DTU', 'NSUT', 'VIT', 'SRM', 'BITS'].includes(college.name)
+    )
+    .slice(0, 20);
+};
+
+export const COLLEGE_TYPES = [
+  { value: 'engineering', label: 'Engineering' },
+  { value: 'medical', label: 'Medical' },
+  { value: 'management', label: 'Management' },
+  { value: 'university', label: 'University' },
+  { value: 'arts', label: 'Arts & Science' },
+  { value: 'law', label: 'Law' },
+  { value: 'commerce', label: 'Commerce' }
+];
