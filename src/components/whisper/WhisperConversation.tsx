@@ -14,6 +14,7 @@ import {
 	markMessagesAsRead,
 } from "@/lib/api-whispers";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatDistanceToNow } from "date-fns";
 
 interface WhisperConversationProps {
 	partnerId: string;
@@ -34,6 +35,8 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	const [hasMore, setHasMore] = useState(true);
 	const [partner, setPartner] = useState<any>(null);
 	const [hasRecognized, setHasRecognized] = useState(false);
+	const [isOnline, setIsOnline] = useState(false);
+	const [lastSeen, setLastSeen] = useState<string | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const [isFirstLoad, setIsFirstLoad] = useState(true);
 
@@ -77,6 +80,12 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			setHasRecognized(conversationData.hasRecognized);
 			setHasMore(conversationData.hasMore);
 			setIsFirstLoad(false);
+
+			// Set initial online status and last seen from partner data
+			if (conversationData.partner) {
+				setIsOnline(conversationData.partner.isOnline || false);
+				setLastSeen(conversationData.partner.lastSeen);
+			}
 		}
 	}, [conversationData, isFirstLoad]);
 
@@ -92,16 +101,12 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		}
 	}, [socket, partnerId]);
 
-	// Socket listeners for real-time messages with deduplication
+	// Socket listeners for real-time messages and online status
 	useEffect(() => {
 		if (!socket || !partnerId || !user) return;
 
 		const handleReceiveWhisper = (whisper: any) => {
 			console.log("🔔 Received whisper in conversation:", whisper);
-			console.log("Current user ID:", user._id);
-			console.log("Partner ID:", partnerId);
-			console.log("Whisper sender:", whisper.sender);
-			console.log("Whisper receiver:", whisper.receiver);
 
 			// Check if this whisper belongs to current conversation
 			const isMyConversation =
@@ -113,10 +118,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				setAllMessages((prev) => {
 					const messageExists = prev.some((msg) => msg._id === whisper._id);
 					if (messageExists) {
-						console.log(
-							"Message already exists, skipping duplicate:",
-							whisper._id
-						);
 						return prev;
 					}
 
@@ -125,7 +126,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 						(a, b) =>
 							new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
 					);
-					console.log("Added new message, total messages:", newMessages.length);
 					return newMessages;
 				});
 
@@ -137,27 +137,43 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		};
 
 		const handleWhisperMessageEdited = (editedMessage: any) => {
-			console.log("✏️ Message edited:", editedMessage);
 			setAllMessages((prev) =>
 				prev.map((msg) => (msg._id === editedMessage._id ? editedMessage : msg))
 			);
 		};
 
 		const handleWhisperMessageDeleted = (deletedData: { _id: string }) => {
-			console.log("🗑️ Message deleted:", deletedData._id);
 			setAllMessages((prev) =>
 				prev.filter((msg) => msg._id !== deletedData._id)
 			);
 		};
 
+		const handleUserOnline = (userId: string) => {
+			if (userId === partnerId) {
+				setIsOnline(true);
+				setLastSeen(null);
+			}
+		};
+
+		const handleUserOffline = (data: { userId: string; lastSeen: string }) => {
+			if (data.userId === partnerId) {
+				setIsOnline(false);
+				setLastSeen(data.lastSeen);
+			}
+		};
+
 		socket.on("receiveWhisper", handleReceiveWhisper);
 		socket.on("whisperMessageEdited", handleWhisperMessageEdited);
 		socket.on("whisperMessageDeleted", handleWhisperMessageDeleted);
+		socket.on("userOnline", handleUserOnline);
+		socket.on("userOffline", handleUserOffline);
 
 		return () => {
 			socket.off("receiveWhisper", handleReceiveWhisper);
 			socket.off("whisperMessageEdited", handleWhisperMessageEdited);
 			socket.off("whisperMessageDeleted", handleWhisperMessageDeleted);
+			socket.off("userOnline", handleUserOnline);
+			socket.off("userOffline", handleUserOffline);
 		};
 	}, [socket, partnerId, user, markAsReadMutation]);
 
@@ -229,6 +245,15 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		}
 	};
 
+	const getOnlineStatusText = () => {
+		if (isOnline) {
+			return "Online";
+		} else if (lastSeen) {
+			return `Last seen ${formatDistanceToNow(new Date(lastSeen), { addSuffix: true })}`;
+		}
+		return "Offline";
+	};
+
 	if (isLoading) {
 		return (
 			<div className="flex justify-center items-center h-full bg-gradient-to-br from-background to-muted/20">
@@ -254,7 +279,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	}
 
 	return (
-		<div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10">
+		<div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10 relative">
 			{/* Enhanced Header */}
 			<div className="relative p-4 border-b backdrop-blur-sm bg-card/95 sticky top-0 z-20 shadow-sm">
 				<div className="flex items-center space-x-3">
@@ -274,15 +299,22 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 							size="md"
 						/>
 						{/* Online status indicator */}
-						<div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
+						<div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-card rounded-full ${
+							isOnline ? 'bg-green-500' : 'bg-gray-400'
+						}`}></div>
 					</div>
 					<div className="flex-1 min-w-0">
 						<h3 className="font-semibold text-undercover-light-purple truncate">
 							{hasRecognized ? partner.username : partner.anonymousAlias}
 						</h3>
 						<p className="text-xs text-muted-foreground flex items-center space-x-1">
-							<span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-							<span>{hasRecognized ? "Identity Revealed" : "Anonymous"}</span>
+							<span className={`w-2 h-2 rounded-full ${
+								isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+							}`}></span>
+							<span>{getOnlineStatusText()}</span>
+							{hasRecognized && (
+								<span className="ml-2 text-undercover-purple">• Identity Revealed</span>
+							)}
 						</p>
 					</div>
 					<Button variant="ghost" size="sm" className="hover:bg-muted/50">
@@ -303,20 +335,15 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				/>
 			</div>
 
-			{/* Enhanced Input Area */}
+			{/* Enhanced Input Area - Fixed to bottom without gap */}
 			<div className={`
-				sticky bottom-0 z-10 border-t backdrop-blur-lg
-				${isMobile 
-					? 'bg-card/90 p-3 pb-safe' 
-					: 'bg-card/95 p-4'
-				}
-				shadow-lg
+				fixed bottom-0 left-0 right-0 z-30
+				border-t backdrop-blur-xl bg-card/95 
+				${isMobile ? 'p-3 pb-[env(safe-area-inset-bottom,16px)]' : 'p-4'}
+				shadow-2xl md:relative md:sticky
 			`}>
-				<div className="relative">
-					{/* Gradient overlay for better visual separation */}
-					<div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-card/90 to-transparent pointer-events-none"></div>
-					
-					<form onSubmit={handleSendMessage} className="flex items-end space-x-2">
+				<div className="max-w-full mx-auto">
+					<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
 						<div className="flex-1 relative">
 							<Input
 								value={newMessage}
@@ -324,20 +351,21 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								placeholder="Type your whisper..."
 								disabled={sendMessageMutation.isPending}
 								className={`
-									resize-none transition-all duration-200 
-									bg-muted/50 border-muted-foreground/20 
-									focus:bg-background focus:border-undercover-purple/50
-									hover:bg-muted/70 hover:border-muted-foreground/30
-									rounded-2xl px-4 py-3 pr-12
-									${isMobile ? 'text-base' : 'text-sm'}
-									placeholder:text-muted-foreground/60
-									shadow-sm
+									resize-none transition-all duration-300 
+									bg-muted/70 border-muted-foreground/30 
+									focus:bg-background focus:border-undercover-purple/60
+									hover:bg-muted/80 hover:border-muted-foreground/40
+									rounded-full px-4 py-3 pr-12
+									${isMobile ? 'text-base h-12' : 'text-sm h-11'}
+									placeholder:text-muted-foreground/70
+									shadow-lg focus:shadow-xl
+									backdrop-blur-sm
 								`}
 								maxLength={1000}
 							/>
 							{/* Character count for long messages */}
 							{newMessage.length > 800 && (
-								<div className="absolute -top-6 right-0 text-xs text-muted-foreground">
+								<div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
 									{newMessage.length}/1000
 								</div>
 							)}
@@ -350,20 +378,24 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								bg-gradient-to-r from-undercover-purple to-undercover-deep-purple 
 								hover:from-undercover-deep-purple hover:to-undercover-purple
 								disabled:from-muted disabled:to-muted
-								shadow-lg hover:shadow-xl transition-all duration-200 
-								rounded-2xl min-w-[44px] h-11
-								${sendMessageMutation.isPending ? 'animate-pulse' : 'hover:scale-105'}
+								shadow-lg hover:shadow-xl transition-all duration-300 
+								rounded-full min-w-[48px] h-12
+								${sendMessageMutation.isPending ? 'animate-pulse' : 'hover:scale-110 active:scale-95'}
+								border border-white/20
 							`}
 						>
 							{sendMessageMutation.isPending ? (
-								<Loader className="h-4 w-4 animate-spin" />
+								<Loader className="h-5 w-5 animate-spin" />
 							) : (
-								<Send className="h-4 w-4" />
+								<Send className="h-5 w-5" />
 							)}
 						</Button>
 					</form>
 				</div>
 			</div>
+
+			{/* Add padding bottom for mobile to account for fixed input */}
+			{isMobile && <div className="h-20"></div>}
 
 			<div ref={messagesEndRef} />
 		</div>

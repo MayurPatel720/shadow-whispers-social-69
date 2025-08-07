@@ -34,7 +34,7 @@ const WhispersPage = () => {
   const [isWhisperModalOpen, setIsWhisperModalOpen] = useState(false);
   const [isYourMatchesOpen, setIsYourMatchesOpen] = useState(false);
   const [joinedMatch, setJoinedMatch] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null); // Conversation being deleted
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const location = useLocation();
@@ -161,7 +161,7 @@ const WhispersPage = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] md:h-screen">
+    <div className={`flex flex-col ${selectedConversation ? 'h-screen' : 'h-[calc(100vh-64px)] md:h-screen'}`}>
       <div className="flex-1 flex flex-col md:flex-row">
         <WhisperSidebar
           searchTerm={searchTerm}
