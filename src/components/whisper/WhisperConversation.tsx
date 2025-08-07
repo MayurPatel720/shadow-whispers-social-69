@@ -45,7 +45,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	const markAsReadMutation = useMutation({
 		mutationFn: () => markMessagesAsRead(partnerId),
 		onSuccess: () => {
-			// Invalidate whispers list to update unread count
 			queryClient.invalidateQueries({ queryKey: ["whispers"] });
 		},
 		onError: (error) => {
@@ -66,12 +65,11 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		queryFn: () =>
 			getWhisperConversationPaginated({ userId: partnerId, limit: 20 }),
 		enabled: !!partnerId,
-		staleTime: 0, // Always fetch fresh data
+		staleTime: 0,
 	});
 
 	useEffect(() => {
 		if (conversationData && isFirstLoad) {
-			// Store messages in chronological order (oldest first)
 			const sortedMessages = [...(conversationData.messages || [])].sort(
 				(a, b) =>
 					new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -84,7 +82,8 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 			// Set initial online status and last seen from partner data
 			if (conversationData.partner) {
-				setIsOnline(conversationData.partner.isOnline || false);
+				console.log("Partner data:", conversationData.partner);
+				setIsOnline(conversationData.partner.isOnline === true);
 				setLastSeen(conversationData.partner.lastSeen);
 			}
 		}
@@ -109,20 +108,17 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		const handleReceiveWhisper = (whisper: any) => {
 			console.log("🔔 Received whisper in conversation:", whisper);
 
-			// Check if this whisper belongs to current conversation
 			const isMyConversation =
 				(whisper.sender === partnerId && whisper.receiver === user._id) ||
 				(whisper.sender === user._id && whisper.receiver === partnerId);
 
 			if (isMyConversation) {
-				// Deduplicate messages by checking if message already exists
 				setAllMessages((prev) => {
 					const messageExists = prev.some((msg) => msg._id === whisper._id);
 					if (messageExists) {
 						return prev;
 					}
 
-					// Add new message at the end (newest messages at bottom)
 					const newMessages = [...prev, whisper].sort(
 						(a, b) =>
 							new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -130,7 +126,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 					return newMessages;
 				});
 
-				// Mark as read immediately if it's from the partner (not from me)
 				if (whisper.sender === partnerId) {
 					markAsReadMutation.mutate();
 				}
@@ -150,6 +145,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		};
 
 		const handleUserOnline = (userId: string) => {
+			console.log("User came online:", userId, "partnerId:", partnerId);
 			if (userId === partnerId) {
 				setIsOnline(true);
 				setLastSeen(null);
@@ -157,6 +153,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		};
 
 		const handleUserOffline = (data: { userId: string; lastSeen: string }) => {
+			console.log("User went offline:", data, "partnerId:", partnerId);
 			if (data.userId === partnerId) {
 				setIsOnline(false);
 				setLastSeen(data.lastSeen);
@@ -193,7 +190,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 		setIsLoadingMore(true);
 		try {
-			// Get the oldest message for pagination
 			const oldestMessage = allMessages[0];
 			const data = await getWhisperConversationPaginated({
 				userId: partnerId,
@@ -201,7 +197,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				before: oldestMessage?._id,
 			});
 
-			// Add older messages at the beginning, maintain chronological order
 			setAllMessages((prev) => {
 				const newMessages = [...data.messages, ...prev].sort(
 					(a, b) =>
@@ -227,7 +222,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		onSuccess: (data) => {
 			setNewMessage("");
 			queryClient.invalidateQueries({ queryKey: ["whispers"] });
-			// Don't add the message here - let the socket handle it to prevent duplication
 		},
 		onError: (error: any) => {
 			console.error("Send whisper error:", error);
@@ -247,10 +241,17 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	};
 
 	const getOnlineStatusText = () => {
+		console.log("Getting status text - isOnline:", isOnline, "lastSeen:", lastSeen);
 		if (isOnline) {
 			return "Online";
 		} else if (lastSeen) {
-			return `Last seen ${formatDistanceToNow(new Date(lastSeen), { addSuffix: true })}`;
+			try {
+				const lastSeenDate = new Date(lastSeen);
+				return `Last seen ${formatDistanceToNow(lastSeenDate, { addSuffix: true })}`;
+			} catch (error) {
+				console.error("Error formatting last seen:", error);
+				return "Offline";
+			}
 		}
 		return "Offline";
 	};
@@ -281,7 +282,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 	return (
 		<div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10 relative">
-			{/* Enhanced Header */}
+			{/* Header */}
 			<div className="relative p-4 border-b backdrop-blur-sm bg-card/95 sticky top-0 z-20 shadow-sm">
 				<div className="flex items-center space-x-3">
 					<Button
@@ -324,8 +325,8 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				</div>
 			</div>
 
-			{/* Messages with enhanced background */}
-			<div className="flex-1 relative overflow-hidden pb-20">
+			{/* Messages */}
+			<div className="flex-1 relative overflow-hidden" style={{ paddingBottom: '80px' }}>
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/5 to-muted/10 pointer-events-none"></div>
 				<WhisperMessageList
 					messages={allMessages}
@@ -336,9 +337,9 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				/>
 			</div>
 
-			{/* Fixed Input Area at bottom */}
-			<div className="fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-xl bg-card/98 shadow-2xl">
-				<div className={`${isMobile ? 'p-3 pb-[max(env(safe-area-inset-bottom),16px)]' : 'p-4'} max-w-full`}>
+			{/* Fixed Input Area */}
+			<div className="absolute bottom-0 left-0 right-0 z-30 border-t backdrop-blur-xl bg-card/98 shadow-2xl">
+				<div className="p-4 max-w-full">
 					<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
 						<div className="flex-1 relative">
 							<Input
@@ -346,20 +347,19 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								onChange={(e) => setNewMessage(e.target.value)}
 								placeholder="Type your whisper..."
 								disabled={sendMessageMutation.isPending}
-								className={`
+								className="
 									resize-none transition-all duration-300 
 									bg-background/90 border-muted-foreground/20 
 									focus:bg-background focus:border-undercover-purple/60
 									hover:bg-background/95 hover:border-muted-foreground/30
 									rounded-full px-4 py-3 pr-12
-									${isMobile ? 'text-base h-12' : 'text-sm h-11'}
+									text-sm h-11
 									placeholder:text-muted-foreground/70
 									shadow-lg focus:shadow-xl
 									backdrop-blur-sm
-								`}
+								"
 								maxLength={1000}
 							/>
-							{/* Character count for long messages */}
 							{newMessage.length > 800 && (
 								<div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
 									{newMessage.length}/1000
@@ -370,15 +370,14 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 						<Button
 							type="submit"
 							disabled={!newMessage.trim() || sendMessageMutation.isPending}
-							className={`
+							className="
 								bg-gradient-to-r from-undercover-purple to-undercover-deep-purple 
 								hover:from-undercover-deep-purple hover:to-undercover-purple
 								disabled:from-muted disabled:to-muted
 								shadow-lg hover:shadow-xl transition-all duration-300 
-								rounded-full min-w-[48px] h-12
-								${sendMessageMutation.isPending ? 'animate-pulse' : 'hover:scale-110 active:scale-95'}
+								rounded-full min-w-[48px] h-11
 								border border-white/20
-							`}
+							"
 						>
 							{sendMessageMutation.isPending ? (
 								<Loader className="h-5 w-5 animate-spin" />
