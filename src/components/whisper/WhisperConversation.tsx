@@ -279,7 +279,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	}
 
 	return (
-		<div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10 relative">
+		<div className="flex flex-col h-screen bg-gradient-to-br from-background via-background to-muted/10 relative">
 			{/* Enhanced Header */}
 			<div className="relative p-4 border-b backdrop-blur-sm bg-card/95 sticky top-0 z-20 shadow-sm">
 				<div className="flex items-center space-x-3">
@@ -323,9 +323,8 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				</div>
 			</div>
 
-			{/* Messages with enhanced background */}
-			<div className="flex-1 relative overflow-hidden">
-				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/5 to-muted/10 pointer-events-none"></div>
+			{/* Messages Area */}
+			<div className="flex-1 overflow-hidden">
 				<WhisperMessageList
 					messages={allMessages}
 					currentUserId={user?._id}
@@ -335,67 +334,57 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				/>
 			</div>
 
-			{/* Enhanced Input Area - Fixed to bottom without gap */}
-			<div className={`
-				fixed bottom-0 left-0 right-0 z-30
-				border-t backdrop-blur-xl bg-card/95 
-				${isMobile ? 'p-3 pb-[env(safe-area-inset-bottom,16px)]' : 'p-4'}
-				shadow-2xl md:relative md:sticky
-			`}>
-				<div className="max-w-full mx-auto">
-					<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
-						<div className="flex-1 relative">
-							<Input
-								value={newMessage}
-								onChange={(e) => setNewMessage(e.target.value)}
-								placeholder="Type your whisper..."
-								disabled={sendMessageMutation.isPending}
-								className={`
-									resize-none transition-all duration-300 
-									bg-muted/70 border-muted-foreground/30 
-									focus:bg-background focus:border-undercover-purple/60
-									hover:bg-muted/80 hover:border-muted-foreground/40
-									rounded-full px-4 py-3 pr-12
-									${isMobile ? 'text-base h-12' : 'text-sm h-11'}
-									placeholder:text-muted-foreground/70
-									shadow-lg focus:shadow-xl
-									backdrop-blur-sm
-								`}
-								maxLength={1000}
-							/>
-							{/* Character count for long messages */}
-							{newMessage.length > 800 && (
-								<div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
-									{newMessage.length}/1000
-								</div>
-							)}
-						</div>
-						
-						<Button
-							type="submit"
-							disabled={!newMessage.trim() || sendMessageMutation.isPending}
-							className={`
-								bg-gradient-to-r from-undercover-purple to-undercover-deep-purple 
-								hover:from-undercover-deep-purple hover:to-undercover-purple
-								disabled:from-muted disabled:to-muted
-								shadow-lg hover:shadow-xl transition-all duration-300 
-								rounded-full min-w-[48px] h-12
-								${sendMessageMutation.isPending ? 'animate-pulse' : 'hover:scale-110 active:scale-95'}
-								border border-white/20
-							`}
-						>
-							{sendMessageMutation.isPending ? (
-								<Loader className="h-5 w-5 animate-spin" />
-							) : (
-								<Send className="h-5 w-5" />
-							)}
-						</Button>
-					</form>
-				</div>
+			{/* Input Area - Fixed at bottom */}
+			<div className="border-t bg-card/95 backdrop-blur-xl p-4 relative z-10">
+				<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+					<div className="flex-1 relative">
+						<Input
+							value={newMessage}
+							onChange={(e) => setNewMessage(e.target.value)}
+							placeholder="Type your whisper..."
+							disabled={sendMessageMutation.isPending}
+							className="
+								resize-none transition-all duration-300 
+								bg-muted/70 border-muted-foreground/30 
+								focus:bg-background focus:border-undercover-purple/60
+								hover:bg-muted/80 hover:border-muted-foreground/40
+								rounded-full px-4 py-3 pr-12
+								text-base h-12
+								placeholder:text-muted-foreground/70
+								shadow-lg focus:shadow-xl
+								backdrop-blur-sm
+							"
+							maxLength={1000}
+						/>
+						{/* Character count for long messages */}
+						{newMessage.length > 800 && (
+							<div className="absolute -top-6 right-0 text-xs text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-1 rounded">
+								{newMessage.length}/1000
+							</div>
+						)}
+					</div>
+					
+					<Button
+						type="submit"
+						disabled={!newMessage.trim() || sendMessageMutation.isPending}
+						className="
+							bg-gradient-to-r from-undercover-purple to-undercover-deep-purple 
+							hover:from-undercover-deep-purple hover:to-undercover-purple
+							disabled:from-muted disabled:to-muted
+							shadow-lg hover:shadow-xl transition-all duration-300 
+							rounded-full min-w-[48px] h-12
+							hover:scale-110 active:scale-95
+							border border-white/20
+						"
+					>
+						{sendMessageMutation.isPending ? (
+							<Loader className="h-5 w-5 animate-spin" />
+						) : (
+							<Send className="h-5 w-5" />
+						)}
+					</Button>
+				</form>
 			</div>
-
-			{/* Add padding bottom for mobile to account for fixed input */}
-			{isMobile && <div className="h-20"></div>}
 
 			<div ref={messagesEndRef} />
 		</div>

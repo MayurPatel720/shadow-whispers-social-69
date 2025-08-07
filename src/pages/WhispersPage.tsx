@@ -160,9 +160,25 @@ const WhispersPage = () => {
     );
   }
 
+  // Hide footer when in conversation view
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (footer) {
+      footer.style.display = selectedConversation ? 'none' : 'block';
+    }
+
+    // Cleanup on component unmount
+    return () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        footer.style.display = 'block';
+      }
+    };
+  }, [selectedConversation]);
+
   return (
-    <div className={`flex flex-col ${selectedConversation ? 'h-screen' : 'h-[calc(100vh-64px)] md:h-screen'}`}>
-      <div className="flex-1 flex flex-col md:flex-row">
+    <div className={`flex flex-col ${selectedConversation ? 'h-screen fixed inset-0 z-50 bg-background' : 'h-[calc(100vh-64px)] md:h-screen'}`}>
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <WhisperSidebar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -180,6 +196,7 @@ const WhispersPage = () => {
           deletePendingId={deleteConversationMutation.isPending ? deletingId : null}
           getLastMessageTime={getLastMessageTime}
         />
+        
         <div className={`flex-1 flex flex-col ${!selectedConversation ? 'hidden md:flex' : 'flex'}`}>
           {selectedConversation ? (
             <WhisperConversation 
