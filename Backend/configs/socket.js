@@ -3,12 +3,26 @@
 const { socketAuth } = require("../middleware/authMiddleware");
 const asyncHandler = require("express-async-handler");
 const { saveWhisper } = require("../controllers/whisperController");
+const User = require("../models/userModel");
 
 module.exports = (io) => {
 	io.use(socketAuth);
 
-	io.on("connection", (socket) => {
+	io.on("connection", async (socket) => {
 		console.log(`User connected: ${socket.user._id}, Socket ID: ${socket.id}`);
+
+		// Update user's online status and last seen
+		try {
+			await User.findByIdAndUpdate(socket.user._id, {
+				isOnline: true,
+				lastSeen: new Date()
+			});
+			
+			// Emit to all users that this user is now online
+			socket.broadcast.emit("userOnline", socket.user._id.toString());
+		} catch (error) {
+			console.error("Error updating user online status:", error);
+		}
 
 		// Join individual user room for notifications
 		socket.on("join", (userId) => {
@@ -78,8 +92,25 @@ module.exports = (io) => {
 			})
 		);
 
-		socket.on("disconnect", () => {
+		socket.on("disconnect", async () => {
 			console.log(`User disconnected: ${socket.user._id}, Socket ID: ${socket.id}`);
+			
+			// Update user's offline status and last seen
+			try {
+				const lastSeen = new Date();
+				await User.findByIdAndUpdate(socket.user._id, {
+					isOnline: false,
+					lastSeen: lastSeen
+				});
+				
+				// Emit to all users that this user is now offline
+				socket.broadcast.emit("userOffline", {
+					userId: socket.user._id.toString(),
+					lastSeen: lastSeen.toISOString()
+				});
+			} catch (error) {
+				console.error("Error updating user offline status:", error);
+			}
 		});
 	});
 };

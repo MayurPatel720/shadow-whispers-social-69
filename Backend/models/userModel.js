@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -127,6 +128,14 @@ const userSchema = new mongoose.Schema({
   oneSignalPlayerId: {
     type: String,
     default: null,
+  },
+  isOnline: {
+    type: Boolean,
+    default: false,
+  },
+  lastSeen: {
+    type: Date,
+    default: Date.now,
   },
 });
 

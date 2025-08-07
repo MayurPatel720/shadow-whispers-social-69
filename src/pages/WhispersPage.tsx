@@ -79,6 +79,26 @@ const WhispersPage = () => {
     // eslint-disable-next-line
   }, [user]);
 
+  // Hide footer when in conversation view
+  useEffect(() => {
+    const footer = document.querySelector('footer');
+    if (footer) {
+      if (selectedConversation) {
+        footer.style.display = 'none';
+      } else {
+        footer.style.display = 'block';
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        footer.style.display = 'block';
+      }
+    };
+  }, [selectedConversation]);
+
   const { data: conversations, isLoading, error } = useQuery({
     queryKey: ['whispers'],
     queryFn: getMyWhispers,
@@ -161,7 +181,7 @@ const WhispersPage = () => {
   }
 
   return (
-    <div className={`flex flex-col ${selectedConversation ? 'h-screen' : 'h-[calc(100vh-64px)] md:h-screen'}`}>
+    <div className="flex flex-col h-screen">
       <div className="flex-1 flex flex-col md:flex-row">
         <WhisperSidebar
           searchTerm={searchTerm}

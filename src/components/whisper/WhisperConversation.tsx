@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, Send, Loader, MoreVertical } from "lucide-react";
@@ -324,7 +325,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			</div>
 
 			{/* Messages with enhanced background */}
-			<div className="flex-1 relative overflow-hidden">
+			<div className="flex-1 relative overflow-hidden pb-20">
 				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/5 to-muted/10 pointer-events-none"></div>
 				<WhisperMessageList
 					messages={allMessages}
@@ -335,14 +336,9 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				/>
 			</div>
 
-			{/* Enhanced Input Area - Fixed to bottom without gap */}
-			<div className={`
-				fixed bottom-0 left-0 right-0 z-30
-				border-t backdrop-blur-xl bg-card/95 
-				${isMobile ? 'p-3 pb-[env(safe-area-inset-bottom,16px)]' : 'p-4'}
-				shadow-2xl md:relative md:sticky
-			`}>
-				<div className="max-w-full mx-auto">
+			{/* Fixed Input Area at bottom */}
+			<div className="fixed bottom-0 left-0 right-0 z-30 border-t backdrop-blur-xl bg-card/98 shadow-2xl">
+				<div className={`${isMobile ? 'p-3 pb-[max(env(safe-area-inset-bottom),16px)]' : 'p-4'} max-w-full`}>
 					<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
 						<div className="flex-1 relative">
 							<Input
@@ -352,9 +348,9 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								disabled={sendMessageMutation.isPending}
 								className={`
 									resize-none transition-all duration-300 
-									bg-muted/70 border-muted-foreground/30 
+									bg-background/90 border-muted-foreground/20 
 									focus:bg-background focus:border-undercover-purple/60
-									hover:bg-muted/80 hover:border-muted-foreground/40
+									hover:bg-background/95 hover:border-muted-foreground/30
 									rounded-full px-4 py-3 pr-12
 									${isMobile ? 'text-base h-12' : 'text-sm h-11'}
 									placeholder:text-muted-foreground/70
@@ -393,9 +389,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 					</form>
 				</div>
 			</div>
-
-			{/* Add padding bottom for mobile to account for fixed input */}
-			{isMobile && <div className="h-20"></div>}
 
 			<div ref={messagesEndRef} />
 		</div>
