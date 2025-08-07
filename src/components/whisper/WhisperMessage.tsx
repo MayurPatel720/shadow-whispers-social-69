@@ -64,26 +64,40 @@ const WhisperMessage: React.FC<WhisperMessageProps> = ({
   };
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-3 group`}>
-      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative ${
-        isOwn 
-          ? "bg-undercover-purple text-white" 
-          : "bg-muted"
-      }`}>
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-4 group`}>
+      <div className={`
+        max-w-[280px] md:max-w-md px-4 py-3 rounded-2xl relative
+        shadow-sm transition-all duration-200 group-hover:shadow-md
+        ${isOwn 
+          ? "bg-gradient-to-br from-undercover-purple to-undercover-deep-purple text-white ml-12" 
+          : "bg-muted/80 backdrop-blur-sm border border-border/50 mr-12"
+        }
+      `}>
         {isEditing ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Input
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="text-sm bg-background/20 border-background/30"
+              className={`
+                text-sm border-0 bg-background/20 
+                focus:bg-background/30 transition-colors
+                ${isOwn ? 'text-white placeholder:text-white/70' : ''}
+              `}
+              placeholder="Edit your message..."
               autoFocus
             />
-            <div className="flex justify-end space-x-1">
+            <div className="flex justify-end space-x-2">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={handleEdit}
-                className="h-6 w-6 p-0 hover:bg-background/20"
+                className={`
+                  h-7 w-7 p-0 rounded-full transition-all
+                  ${isOwn 
+                    ? 'hover:bg-white/20 text-white/80 hover:text-white' 
+                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }
+                `}
               >
                 <Check className="h-3 w-3" />
               </Button>
@@ -91,7 +105,13 @@ const WhisperMessage: React.FC<WhisperMessageProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={handleCancelEdit}
-                className="h-6 w-6 p-0 hover:bg-background/20"
+                className={`
+                  h-7 w-7 p-0 rounded-full transition-all
+                  ${isOwn 
+                    ? 'hover:bg-white/20 text-white/80 hover:text-white' 
+                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }
+                `}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -99,33 +119,48 @@ const WhisperMessage: React.FC<WhisperMessageProps> = ({
           </div>
         ) : (
           <>
-            <p className="text-sm">{message.content}</p>
-            <p className="text-xs opacity-75 mt-1">
-              {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-              {isActuallyEdited() && " (edited)"}
-            </p>
+            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            <div className={`
+              flex items-center justify-between mt-2 pt-1 border-t
+              ${isOwn ? 'border-white/20' : 'border-border/30'}
+            `}>
+              <p className={`
+                text-xs transition-opacity
+                ${isOwn ? 'text-white/70' : 'text-muted-foreground'}
+              `}>
+                {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                {isActuallyEdited() && (
+                  <span className={`ml-2 ${isOwn ? 'text-white/50' : 'text-muted-foreground/70'}`}>
+                    (edited)
+                  </span>
+                )}
+              </p>
+            </div>
           </>
         )}
         
         {isOwn && !isEditing && (
-          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 transform group-hover:scale-105">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 rounded-full bg-background hover:bg-muted"
+                  className="h-7 w-7 p-0 rounded-full bg-background hover:bg-muted shadow-lg border border-border/20"
                 >
-                  <MoreVertical className="h-3 w-3" />
+                  <MoreVertical className="h-3 w-3 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+              <DropdownMenuContent align="end" className="shadow-xl border border-border/50 backdrop-blur-sm">
+                <DropdownMenuItem 
+                  onClick={() => setIsEditing(true)}
+                  className="hover:bg-muted/80 transition-colors"
+                >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  className="text-destructive"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
                   onClick={() => setShowDeleteDialog(true)}
                 >
                   <Trash className="h-4 w-4 mr-2" />
@@ -138,7 +173,7 @@ const WhisperMessage: React.FC<WhisperMessageProps> = ({
       </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="backdrop-blur-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Message</AlertDialogTitle>
             <AlertDialogDescription>
@@ -146,8 +181,11 @@ const WhisperMessage: React.FC<WhisperMessageProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+            <AlertDialogCancel className="hover:bg-muted/80">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-destructive hover:bg-destructive/90 transition-colors"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

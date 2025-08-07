@@ -25,7 +25,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 	onBack,
 }) => {
 	const { user } = useAuth();
-	const Ismobile = useIsMobile();
+	const isMobile = useIsMobile();
 	const { socket } = useNotification();
 	const queryClient = useQueryClient();
 	const [newMessage, setNewMessage] = useState("");
@@ -231,74 +231,129 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 
 	if (isLoading) {
 		return (
-			<div className="flex justify-center items-center h-full">
-				<Loader className="h-8 w-8 animate-spin text-purple-500" />
+			<div className="flex justify-center items-center h-full bg-gradient-to-br from-background to-muted/20">
+				<div className="text-center">
+					<Loader className="h-8 w-8 animate-spin text-undercover-purple mx-auto mb-2" />
+					<p className="text-sm text-muted-foreground">Loading conversation...</p>
+				</div>
 			</div>
 		);
 	}
 
 	if (!partner) {
 		return (
-			<div className="flex justify-center items-center h-full">
-				<p className="text-muted-foreground">Conversation not found</p>
+			<div className="flex justify-center items-center h-full bg-gradient-to-br from-background to-muted/20">
+				<div className="text-center">
+					<div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+						<MoreVertical className="h-6 w-6 text-muted-foreground" />
+					</div>
+					<p className="text-muted-foreground">Conversation not found</p>
+				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col h-full">
-			{/* Header */}
-			<div className="p-4 border-b sticky top-0 z-20 border-border flex items-center space-x-3 bg-card">
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={onBack}
-					className="md:hidden"
-				>
-					<ArrowLeft className="h-5 w-5" />
-				</Button>
-				<AvatarGenerator
-					emoji={partner.avatarEmoji || "🎭"}
-					nickname={partner.anonymousAlias}
-					color="#6E59A5"
-					size="md"
-				/>
-				<div className="flex-1 min-w-0">
-					<h3 className="font-semibold text-undercover-light-purple truncate">
-						{hasRecognized ? partner.username : partner.anonymousAlias}
-					</h3>
-					<p className="text-sm text-muted-foreground">
-						{hasRecognized ? "Identity Revealed" : "Anonymous"}
-					</p>
+		<div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-muted/10">
+			{/* Enhanced Header */}
+			<div className="relative p-4 border-b backdrop-blur-sm bg-card/95 sticky top-0 z-20 shadow-sm">
+				<div className="flex items-center space-x-3">
+					<Button
+						variant="ghost"
+						size="sm"
+						onClick={onBack}
+						className="md:hidden hover:bg-muted/50 transition-colors"
+					>
+						<ArrowLeft className="h-5 w-5" />
+					</Button>
+					<div className="relative">
+						<AvatarGenerator
+							emoji={partner.avatarEmoji || "🎭"}
+							nickname={partner.anonymousAlias}
+							color="#6E59A5"
+							size="md"
+						/>
+						{/* Online status indicator */}
+						<div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-card rounded-full"></div>
+					</div>
+					<div className="flex-1 min-w-0">
+						<h3 className="font-semibold text-undercover-light-purple truncate">
+							{hasRecognized ? partner.username : partner.anonymousAlias}
+						</h3>
+						<p className="text-xs text-muted-foreground flex items-center space-x-1">
+							<span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+							<span>{hasRecognized ? "Identity Revealed" : "Anonymous"}</span>
+						</p>
+					</div>
+					<Button variant="ghost" size="sm" className="hover:bg-muted/50">
+						<MoreVertical className="h-5 w-5" />
+					</Button>
 				</div>
-				<Button variant="ghost" size="sm">
-					<MoreVertical className="h-5 w-5" />
-				</Button>
 			</div>
 
-			{/* Messages */}
-			<WhisperMessageList
-				messages={allMessages}
-				currentUserId={user?._id}
-				onLoadMore={loadMoreMessages}
-				isLoadingMore={isLoadingMore}
-				hasMore={hasMore}
-			/>
+			{/* Messages with enhanced background */}
+			<div className="flex-1 relative overflow-hidden">
+				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/5 to-muted/10 pointer-events-none"></div>
+				<WhisperMessageList
+					messages={allMessages}
+					currentUserId={user?._id}
+					onLoadMore={loadMoreMessages}
+					isLoadingMore={isLoadingMore}
+					hasMore={hasMore}
+				/>
+			</div>
 
-			{Ismobile ? (
-				<div className="sticky -bottom-4 bg-background z-10 px-2  border-t border-border">
-					<form onSubmit={handleSendMessage} className="flex space-x-2">
-						<Input
-							value={newMessage}
-							onChange={(e) => setNewMessage(e.target.value)}
-							placeholder="Type your whisper..."
-							className="flex-1"
-							disabled={sendMessageMutation.isPending}
-						/>
+			{/* Enhanced Input Area */}
+			<div className={`
+				sticky bottom-0 z-10 border-t backdrop-blur-lg
+				${isMobile 
+					? 'bg-card/90 p-3 pb-safe' 
+					: 'bg-card/95 p-4'
+				}
+				shadow-lg
+			`}>
+				<div className="relative">
+					{/* Gradient overlay for better visual separation */}
+					<div className="absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-card/90 to-transparent pointer-events-none"></div>
+					
+					<form onSubmit={handleSendMessage} className="flex items-end space-x-2">
+						<div className="flex-1 relative">
+							<Input
+								value={newMessage}
+								onChange={(e) => setNewMessage(e.target.value)}
+								placeholder="Type your whisper..."
+								disabled={sendMessageMutation.isPending}
+								className={`
+									resize-none transition-all duration-200 
+									bg-muted/50 border-muted-foreground/20 
+									focus:bg-background focus:border-undercover-purple/50
+									hover:bg-muted/70 hover:border-muted-foreground/30
+									rounded-2xl px-4 py-3 pr-12
+									${isMobile ? 'text-base' : 'text-sm'}
+									placeholder:text-muted-foreground/60
+									shadow-sm
+								`}
+								maxLength={1000}
+							/>
+							{/* Character count for long messages */}
+							{newMessage.length > 800 && (
+								<div className="absolute -top-6 right-0 text-xs text-muted-foreground">
+									{newMessage.length}/1000
+								</div>
+							)}
+						</div>
+						
 						<Button
 							type="submit"
 							disabled={!newMessage.trim() || sendMessageMutation.isPending}
-							className="bg-undercover-purple hover:bg-undercover-deep-purple"
+							className={`
+								bg-gradient-to-r from-undercover-purple to-undercover-deep-purple 
+								hover:from-undercover-deep-purple hover:to-undercover-purple
+								disabled:from-muted disabled:to-muted
+								shadow-lg hover:shadow-xl transition-all duration-200 
+								rounded-2xl min-w-[44px] h-11
+								${sendMessageMutation.isPending ? 'animate-pulse' : 'hover:scale-105'}
+							`}
 						>
 							{sendMessageMutation.isPending ? (
 								<Loader className="h-4 w-4 animate-spin" />
@@ -308,30 +363,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 						</Button>
 					</form>
 				</div>
-			) : (
-				<div className="sticky bottom-0 bg-background z-10 p-4 border-t border-border">
-					<form onSubmit={handleSendMessage} className="flex space-x-2">
-						<Input
-							value={newMessage}
-							onChange={(e) => setNewMessage(e.target.value)}
-							placeholder="Type your whisper..."
-							className="flex-1"
-							disabled={sendMessageMutation.isPending}
-						/>
-						<Button
-							type="submit"
-							disabled={!newMessage.trim() || sendMessageMutation.isPending}
-							className="bg-undercover-purple hover:bg-undercover-deep-purple"
-						>
-							{sendMessageMutation.isPending ? (
-								<Loader className="h-4 w-4 animate-spin" />
-							) : (
-								<Send className="h-4 w-4" />
-							)}
-						</Button>
-					</form>
-				</div>
-			)}
+			</div>
 
 			<div ref={messagesEndRef} />
 		</div>
