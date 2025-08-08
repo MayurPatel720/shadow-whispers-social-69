@@ -1,15 +1,23 @@
-
 // configs/socket.js
 const { socketAuth } = require("../middleware/authMiddleware");
 const asyncHandler = require("express-async-handler");
 const { saveWhisper } = require("../controllers/whisperController");
 const User = require("../models/userModel");
 
+// Keep track of connected users
+const connectedUsers = new Map();
+
 module.exports = (io) => {
 	io.use(socketAuth);
 
 	io.on("connection", async (socket) => {
 		console.log(`User connected: ${socket.user._id}, Socket ID: ${socket.id}`);
+
+		// Track this connection
+		if (!connectedUsers.has(socket.user._id.toString())) {
+			connectedUsers.set(socket.user._id.toString(), new Set());
+		}
+		connectedUsers.get(socket.user._id.toString()).add(socket.id);
 
 		// Update user's online status and last seen
 		try {
@@ -20,6 +28,7 @@ module.exports = (io) => {
 			
 			// Emit to all users that this user is now online
 			socket.broadcast.emit("userOnline", socket.user._id.toString());
+			console.log(`User ${socket.user._id} is now online`);
 		} catch (error) {
 			console.error("Error updating user online status:", error);
 		}
@@ -95,21 +104,32 @@ module.exports = (io) => {
 		socket.on("disconnect", async () => {
 			console.log(`User disconnected: ${socket.user._id}, Socket ID: ${socket.id}`);
 			
-			// Update user's offline status and last seen
-			try {
-				const lastSeen = new Date();
-				await User.findByIdAndUpdate(socket.user._id, {
-					isOnline: false,
-					lastSeen: lastSeen
-				});
+			// Remove this socket from connected users tracking
+			const userSockets = connectedUsers.get(socket.user._id.toString());
+			if (userSockets) {
+				userSockets.delete(socket.id);
 				
-				// Emit to all users that this user is now offline
-				socket.broadcast.emit("userOffline", {
-					userId: socket.user._id.toString(),
-					lastSeen: lastSeen.toISOString()
-				});
-			} catch (error) {
-				console.error("Error updating user offline status:", error);
+				// If no more sockets for this user, mark as offline
+				if (userSockets.size === 0) {
+					connectedUsers.delete(socket.user._id.toString());
+					
+					try {
+						const lastSeen = new Date();
+						await User.findByIdAndUpdate(socket.user._id, {
+							isOnline: false,
+							lastSeen: lastSeen
+						});
+						
+						// Emit to all users that this user is now offline
+						socket.broadcast.emit("userOffline", {
+							userId: socket.user._id.toString(),
+							lastSeen: lastSeen.toISOString()
+						});
+						console.log(`User ${socket.user._id} is now offline, last seen: ${lastSeen}`);
+					} catch (error) {
+						console.error("Error updating user offline status:", error);
+					}
+				}
 			}
 		});
 	});

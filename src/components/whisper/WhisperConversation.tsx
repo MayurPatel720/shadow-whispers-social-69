@@ -83,8 +83,16 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			// Set initial online status and last seen from partner data
 			if (conversationData.partner) {
 				console.log("Partner data:", conversationData.partner);
-				setIsOnline(conversationData.partner.isOnline === true);
-				setLastSeen(conversationData.partner.lastSeen);
+				const partnerIsOnline = conversationData.partner.isOnline === true;
+				setIsOnline(partnerIsOnline);
+				
+				if (!partnerIsOnline && conversationData.partner.lastSeen) {
+					setLastSeen(conversationData.partner.lastSeen);
+				} else {
+					setLastSeen(null);
+				}
+				
+				console.log("Setting partner online status:", partnerIsOnline, "lastSeen:", conversationData.partner.lastSeen);
 			}
 		}
 	}, [conversationData, isFirstLoad]);
@@ -149,6 +157,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			if (userId === partnerId) {
 				setIsOnline(true);
 				setLastSeen(null);
+				console.log("Partner is now online");
 			}
 		};
 
@@ -157,6 +166,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 			if (data.userId === partnerId) {
 				setIsOnline(false);
 				setLastSeen(data.lastSeen);
+				console.log("Partner is now offline, last seen:", data.lastSeen);
 			}
 		};
 
@@ -247,7 +257,16 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 		} else if (lastSeen) {
 			try {
 				const lastSeenDate = new Date(lastSeen);
-				return `Last seen ${formatDistanceToNow(lastSeenDate, { addSuffix: true })}`;
+				const now = new Date();
+				const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
+				
+				if (diffInMinutes < 1) {
+					return "Last seen just now";
+				} else if (diffInMinutes < 60) {
+					return `Last seen ${diffInMinutes} ${diffInMinutes === 1 ? 'min' : 'mins'} ago`;
+				} else {
+					return `Last seen ${formatDistanceToNow(lastSeenDate, { addSuffix: true })}`;
+				}
 			} catch (error) {
 				console.error("Error formatting last seen:", error);
 				return "Offline";
