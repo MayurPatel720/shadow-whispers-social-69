@@ -42,6 +42,8 @@ const getWhisperConversation = asyncHandler(async (req, res) => {
 			_id: partnerExists._id,
 			anonymousAlias: partnerExists.anonymousAlias,
 			avatarEmoji: partnerExists.avatarEmoji,
+			isOnline: partnerExists.isOnline || false,
+			lastSeen: partnerExists.lastSeen || new Date(),
 		};
 
 		if (hasRecognized) {
@@ -66,4 +68,3 @@ const getWhisperConversation = asyncHandler(async (req, res) => {
 	}
 });
 module.exports = { getWhisperConversation };
-

@@ -325,21 +325,34 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 				</div>
 			</div>
 
-			{/* Messages */}
-			<div className="flex-1 relative overflow-hidden" style={{ paddingBottom: '80px' }}>
-				<div className="absolute inset-0 bg-gradient-to-b from-transparent via-muted/5 to-muted/10 pointer-events-none"></div>
-				<WhisperMessageList
-					messages={allMessages}
-					currentUserId={user?._id}
-					onLoadMore={loadMoreMessages}
-					isLoadingMore={isLoadingMore}
-					hasMore={hasMore}
-				/>
+			{/* Messages Container */}
+			<div className="flex-1 relative overflow-hidden">
+				<div 
+					className="absolute inset-0 overflow-y-auto"
+					style={{ 
+						paddingBottom: isMobile ? '100px' : '90px'
+					}}
+				>
+					<WhisperMessageList
+						messages={allMessages}
+						currentUserId={user?._id}
+						onLoadMore={loadMoreMessages}
+						isLoadingMore={isLoadingMore}
+						hasMore={hasMore}
+					/>
+					<div ref={messagesEndRef} />
+				</div>
 			</div>
 
-			{/* Fixed Input Area */}
-			<div className="absolute bottom-0 left-0 right-0 z-30 border-t backdrop-blur-xl bg-card/98 shadow-2xl">
-				<div className="p-4 max-w-full">
+			{/* Input Area - Fixed at bottom */}
+			<div 
+				className={`
+					absolute bottom-0 left-0 right-0 z-30 
+					border-t backdrop-blur-xl bg-card/98 shadow-2xl
+					${isMobile ? 'pb-4' : 'pb-0'}
+				`}
+			>
+				<div className="p-4">
 					<form onSubmit={handleSendMessage} className="flex items-center space-x-3">
 						<div className="flex-1 relative">
 							<Input
@@ -357,6 +370,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 									placeholder:text-muted-foreground/70
 									shadow-lg focus:shadow-xl
 									backdrop-blur-sm
+									w-full
 								"
 								maxLength={1000}
 							/>
@@ -377,6 +391,7 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 								shadow-lg hover:shadow-xl transition-all duration-300 
 								rounded-full min-w-[48px] h-11
 								border border-white/20
+								flex-shrink-0
 							"
 						>
 							{sendMessageMutation.isPending ? (
@@ -388,8 +403,6 @@ const WhisperConversation: React.FC<WhisperConversationProps> = ({
 					</form>
 				</div>
 			</div>
-
-			<div ref={messagesEndRef} />
 		</div>
 	);
 };
