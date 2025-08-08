@@ -1,4 +1,3 @@
-
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -47,7 +46,7 @@ const userSchema = new mongoose.Schema({
   referralCode: { 
     type: String, 
     unique: true,
-    sparse: true // This allows null/undefined values while maintaining uniqueness for non-null values
+    sparse: true
   },
   referralCount: { type: Number, default: 0 },
   referredBy: {
@@ -137,6 +136,17 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // Bot-specific fields
+  isBot: {
+    type: Boolean,
+    default: false,
+  },
+  botProfile: {
+    personality: { type: String },
+    feedFocus: { type: String, enum: ['global', 'college', 'area'] },
+    activityLevel: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+    lastActivity: { type: Date, default: Date.now }
+  }
 });
 
 // Generate unique anonymous alias

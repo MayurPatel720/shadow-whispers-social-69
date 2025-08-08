@@ -112,27 +112,38 @@ const getPaginatedPosts = asyncHandler(async (req, res) => {
 	}
 
 	try {
-		// First get regular posts (non-seed posts)
+		// Get both regular and seed posts, then mix them naturally
 		const regularPosts = await Post.find({
 			...query,
 			isSeedPost: { $ne: true }
-		}).sort({ _id: -1 }).limit(limit).lean();
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.8)).lean();
 
-		console.log(`Found ${regularPosts.length} regular global posts`);
+		const seedPosts = await Post.find({
+			...query,
+			isSeedPost: true
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.4)).lean();
 
-		let posts = regularPosts;
-		
-		// If we don't have enough regular posts, add seed posts
-		if (regularPosts.length < limit) {
-			const seedPostsNeeded = limit - regularPosts.length;
-			const seedPosts = await Post.find({
-				...query,
-				isSeedPost: true
-			}).sort({ _id: -1 }).limit(seedPostsNeeded).lean();
-			
-			console.log(`Adding ${seedPosts.length} seed posts to global feed`);
-			posts = [...regularPosts, ...seedPosts];
+		// Mix posts naturally - about 20% seed posts distributed throughout
+		let posts = [];
+		let regularIndex = 0;
+		let seedIndex = 0;
+
+		for (let i = 0; i < limit && (regularIndex < regularPosts.length || seedIndex < seedPosts.length); i++) {
+			// Add seed post roughly every 4-5 posts
+			if (seedIndex < seedPosts.length && (i % 4 === 3 || regularIndex >= regularPosts.length)) {
+				posts.push(seedPosts[seedIndex]);
+				seedIndex++;
+			} else if (regularIndex < regularPosts.length) {
+				posts.push(regularPosts[regularIndex]);
+				regularIndex++;
+			}
 		}
+
+		// Sort the final mixed array by creation time to maintain chronological order
+		posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+		posts = posts.slice(0, limit);
+
+		console.log(`Global feed: ${regularPosts.length} regular + ${seedPosts.length} seed = ${posts.length} total posts`);
 
 		// Only cache first/default page when no tag filter
 		if (!after && limit === 20 && !tag && !tags && redis.isAvailable()) {
@@ -205,12 +216,44 @@ const getCollegeFeed = asyncHandler(async (req, res) => {
 	}
 
 	try {
-		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
+		// Get both regular and seed posts for this college
+		const regularPosts = await Post.find({
+			...query,
+			isSeedPost: { $ne: true }
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.8)).lean();
+
+		const seedPosts = await Post.find({
+			...query,
+			isSeedPost: true
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.4)).lean();
+
+		// Mix posts naturally
+		let posts = [];
+		let regularIndex = 0;
+		let seedIndex = 0;
+
+		for (let i = 0; i < limit && (regularIndex < regularPosts.length || seedIndex < seedPosts.length); i++) {
+			// Add seed post roughly every 4-5 posts
+			if (seedIndex < seedPosts.length && (i % 4 === 3 || regularIndex >= regularPosts.length)) {
+				posts.push(seedPosts[seedIndex]);
+				seedIndex++;
+			} else if (regularIndex < regularPosts.length) {
+				posts.push(regularPosts[regularIndex]);
+				regularIndex++;
+			}
+		}
+
+		// Sort by creation time and limit
+		posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+		posts = posts.slice(0, limit);
+
 		const hasMore = posts.length === limit;
 		
 		console.log("College feed response:", {
 			college,
-			postsCount: posts.length,
+			regularPosts: regularPosts.length,
+			seedPosts: seedPosts.length,
+			totalPosts: posts.length,
 			hasMore,
 			tag: tag || "none",
 			tags: tags || [],
@@ -263,12 +306,44 @@ const getAreaFeed = asyncHandler(async (req, res) => {
 	}
 
 	try {
-		const posts = await Post.find(query).sort({ _id: -1 }).limit(limit).lean();
+		// Get both regular and seed posts for this area
+		const regularPosts = await Post.find({
+			...query,
+			isSeedPost: { $ne: true }
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.8)).lean();
+
+		const seedPosts = await Post.find({
+			...query,
+			isSeedPost: true
+		}).sort({ _id: -1 }).limit(Math.ceil(limit * 0.4)).lean();
+
+		// Mix posts naturally
+		let posts = [];
+		let regularIndex = 0;
+		let seedIndex = 0;
+
+		for (let i = 0; i < limit && (regularIndex < regularPosts.length || seedIndex < seedPosts.length); i++) {
+			// Add seed post roughly every 4-5 posts
+			if (seedIndex < seedPosts.length && (i % 4 === 3 || regularIndex >= regularPosts.length)) {
+				posts.push(seedPosts[seedIndex]);
+				seedIndex++;
+			} else if (regularIndex < regularPosts.length) {
+				posts.push(regularPosts[regularIndex]);
+				regularIndex++;
+			}
+		}
+
+		// Sort by creation time and limit
+		posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+		posts = posts.slice(0, limit);
+
 		const hasMore = posts.length === limit;
 		
 		console.log("Area feed response:", {
 			area,
-			postsCount: posts.length,
+			regularPosts: regularPosts.length,
+			seedPosts: seedPosts.length,
+			totalPosts: posts.length,
 			hasMore,
 			tag: tag || "none",
 			tags: tags || [],
