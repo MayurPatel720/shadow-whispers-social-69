@@ -1,322 +1,195 @@
-const express = require('express');
-const router = express.Router();
-const Post = require('../models/postModel');
-const User = require('../models/userModel');
-const { botPersonas, getRandomBotPersona } = require('../utils/seed/botPersonas');
-const { getRandomTemplate, getRandomComment } = require('../utils/seed/postTemplates');
-const { generateAnonymousAlias, generateAvatar } = require('../utils/generators');
-const colleges = require('../data/colleges');
-const cities = require('../data/cities');
+const express = require("express");
+const asyncHandler = require("express-async-handler");
+const Post = require("../models/postModel");
+const User = require("../models/userModel");
+const { botPersonas, getRandomBotPersona } = require("../utils/seed/botPersonas");
+const { getRandomTemplate, getRandomComment } = require("../utils/seed/postTemplates");
+const { generateAnonymousAlias, generateAvatar } = require("../utils/generators");
+const multer = require('multer');
+const csv = require('csv-parser');
+const fs = require('fs');
 
-// Admin middleware to check credentials
+const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
+
+// Admin auth middleware
 const adminAuth = (req, res, next) => {
-  const { authorization } = req.headers;
+  console.log("Admin auth check, authorization:", req.headers.authorization);
   
-  console.log('Admin auth check, authorization:', authorization);
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer admin-')) {
+    console.log("Admin auth failed: Invalid authorization header");
+    return res.status(401).json({ message: "Admin access denied" });
+  }
   
-  // Check for admin token in different formats
-  if (authorization && (
-    authorization.includes('admin') || 
-    authorization.includes('Bearer admin-true') ||
-    authorization === 'Bearer admin-true' ||
-    authorization.includes('admin-true')
-  )) {
-    console.log('Admin access granted');
-    next();
-  } else {
-    console.log('Admin access denied, authorization:', authorization);
-    res.status(401).json({ message: 'Admin access required' });
+  const token = authHeader.replace('Bearer admin-', '');
+  if (token !== 'token' && token !== 'true') {
+    console.log("Admin auth failed: Invalid token");
+    return res.status(401).json({ message: "Admin access denied" });
+  }
+  
+  console.log("Admin access granted");
+  next();
+};
+
+// Generate valid email for bot
+const generateBotEmail = (persona, index) => {
+  const domains = ['botmail.com', 'aiuser.net', 'ghostbot.io', 'whisperbot.dev'];
+  const domain = domains[Math.floor(Math.random() * domains.length)];
+  const username = persona.anonymousAlias.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return `${username}${index}@${domain}`;
+};
+
+// Generate phone number for bot
+const generateBotPhone = () => {
+  return '+1' + Math.floor(1000000000 + Math.random() * 9000000000);
+};
+
+// Create comprehensive bot user with all required fields
+const createBotUser = async (persona, index, feedType, college, area) => {
+  const email = generateBotEmail(persona, index);
+  const phone = generateBotPhone();
+  
+  const botData = {
+    username: `bot_${persona.anonymousAlias.toLowerCase()}_${Date.now()}_${index}`,
+    fullName: persona.name,
+    email: email,
+    phone: phone,
+    password: 'BotUser123!', // This will be hashed
+    anonymousAlias: persona.anonymousAlias,
+    avatarEmoji: persona.avatarEmoji,
+    bio: persona.bio,
+    interests: persona.interests,
+    isBot: true,
+    isActive: true,
+    isEmailVerified: true,
+    onboardingComplete: true,
+    
+    // Bot-specific profile
+    botProfile: {
+      personality: persona.personality,
+      activityLevel: Math.random() > 0.3 ? 'medium' : 'high',
+      feedFocus: feedType,
+      lastActivity: new Date(),
+      responsePatterns: persona.interests.slice(0, 3)
+    },
+    
+    // Matching and whisper capabilities
+    gender: Math.random() > 0.5 ? 'male' : 'female',
+    lookingFor: Math.random() > 0.5 ? 'male' : 'female',
+    ageRange: { min: 18, max: 25 },
+    
+    // Location data based on feed type
+    ...(feedType === 'college' && college && { college }),
+    ...(feedType === 'area' && area && { area }),
+    
+    // Social features
+    posts: [],
+    friends: [],
+    ghostCircles: [],
+    recognizedUsers: [],
+    identityRecognizers: [],
+    recognitionAttempts: 0,
+    successfulRecognitions: 0,
+    
+    // Referral system
+    referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+    referralCount: 0,
+    claimedRewards: [],
+    
+    // Timestamps
+    createdAt: new Date(),
+    lastSeen: new Date(),
+    isOnline: Math.random() > 0.5
+  };
+  
+  try {
+    const bot = new User(botData);
+    const savedBot = await bot.save();
+    console.log(`✅ Created bot: ${savedBot.anonymousAlias} (${savedBot.email})`);
+    return savedBot;
+  } catch (error) {
+    console.error(`❌ Failed to create bot ${persona.name}:`, error.message);
+    throw error;
   }
 };
 
-// GET /api/admin/posts - Get all posts with user details
-router.get('/posts', adminAuth, async (req, res) => {
+// POST /api/admin/seed/bots - Create bot users
+router.post("/seed/bots", adminAuth, asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching admin posts...');
-    const posts = await Post.find()
-      .populate('user', 'username email fullName anonymousAlias')
-      .sort({ createdAt: -1 });
-    
-    console.log(`Found ${posts.length} posts`);
-    res.json(posts);
-  } catch (error) {
-    console.error('Error fetching admin posts:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// GET /api/admin/users - Get all users
-router.get('/users', adminAuth, async (req, res) => {
-  try {
-    console.log('Fetching admin users...');
-    const users = await User.find()
-      .select('-password')
-      .sort({ createdAt: -1 });
-    
-    console.log(`Found ${users.length} users`);
-    res.json(users);
-  } catch (error) {
-    console.error('Error fetching admin users:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// DELETE /api/admin/posts/:id - Delete any post
-router.delete('/posts/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Deleting post:', req.params.id);
-    const post = await Post.findByIdAndDelete(req.params.id);
-    
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-    
-    console.log('Post deleted successfully');
-    res.json({ message: 'Post deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting post:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// PUT /api/admin/posts/:id - Edit any post
-router.put('/posts/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Updating post:', req.params.id);
-    const { content, images, videos } = req.body;
-    
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      { content, images: images || [], videos: videos || [] },
-      { new: true }
-    ).populate('user', 'username email fullName anonymousAlias');
-    
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-    
-    console.log('Post updated successfully');
-    res.json(post);
-  } catch (error) {
-    console.error('Error updating post:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// GET /api/admin/users/:id - Get specific user details
-router.get('/users/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Fetching user details:', req.params.id);
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('posts');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// PUT /api/admin/users/:id/ban - Ban/unban a user with proper persistence
-router.put('/users/:id/ban', adminAuth, async (req, res) => {
-  try {
-    console.log('Toggling user ban status:', req.params.id);
-    const { banned } = req.body;
-    
-    // Ensure the banned field is properly set and saved
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    user.banned = banned;
-    if (banned) {
-      user.bannedAt = new Date();
-    } else {
-      user.bannedAt = null;
-    }
-    
-    await user.save();
-    
-    // Return user without password
-    const updatedUser = await User.findById(req.params.id).select('-password');
-    
-    console.log(`User ${banned ? 'banned' : 'unbanned'} successfully, new status:`, updatedUser.banned);
-    res.json({ 
-      message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
-      user: updatedUser
-    });
-  } catch (error) {
-    console.error('Error updating user ban status:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// GET /api/admin/stats - Get admin statistics
-router.get('/stats', adminAuth, async (req, res) => {
-  try {
-    console.log('Fetching admin stats...');
-    
-    const totalUsers = await User.countDocuments();
-    const totalPosts = await Post.countDocuments();
-    const bannedUsers = await User.countDocuments({ banned: true });
-    const activeUsers = totalUsers - bannedUsers;
-    
-    // Posts created today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const postsToday = await Post.countDocuments({
-      createdAt: { $gte: today, $lt: tomorrow }
-    });
-    
-    const stats = {
-      totalUsers,
-      totalPosts,
-      activeUsers,
-      bannedUsers,
-      postsToday
-    };
-    
-    console.log('Admin stats:', stats);
-    res.json(stats);
-  } catch (error) {
-    console.error('Error fetching admin stats:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// DELETE /api/admin/users/:id - Soft delete a user (ban them permanently)
-router.delete('/users/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Soft deleting user:', req.params.id);
-    
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    user.banned = true;
-    user.bannedAt = new Date();
-    user.deletedAt = new Date();
-    await user.save();
-    
-    const updatedUser = await User.findById(req.params.id).select('-password');
-    
-    console.log('User soft-deleted (banned) successfully');
-    res.json({ message: 'User deleted successfully', user: updatedUser });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// CREATE BOT USERS
-router.post('/seed/bots', adminAuth, async (req, res) => {
-  try {
-    const { count = 10, feedType } = req.body;
-    console.log(`Creating ${count} bot users for feed type: ${feedType || 'mixed'}`);
+    const { count = 10, feedType = 'global', college, area } = req.body;
+    console.log(`Creating ${count} bot users for feed type: ${feedType}`);
     
     const createdBots = [];
     
     for (let i = 0; i < count; i++) {
       const persona = getRandomBotPersona(feedType);
-      
-      // Generate unique bot username
-      const botUsername = `bot_${persona.name.replace(/\s+/g, '').toLowerCase()}_${Date.now()}_${i}`;
-      
-      let college, area;
-      if (feedType === 'college') {
-        college = colleges[Math.floor(Math.random() * colleges.length)];
-      } else if (feedType === 'area') {
-        area = cities[Math.floor(Math.random() * cities.length)];
+      try {
+        const bot = await createBotUser(persona, i, feedType, college, area);
+        createdBots.push({
+          id: bot._id,
+          name: bot.fullName,
+          alias: bot.anonymousAlias,
+          email: bot.email,
+          personality: bot.botProfile.personality
+        });
+      } catch (error) {
+        console.error(`Failed to create bot ${i + 1}:`, error.message);
+        continue; // Continue with next bot
       }
-      
-      const botUser = new User({
-        username: botUsername,
-        fullName: persona.name,
-        email: `${botUsername}@botuser.local`,
-        password: 'botpassword123',
-        anonymousAlias: persona.anonymousAlias + Math.floor(Math.random() * 1000),
-        avatarEmoji: persona.avatarEmoji,
-        bio: persona.bio,
-        interests: persona.interests,
-        college,
-        area,
-        isBot: true,
-        onboardingComplete: true,
-        isEmailVerified: true,
-        botProfile: {
-          personality: persona.personality,
-          feedFocus: feedType || (persona.globalFocused ? 'global' : persona.collegeFocused ? 'college' : 'area'),
-          activityLevel: ['low', 'medium', 'high'][Math.floor(Math.random() * 3)]
-        }
-      });
-      
-      await botUser.save();
-      createdBots.push(botUser);
     }
     
-    console.log(`Created ${createdBots.length} bot users`);
-    res.json({ 
+    console.log(`✅ Successfully created ${createdBots.length} bot users`);
+    res.status(201).json({
+      success: true,
       message: `Created ${createdBots.length} bot users`,
-      bots: createdBots.map(bot => ({
-        id: bot._id,
-        username: bot.username,
-        anonymousAlias: bot.anonymousAlias,
-        personality: bot.botProfile.personality
-      }))
+      bots: createdBots
     });
   } catch (error) {
-    console.error('Error creating bot users:', error);
-    res.status(500).json({ message: 'Error creating bot users', error: error.message });
+    console.error("Error creating bot users:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create bot users",
+      error: error.message
+    });
   }
-});
+}));
 
-// CREATE SEED POSTS
-router.post('/seed/posts', adminAuth, async (req, res) => {
+// POST /api/admin/seed/posts - Create seed posts
+router.post("/seed/posts", adminAuth, asyncHandler(async (req, res) => {
   try {
     const { count = 20, feedType = 'global', college, area } = req.body;
-    console.log(`Creating ${count} seed posts for ${feedType} feed`);
     
-    // Get bot users for the specified feed type
-    const query = { isBot: true };
+    // Get available bots for this feed type
+    const botQuery = { isBot: true };
     if (feedType === 'college' && college) {
-      query.college = college;
+      botQuery.$or = [
+        { 'botProfile.feedFocus': 'global' },
+        { 'botProfile.feedFocus': 'college', college: college }
+      ];
     } else if (feedType === 'area' && area) {
-      query.area = area;
-    } else if (feedType === 'global') {
-      query.$or = [
-        { college: { $exists: false } },
-        { area: { $exists: false } }
+      botQuery.$or = [
+        { 'botProfile.feedFocus': 'global' },
+        { 'botProfile.feedFocus': 'area', area: area }
       ];
     }
     
-    const bots = await User.find(query);
-    if (bots.length === 0) {
-      return res.status(400).json({ 
-        message: 'No bot users found for this feed type. Create bots first.' 
+    const availableBots = await User.find(botQuery);
+    
+    if (availableBots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No bots available for this feed type. Create bots first."
       });
     }
     
     const createdPosts = [];
-    const now = new Date();
     
     for (let i = 0; i < count; i++) {
-      const bot = bots[Math.floor(Math.random() * bots.length)];
+      const bot = availableBots[Math.floor(Math.random() * availableBots.length)];
       const content = getRandomTemplate(feedType);
       
       if (!content) continue;
-      
-      // Create post with proper expiration (24 hours from now)
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       
       const postData = {
         user: bot._id,
@@ -324,69 +197,82 @@ router.post('/seed/posts', adminAuth, async (req, res) => {
         anonymousAlias: bot.anonymousAlias,
         avatarEmoji: bot.avatarEmoji,
         isSeedPost: true,
-        expiresAt,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         likes: [],
-        comments: []
+        comments: [],
+        shareCount: 0
       };
       
-      // Add feed-specific fields
-      if (feedType === 'college' && (college || bot.college)) {
-        postData.college = college || bot.college;
-      } else if (feedType === 'area' && (area || bot.area)) {
-        postData.area = area || bot.area;
+      // Add feed-specific data
+      if (feedType === 'college' && college) {
+        postData.college = college;
+      } else if (feedType === 'area' && area) {
+        postData.area = area;
       }
       
-      const post = new Post(postData);
-      await post.save();
-      
-      // Update bot's posts array
-      await User.findByIdAndUpdate(bot._id, {
-        $push: { posts: post._id }
-      });
-      
-      createdPosts.push(post);
+      try {
+        const post = new Post(postData);
+        const savedPost = await post.save();
+        
+        // Update bot's posts array
+        await User.findByIdAndUpdate(bot._id, {
+          $push: { posts: savedPost._id },
+          'botProfile.lastActivity': new Date()
+        });
+        
+        createdPosts.push(savedPost._id);
+      } catch (error) {
+        console.error(`Failed to create post ${i + 1}:`, error.message);
+      }
     }
     
-    console.log(`Created ${createdPosts.length} seed posts`);
-    res.json({ 
-      message: `Created ${createdPosts.length} seed posts`,
+    console.log(`✅ Successfully created ${createdPosts.length} posts`);
+    res.status(201).json({
+      success: true,
+      message: `Created ${createdPosts.length} posts`,
       posts: createdPosts.length
     });
   } catch (error) {
-    console.error('Error creating seed posts:', error);
-    res.status(500).json({ message: 'Error creating seed posts', error: error.message });
+    console.error("Error creating posts:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create posts",
+      error: error.message
+    });
   }
-});
+}));
 
-// ADD BOT INTERACTIONS (likes and comments)
-router.post('/seed/interactions', adminAuth, async (req, res) => {
+// POST /api/admin/seed/interactions - Add interactions to posts
+router.post("/seed/interactions", adminAuth, asyncHandler(async (req, res) => {
   try {
     const { postCount = 50, likesPerPost = 5, commentsPerPost = 2 } = req.body;
-    console.log(`Adding bot interactions to ${postCount} posts`);
     
-    // Get recent posts that need interactions
-    const posts = await Post.find({
-      createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-    }).limit(postCount).sort({ createdAt: -1 });
+    // Get recent posts
+    const recentPosts = await Post.find({
+      createdAt: { $gte: new Date(Date.now() - 4 * 60 * 60 * 1000) }
+    }).limit(postCount);
     
-    // Get all bot users
-    const bots = await User.find({ isBot: true });
-    if (bots.length === 0) {
-      return res.status(400).json({ message: 'No bot users found' });
+    // Get available bots
+    const availableBots = await User.find({ isBot: true });
+    
+    if (availableBots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No bots available for interactions"
+      });
     }
     
     let totalLikes = 0;
     let totalComments = 0;
     
-    for (const post of posts) {
-      // Add random likes
-      const numLikes = Math.floor(Math.random() * likesPerPost) + 1;
-      const shuffledBots = [...bots].sort(() => 0.5 - Math.random());
+    for (const post of recentPosts) {
+      const shuffledBots = [...availableBots].sort(() => 0.5 - Math.random());
       
-      for (let i = 0; i < numLikes && i < shuffledBots.length; i++) {
+      // Add likes
+      const numLikes = Math.min(likesPerPost, shuffledBots.length);
+      for (let i = 0; i < numLikes; i++) {
         const bot = shuffledBots[i];
         
-        // Check if bot already liked this post
         const alreadyLiked = post.likes.some(
           like => like.user.toString() === bot._id.toString()
         );
@@ -401,268 +287,448 @@ router.post('/seed/interactions', adminAuth, async (req, res) => {
         }
       }
       
-      // Add random comments
-      const numComments = Math.floor(Math.random() * commentsPerPost) + 1;
-      const commentBots = shuffledBots.slice(numLikes);
-      
-      for (let i = 0; i < numComments && i < commentBots.length; i++) {
-        const bot = commentBots[i];
-        const commentContent = getRandomComment();
-        
-        post.comments.push({
-          user: bot._id,
-          content: commentContent,
-          anonymousAlias: bot.anonymousAlias,
-          avatarEmoji: bot.avatarEmoji,
-          createdAt: new Date(),
-          replies: []
-        });
-        totalComments++;
+      // Add comments
+      const numComments = Math.min(commentsPerPost, Math.max(0, shuffledBots.length - numLikes));
+      for (let i = 0; i < numComments; i++) {
+        if (shuffledBots[numLikes + i]) {
+          const bot = shuffledBots[numLikes + i];
+          const commentContent = getRandomComment();
+          
+          post.comments.push({
+            user: bot._id,
+            content: commentContent,
+            anonymousAlias: bot.anonymousAlias,
+            avatarEmoji: bot.avatarEmoji,
+            createdAt: new Date(),
+            replies: []
+          });
+          totalComments++;
+        }
       }
       
       await post.save();
     }
     
-    console.log(`Added ${totalLikes} likes and ${totalComments} comments`);
-    res.json({ 
-      message: `Added interactions to ${posts.length} posts`,
+    console.log(`✅ Added ${totalLikes} likes and ${totalComments} comments`);
+    res.status(200).json({
+      success: true,
+      message: `Added ${totalLikes} likes and ${totalComments} comments`,
       totalLikes,
       totalComments
     });
   } catch (error) {
-    console.error('Error adding bot interactions:', error);
-    res.status(500).json({ message: 'Error adding bot interactions', error: error.message });
+    console.error("Error adding interactions:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to add interactions",
+      error: error.message
+    });
   }
-});
+}));
 
-// COMPREHENSIVE SEEDING ENDPOINT
-router.post('/seed/complete', adminAuth, async (req, res) => {
+// POST /api/admin/seed/complete - Comprehensive seeding
+router.post("/seed/complete", adminAuth, asyncHandler(async (req, res) => {
   try {
     const { 
-      colleges: targetColleges = [], 
-      areas: targetAreas = [],
-      botsPerFeed = 5,
+      colleges = [], 
+      areas = [], 
+      botsPerFeed = 5, 
       postsPerFeed = 15,
-      interactionsEnabled = true
+      interactionsEnabled = true 
     } = req.body;
     
-    console.log('Starting comprehensive seeding...');
     const results = {
-      bots: { global: 0, college: 0, area: 0 },
-      posts: { global: 0, college: 0, area: 0 },
-      interactions: { likes: 0, comments: 0 }
+      botsCreated: 0,
+      postsCreated: 0,
+      interactionsAdded: { likes: 0, comments: 0 }
     };
     
-    // 1. Create global bots
-    const globalBotsResponse = await fetch(`${req.protocol}://${req.get('host')}/api/admin/seed/bots`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': req.headers.authorization
-      },
-      body: JSON.stringify({ count: botsPerFeed, feedType: 'global' })
-    });
-    const globalBotsData = await globalBotsResponse.json();
-    results.bots.global = globalBotsData.bots?.length || 0;
-    
-    // 2. Create college-specific bots
-    for (const college of targetColleges) {
-      const collegeBotsResponse = await fetch(`${req.protocol}://${req.get('host')}/api/admin/seed/bots`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.authorization
-        },
-        body: JSON.stringify({ count: botsPerFeed, feedType: 'college' })
-      });
-      const collegeBotsData = await collegeBotsResponse.json();
-      results.bots.college += collegeBotsData.bots?.length || 0;
+    // Create global bots and posts
+    console.log("Creating global feed content...");
+    const globalBots = [];
+    for (let i = 0; i < botsPerFeed; i++) {
+      const persona = getRandomBotPersona('global');
+      try {
+        const bot = await createBotUser(persona, i, 'global');
+        globalBots.push(bot);
+        results.botsCreated++;
+      } catch (error) {
+        console.error(`Failed to create global bot ${i + 1}:`, error.message);
+      }
     }
     
-    // 3. Create area-specific bots
-    for (const area of targetAreas) {
-      const areaBotsResponse = await fetch(`${req.protocol}://${req.get('host')}/api/admin/seed/bots`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.authorization
-        },
-        body: JSON.stringify({ count: botsPerFeed, feedType: 'area' })
-      });
-      const areaBotsData = await areaBotsResponse.json();
-      results.bots.area += areaBotsData.bots?.length || 0;
-    }
-    
-    // Wait a bit for bots to be created
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // 4. Create posts for each feed type
-    const feedTypes = [
-      { type: 'global', count: postsPerFeed },
-      ...targetColleges.map(college => ({ type: 'college', college, count: postsPerFeed })),
-      ...targetAreas.map(area => ({ type: 'area', area, count: postsPerFeed }))
-    ];
-    
-    for (const feed of feedTypes) {
-      const postsResponse = await fetch(`${req.protocol}://${req.get('host')}/api/admin/seed/posts`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.authorization
-        },
-        body: JSON.stringify(feed)
-      });
-      const postsData = await postsResponse.json();
-      results.posts[feed.type] += postsData.posts || 0;
-    }
-    
-    // 5. Add interactions if enabled
-    if (interactionsEnabled) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+    // Create global posts
+    for (let i = 0; i < postsPerFeed && globalBots.length > 0; i++) {
+      const bot = globalBots[Math.floor(Math.random() * globalBots.length)];
+      const content = getRandomTemplate('global');
       
-      const interactionsResponse = await fetch(`${req.protocol}://${req.get('host')}/api/admin/seed/interactions`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.authorization
-        },
-        body: JSON.stringify({ 
-          postCount: 100,
-          likesPerPost: 8,
-          commentsPerPost: 3
-        })
-      });
-      const interactionsData = await interactionsResponse.json();
-      results.interactions = {
-        likes: interactionsData.totalLikes || 0,
-        comments: interactionsData.totalComments || 0
-      };
+      if (content) {
+        try {
+            const post = new Post({
+              user: bot._id,
+              content,
+              anonymousAlias: bot.anonymousAlias,
+              avatarEmoji: bot.avatarEmoji,
+              isSeedPost: true,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              likes: [],
+              comments: []
+            });
+          
+          const savedPost = await post.save();
+          await User.findByIdAndUpdate(bot._id, { $push: { posts: savedPost._id } });
+          results.postsCreated++;
+        } catch (error) {
+          console.error(`Failed to create global post ${i + 1}:`, error.message);
+        }
+      }
     }
     
-    console.log('Comprehensive seeding completed:', results);
-    res.json({ 
-      message: 'Comprehensive seeding completed',
+    // Create college-specific content
+    for (const college of colleges) {
+      console.log(`Creating content for college: ${college}`);
+      const collegeBots = [];
+      
+      for (let i = 0; i < botsPerFeed; i++) {
+        const persona = getRandomBotPersona('college');
+        try {
+          const bot = await createBotUser(persona, i, 'college', college);
+          collegeBots.push(bot);
+          results.botsCreated++;
+        } catch (error) {
+          console.error(`Failed to create college bot ${i + 1} for ${college}:`, error.message);
+        }
+      }
+      
+      // Create college posts
+      for (let i = 0; i < postsPerFeed && collegeBots.length > 0; i++) {
+        const bot = collegeBots[Math.floor(Math.random() * collegeBots.length)];
+        const content = getRandomTemplate('college');
+        
+        if (content) {
+          try {
+              const post = new Post({
+                user: bot._id,
+                content,
+                anonymousAlias: bot.anonymousAlias,
+                avatarEmoji: bot.avatarEmoji,
+                college: college,
+                isSeedPost: true,
+                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+                likes: [],
+                comments: []
+              });
+            
+            const savedPost = await post.save();
+            await User.findByIdAndUpdate(bot._id, { $push: { posts: savedPost._id } });
+            results.postsCreated++;
+          } catch (error) {
+            console.error(`Failed to create college post ${i + 1} for ${college}:`, error.message);
+          }
+        }
+      }
+    }
+    
+    // Create area-specific content
+    for (const area of areas) {
+      console.log(`Creating content for area: ${area}`);
+      const areaBots = [];
+      
+      for (let i = 0; i < botsPerFeed; i++) {
+        const persona = getRandomBotPersona('area');
+        try {
+          const bot = await createBotUser(persona, i, 'area', null, area);
+          areaBots.push(bot);
+          results.botsCreated++;
+        } catch (error) {
+          console.error(`Failed to create area bot ${i + 1} for ${area}:`, error.message);
+        }
+      }
+      
+      // Create area posts
+      for (let i = 0; i < postsPerFeed && areaBots.length > 0; i++) {
+        const bot = areaBots[Math.floor(Math.random() * areaBots.length)];
+        const content = getRandomTemplate('area');
+        
+        if (content) {
+          try {
+            const post = new Post({
+              user: bot._id,
+              content,
+              anonymousAlias: bot.anonymousAlias,
+              avatarEmoji: bot.avatarEmoji,
+              area: area,
+              isSeedPost: true,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              likes: [],
+              comments: []
+            });
+            
+            const savedPost = await post.save();
+            await User.findByIdAndUpdate(bot._id, { $push: { posts: savedPost._id } });
+            results.postsCreated++;
+          } catch (error) {
+            console.error(`Failed to create area post ${i + 1} for ${area}:`, error.message);
+          }
+        }
+      }
+    }
+    
+    // Add interactions if enabled
+    if (interactionsEnabled && results.postsCreated > 0) {
+      console.log("Adding interactions to posts...");
+      
+      const recentPosts = await Post.find({
+        createdAt: { $gte: new Date(Date.now() - 1 * 60 * 60 * 1000) }
+      }).limit(50);
+      
+      const allBots = await User.find({ isBot: true });
+      
+      for (const post of recentPosts) {
+        const shuffledBots = [...allBots].sort(() => 0.5 - Math.random());
+        
+        // Add 1-3 likes
+        const numLikes = Math.floor(Math.random() * 3) + 1;
+        for (let i = 0; i < Math.min(numLikes, shuffledBots.length); i++) {
+          const bot = shuffledBots[i];
+          
+          const alreadyLiked = post.likes.some(
+            like => like.user.toString() === bot._id.toString()
+          );
+          
+          if (!alreadyLiked) {
+            post.likes.push({
+              user: bot._id,
+              anonymousAlias: bot.anonymousAlias,
+              createdAt: new Date()
+            });
+            results.interactionsAdded.likes++;
+          }
+        }
+        
+        // Maybe add a comment (30% chance)
+        if (Math.random() < 0.3 && shuffledBots.length > numLikes) {
+          const bot = shuffledBots[numLikes];
+          const commentContent = getRandomComment();
+          
+          post.comments.push({
+            user: bot._id,
+            content: commentContent,
+            anonymousAlias: bot.anonymousAlias,
+            avatarEmoji: bot.avatarEmoji,
+            createdAt: new Date(),
+            replies: []
+          });
+          results.interactionsAdded.comments++;
+        }
+        
+        await post.save();
+      }
+    }
+    
+    console.log("✅ Comprehensive seeding completed:", results);
+    res.status(201).json({
+      success: true,
+      message: "Comprehensive seeding completed successfully",
       results
     });
   } catch (error) {
-    console.error('Error in comprehensive seeding:', error);
-    res.status(500).json({ message: 'Error in comprehensive seeding', error: error.message });
-  }
-});
-
-// GET /api/admin/users/:id - Get specific user details
-router.get('/users/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Fetching user details:', req.params.id);
-    const user = await User.findById(req.params.id)
-      .select('-password')
-      .populate('posts');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    res.json(user);
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// PUT /api/admin/users/:id/ban - Ban/unban a user with proper persistence
-router.put('/users/:id/ban', adminAuth, async (req, res) => {
-  try {
-    console.log('Toggling user ban status:', req.params.id);
-    const { banned } = req.body;
-    
-    // Ensure the banned field is properly set and saved
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    user.banned = banned;
-    if (banned) {
-      user.bannedAt = new Date();
-    } else {
-      user.bannedAt = null;
-    }
-    
-    await user.save();
-    
-    // Return user without password
-    const updatedUser = await User.findById(req.params.id).select('-password');
-    
-    console.log(`User ${banned ? 'banned' : 'unbanned'} successfully, new status:`, updatedUser.banned);
-    res.json({ 
-      message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
-      user: updatedUser
+    console.error("Error in comprehensive seeding:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to complete comprehensive seeding",
+      error: error.message
     });
-  } catch (error) {
-    console.error('Error updating user ban status:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
   }
-});
+}));
 
-// GET /api/admin/stats - Get admin statistics
-router.get('/stats', adminAuth, async (req, res) => {
+// POST /api/admin/seed/csv-posts - Import posts from CSV
+router.post("/seed/csv-posts", adminAuth, upload.single('csvFile'), asyncHandler(async (req, res) => {
   try {
-    console.log('Fetching admin stats...');
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No CSV file uploaded"
+      });
+    }
     
-    const totalUsers = await User.countDocuments();
-    const totalPosts = await Post.countDocuments();
-    const bannedUsers = await User.countDocuments({ banned: true });
-    const activeUsers = totalUsers - bannedUsers;
+    const { feedType = 'global', college, area } = req.body;
+    const posts = [];
     
-    // Posts created today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const postsToday = await Post.countDocuments({
-      createdAt: { $gte: today, $lt: tomorrow }
+    // Read CSV file
+    fs.createReadStream(req.file.path)
+      .pipe(csv())
+      .on('data', (row) => {
+        if (row.content && row.content.trim()) {
+          posts.push({
+            content: row.content.trim(),
+            category: row.category || 'general',
+            tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
+            imageUrl: row.imageUrl && row.imageUrl.trim() ? row.imageUrl.trim() : '',
+            images: row.images ? row.images.split(',').map(img => img.trim()).filter(img => img) : []
+          });
+        }
+      })
+      .on('end', async () => {
+        try {
+          // Get available bots
+          const botQuery = { isBot: true };
+          if (feedType === 'college' && college) {
+            botQuery.$or = [
+              { 'botProfile.feedFocus': 'global' },
+              { 'botProfile.feedFocus': 'college', college: college }
+            ];
+          } else if (feedType === 'area' && area) {
+            botQuery.$or = [
+              { 'botProfile.feedFocus': 'global' },
+              { 'botProfile.feedFocus': 'area', area: area }
+            ];
+          }
+          
+          const availableBots = await User.find(botQuery);
+          
+          if (availableBots.length === 0) {
+            return res.status(400).json({
+              success: false,
+              message: "No bots available for this feed type"
+            });
+          }
+          
+          const createdPosts = [];
+          
+          for (const postData of posts) {
+            const bot = availableBots[Math.floor(Math.random() * availableBots.length)];
+            
+            const newPostData = {
+              user: bot._id,
+              content: postData.content,
+              imageUrl: postData.imageUrl || '',
+              images: postData.images || [],
+              anonymousAlias: bot.anonymousAlias,
+              avatarEmoji: bot.avatarEmoji,
+              isSeedPost: true,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+              likes: [],
+              comments: [],
+              tags: postData.tags
+            };
+            
+            if (feedType === 'college' && college) {
+              newPostData.college = college;
+            } else if (feedType === 'area' && area) {
+              newPostData.area = area;
+            }
+            
+            try {
+              const post = new Post(newPostData);
+              const savedPost = await post.save();
+              
+              await User.findByIdAndUpdate(bot._id, {
+                $push: { posts: savedPost._id }
+              });
+              
+              createdPosts.push(savedPost._id);
+            } catch (error) {
+              console.error("Error creating post from CSV:", error.message);
+            }
+          }
+          
+          // Clean up uploaded file
+          fs.unlinkSync(req.file.path);
+          
+          res.status(201).json({
+            success: true,
+            message: `Created ${createdPosts.length} posts from CSV`,
+            postsCreated: createdPosts.length,
+            totalRowsProcessed: posts.length
+          });
+        } catch (error) {
+          console.error("Error processing CSV posts:", error);
+          res.status(500).json({
+            success: false,
+            message: "Failed to process CSV posts",
+            error: error.message
+          });
+        }
+      });
+  } catch (error) {
+    console.error("Error uploading CSV:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload CSV",
+      error: error.message
     });
+  }
+}));
+
+// Get all posts
+router.get("/posts", adminAuth, asyncHandler(async (req, res) => {
+  const posts = await Post.find({})
+    .populate('user', 'username email fullName anonymousAlias avatarEmoji')
+    .populate('ghostCircle', 'name')
+    .sort({ createdAt: -1 });
+  
+  // Add notification acceptance info and feed type
+  const postsWithDetails = posts.map(post => {
+    let feedType = 'Global';
+    if (post.college) feedType = `College: ${post.college}`;
+    if (post.area) feedType = `Area: ${post.area}`;
+    if (post.ghostCircle) feedType = `Ghost Circle: ${post.ghostCircle.name}`;
     
-    const stats = {
-      totalUsers,
-      totalPosts,
-      activeUsers,
-      bannedUsers,
-      postsToday
+    return {
+      ...post.toObject(),
+      feedType,
+      notificationAccepts: post.likes?.length || 0 // Using likes as proxy for engagement
     };
-    
-    console.log('Admin stats:', stats);
-    res.json(stats);
-  } catch (error) {
-    console.error('Error fetching admin stats:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
+  });
+  
+  res.json(postsWithDetails);
+}));
 
-// DELETE /api/admin/users/:id - Soft delete a user (ban them permanently)
-router.delete('/users/:id', adminAuth, async (req, res) => {
-  try {
-    console.log('Soft deleting user:', req.params.id);
-    
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    user.banned = true;
-    user.bannedAt = new Date();
-    user.deletedAt = new Date();
-    await user.save();
-    
-    const updatedUser = await User.findById(req.params.id).select('-password');
-    
-    console.log('User soft-deleted (banned) successfully');
-    res.json({ message: 'User deleted successfully', user: updatedUser });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+// Get all users
+router.get("/users", adminAuth, asyncHandler(async (req, res) => {
+  const users = await User.find({});
+  res.json(users);
+}));
+
+// Delete a post
+router.delete("/posts/:id", adminAuth, asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.id);
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
   }
-});
+  await Post.findByIdAndDelete(req.params.id);
+  res.json({ message: "Post removed" });
+}));
+
+// Update a post
+router.put("/posts/:id", adminAuth, asyncHandler(async (req, res) => {
+  const post = await Post.findById(req.params.id);
+
+  if (post) {
+    post.content = req.body.content || post.content;
+
+    const updatedPost = await post.save();
+    res.json(updatedPost);
+  } else {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+}));
+
+// Ban a user
+router.put("/users/:id/ban", adminAuth, asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+
+  if (user) {
+    user.banned = req.body.banned;
+    const updatedUser = await user.save();
+    res.json({ message: "User ban status updated" });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
+  }
+}));
 
 module.exports = router;

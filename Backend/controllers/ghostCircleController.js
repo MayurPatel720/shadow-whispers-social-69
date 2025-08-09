@@ -193,6 +193,37 @@ const getGhostCircleById = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Join a ghost circle from invitation
+// @route   POST /api/ghost-circles/:id/join
+// @access  Private
+const joinGhostCircle = asyncHandler(async (req, res) => {
+  const ghostCircle = await GhostCircle.findById(req.params.id);
+
+  if (!ghostCircle) {
+    res.status(404);
+    throw new Error('Ghost circle not found');
+  }
+
+  const isMember = ghostCircle.members.some(member => 
+    member.userId.toString() === req.user._id.toString()
+  );
+
+  if (isMember) {
+    res.status(400);
+    throw new Error('You are already a member of this ghost circle');
+  }
+
+  ghostCircle.members.push({ userId: req.user._id, joinedAt: new Date() });
+  await ghostCircle.save();
+
+  await User.findByIdAndUpdate(
+    req.user._id,
+    { $push: { ghostCircles: ghostCircle._id } }
+  );
+
+  res.status(200).json({ message: 'Successfully joined the ghost circle' });
+});
+
 // @desc    Search for users to invite to a ghost circle
 // @route   GET /api/users/search
 // @access  Private
@@ -219,6 +250,7 @@ module.exports = {
   createGhostCircle,
   getMyGhostCircles,
   inviteToGhostCircle,
+  joinGhostCircle,
   getGhostCircleById,
   searchUsers,
 };

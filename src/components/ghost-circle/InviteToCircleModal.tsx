@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { inviteToGhostCircle } from "@/lib/api";
 import UserSearchInput from "./UserSearchInput";
+import { getErrorMessage } from "@/lib/error-utils";
 
 const inviteSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -74,7 +75,7 @@ const InviteToCircleModal: React.FC<InviteToCircleModalProps> = ({
       toast({
         variant: "destructive",
         title: "Failed to invite user",
-        description: error?.message || "Something went wrong. Please try again.",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);

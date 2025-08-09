@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Shield, Lock, Mail } from 'lucide-react';
 import { useAdmin } from '@/context/AdminContext';
 import { toast } from '@/hooks/use-toast';
+import { getErrorMessage } from '@/lib/error-utils';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -39,7 +40,7 @@ const AdminLogin = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Something went wrong",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsLoading(false);

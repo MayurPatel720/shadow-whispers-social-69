@@ -113,13 +113,13 @@ if (process.env.NODE_ENV !== "production") {
 
 // Make io globally available
 global.io = io;
-app.set('socketio', io);
+app.set("socketio", io);
 
 // Apply Socket.IO configuration
 require("./configs/socket")(io);
 
 // Initialize like notification job
-const { initializeLikeNotificationJob } = require('./jobs/likeNotifications');
+const { initializeLikeNotificationJob } = require("./jobs/likeNotifications");
 initializeLikeNotificationJob(io);
 
 // Connect to DB

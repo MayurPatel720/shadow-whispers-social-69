@@ -4,6 +4,7 @@ const {
 	createGhostCircle,
 	getMyGhostCircles,
 	inviteToGhostCircle,
+	joinGhostCircle,
 	getGhostCircleById,
 	searchUsers,
 } = require("../controllers/ghostCircleController");
@@ -19,6 +20,7 @@ router
 router.route("/:id").get(protect, getGhostCircleById);
 
 router.route("/:id/invite").post(protect, inviteToGhostCircle);
+router.route("/:id/join").post(protect, joinGhostCircle);
 router.route("/circle/:id").get(protect, getGhostCirclePosts);
 
 // User search for ghost circle invitations

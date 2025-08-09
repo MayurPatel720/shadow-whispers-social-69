@@ -6,6 +6,7 @@ import { Ghost, ArrowRight } from "lucide-react";
 import { joinGhostCircle } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 import { processReferral } from "@/lib/api-referral";
+import { getErrorMessage } from "@/lib/error-utils";
 
 const InvitePage = () => {
 	const { isAuthenticated, user } = useAuth();
@@ -67,7 +68,7 @@ const InvitePage = () => {
 			console.error("Error joining circle:", error);
 			toast({
 				title: "Failed to join circle",
-				description: "Something went wrong",
+				description: getErrorMessage(error),
 				variant: "destructive",
 			});
 		} finally {

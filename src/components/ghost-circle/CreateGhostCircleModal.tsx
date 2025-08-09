@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { createGhostCircle } from "@/lib/api";
+import { getErrorMessage } from "@/lib/error-utils";
 
 const circleSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -68,7 +69,7 @@ const CreateGhostCircleModal: React.FC<CreateGhostCircleModalProps> = ({
       toast({
         variant: "destructive",
         title: "Failed to create Ghost Circle",
-        description: error?.message || "Something went wrong. Please try again.",
+        description: getErrorMessage(error),
       });
     } finally {
       setIsSubmitting(false);

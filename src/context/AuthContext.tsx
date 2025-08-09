@@ -4,6 +4,7 @@ import { loginUser, registerUser } from "@/lib/api";
 import { User } from "@/types/user";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { getErrorMessage } from "@/lib/error-utils";
 
 interface AuthContextType {
 	user: User | null;
@@ -173,9 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			toast({
 				variant: "destructive",
 				title: "Registration failed",
-				description:
-					error.message ||
-					"Something went wrong during registration. Please try again.",
+				description: getErrorMessage(error),
 			});
 			throw error;
 		} finally {
